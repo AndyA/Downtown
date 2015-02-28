@@ -139,18 +139,14 @@ y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
   return y4m2_retain_frame(frame);
 }
 
+y4m2_frame *y4m2_like_frame(const y4m2_frame *frame) {
+  return y4m2_new_frame_info(&frame->i);
+}
+
 y4m2_frame *y4m2_new_frame(const y4m2_parameters *parms) {
   y4m2_frame_info info;
   y4m2_parse_frame_info(&info, parms);
   return y4m2_new_frame_info(&info);
-}
-
-y4m2_frame *y4m2_like_frame(const y4m2_frame *frame) {
-  y4m2_frame *nf = jd_alloc(sizeof(y4m2_frame));
-  *nf = *frame;
-  nf->buf = jd_alloc(frame->i.size);
-  nf->refcnt = 0;
-  return y4m2_retain_frame(nf);
 }
 
 y4m2_frame *y4m2_clone_frame(const y4m2_frame *frame) {
