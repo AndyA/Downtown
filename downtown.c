@@ -10,10 +10,6 @@ typedef struct {
   y4m2_output *next;
 } context;
 
-static void help(void) {
-  printf("Syntax: downtown <config file>...\n");
-}
-
 static void callback(y4m2_reason reason,
                      const y4m2_parameters *parms,
                      y4m2_frame *frame,
