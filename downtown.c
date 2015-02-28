@@ -38,7 +38,7 @@ int main(void) {
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
   y4m2_parse(stdin, out);
-  y4m2_free_output(out);
+  y4m2_free_output(ctx.next);
 
   return 0;
 }
