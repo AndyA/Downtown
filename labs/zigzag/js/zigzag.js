@@ -61,7 +61,7 @@ $(function() {
       var x0 = Math.min(sz.w - 1, x);
       var y0 = x - x0;
 
-      var y1 = Math.min(sz.h - 1, x0);
+      var y1 = Math.min(sz.h - 1, x);
       var x1 = x - y1;
 
       console.log('x0=' + x0 + ', y0=' + y0 + ', x1=' + x1 + ', y1=' + y1);

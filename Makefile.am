@@ -12,7 +12,8 @@ bin_PROGRAMS = downtown
 
 libdowntown_la_SOURCES = \
 	colour.h colour.c \
-	yuv4mpeg2.h yuv4mpeg2.c
+	yuv4mpeg2.h yuv4mpeg2.c \
+	zigzag.h zigzag.c
 
 libdowntown_la_LDFLAGS = -avoid-version -static
 
