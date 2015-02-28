@@ -314,6 +314,21 @@ int y4m2_emit_end(y4m2_output *out) {
   return 0;
 }
 
+int y4m2_emit(y4m2_output *out, y4m2_reason reason,
+              const y4m2_parameters *parms,
+              y4m2_frame *frame) {
+  switch (reason) {
+  case Y4M2_START:
+    return y4m2_emit_start(out, parms);
+  case Y4M2_FRAME:
+    return y4m2_emit_frame(out, parms, frame);
+  case Y4M2_END:
+    return y4m2_emit_end(out);
+  default:
+    return -1;
+  }
+}
+
 y4m2_output *y4m2_output_file(FILE *out) {
   y4m2_output *o = jd_alloc(sizeof(y4m2_output));
   o->type = Y4M2_OUTPUT_FILE;

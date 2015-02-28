@@ -75,6 +75,9 @@ int y4m2_parse(FILE *in, y4m2_output *out);
 int y4m2_emit_start(y4m2_output *out, const y4m2_parameters *parms);
 int y4m2_emit_frame(y4m2_output *out, const y4m2_parameters *parms, y4m2_frame *frame);
 int y4m2_emit_end(y4m2_output *out);
+int y4m2_emit(y4m2_output *out, y4m2_reason reason,
+              const y4m2_parameters *parms,
+              y4m2_frame *frame);
 y4m2_output *y4m2_output_file(FILE *out);
 y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx);
 void y4m2_free_output(y4m2_output *out);
