@@ -1,0 +1,6 @@
+{
+   "maxwidth" : 2048,
+   "stride" : 8192,
+   "vscale" : 16,
+   "window" : true
+}
