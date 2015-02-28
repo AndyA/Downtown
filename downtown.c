@@ -8,7 +8,7 @@
 #include "zigzag.h"
 
 typedef struct {
-  uint8_t *buf;
+  y4m2_frame *buf;
   y4m2_output *next;
 } context;
 
@@ -25,14 +25,16 @@ static void callback(y4m2_reason reason,
     y4m2_emit_start(c->next, parms);
     break;
   case Y4M2_FRAME:
-    if (!c->buf)
-      c->buf = malloc(frame->i.width * frame->i.height);
-    zigzag_permute(frame->plane[Y4M2_Y_PLANE], c->buf, frame->i.width, frame->i.height);
-    memcpy(frame->plane[Y4M2_Y_PLANE], c->buf, frame->i.width * frame->i.height);
-    y4m2_emit_frame(c->next, parms, frame);
+    if (!c->buf) c->buf = y4m2_like_frame(frame);
+    for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
+      int w = frame->i.width / frame->i.plane[pl].xs;
+      int h = frame->i.height / frame->i.plane[pl].ys;
+      zigzag_permute(frame->plane[pl], c->buf->plane[pl], w, h);
+    }
+    y4m2_emit_frame(c->next, parms, c->buf);
     break;
   case Y4M2_END:
-    free(c->buf);
+    y4m2_free_frame(c->buf);
     y4m2_emit_end(c->next);
     break;
   }
