@@ -34,7 +34,7 @@ static void callback(y4m2_reason reason,
     y4m2_emit_frame(c->next, parms, c->buf);
     break;
   case Y4M2_END:
-    y4m2_release_frame(c->buf);
+    if (c->buf) y4m2_release_frame(c->buf);
     y4m2_emit_end(c->next);
     break;
   }
