@@ -1,4 +1,4 @@
-# Effects processing on ffmpeg yuv4mpegpipe
+# Generate frequency domain signatures from video
 
 ```shell
 $ ./setup.sh && ./configure && make test
@@ -7,9 +7,7 @@ $ ./setup.sh && ./configure && make test
 Requires: https://github.com/AndyA/jsondata
 
 ```shell
-$ ffmpeg -i infile.mov -f yuv4mpegpipe - | \
-    downtown config.json | \
-    ffmpeg -y -f yuv4mpegpipe -i - -c:v libx264 -b:v 3000k outfile.ts
+$ ffmpeg -i infile.mov -f yuv4mpegpipe - | downtown config.json 
 ```
 
 Andy Armstrong, andy@hexten.net
