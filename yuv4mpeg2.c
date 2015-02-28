@@ -81,7 +81,10 @@ static unsigned parse_num(const char *s) {
   exit(1);
 }
 
-static void set_planes(y4m2_frame_info *info, unsigned xsY, unsigned ysY, unsigned xsCb, unsigned ysCb, unsigned xsCr, unsigned ysCr) {
+static void set_planes(y4m2_frame_info *info,
+                       unsigned xsY, unsigned ysY,
+                       unsigned xsCb, unsigned ysCb,
+                       unsigned xsCr, unsigned ysCr) {
   size_t pix_size = info->width * info->height;
 
   info->plane[Y4M2_Y_PLANE].xs = xsY;
