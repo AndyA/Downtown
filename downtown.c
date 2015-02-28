@@ -31,13 +31,8 @@ static void callback(y4m2_reason reason,
   }
 }
 
-int main(int argc, char *argv[]) {
+int main(void) {
   context ctx;
-
-  /*  if (argc == 1 || (argc == 2 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")))) {*/
-  /*    help();*/
-  /*    return 1;*/
-  /*  }*/
 
   ctx.next = y4m2_output_file(stdout);
 
