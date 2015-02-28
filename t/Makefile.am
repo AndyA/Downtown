@@ -2,13 +2,12 @@ TESTBIN = basic yuv4mpeg2 colour
 
 TESTPERL =
 
-noinst_PROGRAMS = wrap plotpipe $(TESTBIN)
+noinst_PROGRAMS = wrap $(TESTBIN)
 
 noinst_LTLIBRARIES = libtest-support.la
 
 libtest_support_la_SOURCES = \
-	tap.c tap.h framework.c framework.h \
-	filter_harness.c filter_harness.h
+	tap.c tap.h framework.c framework.h
 
 libtest_support_la_LDFLAGS = -static
 
