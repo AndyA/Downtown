@@ -29,6 +29,7 @@
 /Session.vim
 /TAGS
 /autom4te.cache
+/compile
 /config.cache
 /config.guess
 /config.h
@@ -39,6 +40,7 @@
 /configure
 /core
 /depcomp
+/downtown
 /install-sh
 /libtool
 /ltmain.sh
@@ -46,7 +48,6 @@
 /stamp-h*
 /tags
 /test.*
-/downtown
 /version.h
 Makefile
 Makefile.in
