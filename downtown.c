@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <fftw3.h>
+
 #include "yuv4mpeg2.h"
 #include "zigzag.h"
 
