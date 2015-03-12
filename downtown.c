@@ -244,8 +244,8 @@ static void callback(y4m2_reason reason,
     break;
 
   case Y4M2_END:
-    free_context(c);
     y4m2_emit_end(c->next);
+    free_context(c);
     break;
 
   }
