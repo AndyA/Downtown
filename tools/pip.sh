@@ -1,10 +1,11 @@
 #!/bin/bash
 
-DURATION=120
+DURATION=240
 
-for src in "$*"; do
+for src in "$@"; do
   dst="$src.downtown.mov"
   if [ "$src" -nt "$dst" ]; then
+    echo "$src -> $dst"
     tmp="$dst.tmp.mov"
 
     ffmpeg -i "$src" -pix_fmt yuv420p -s 256x256 -t $DURATION -f yuv4mpegpipe - \
