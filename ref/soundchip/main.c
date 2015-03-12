@@ -150,7 +150,7 @@ static void process(jd_var *ctx, const char *name) {
 
     for (c = 0; c < info.channels; c++) {
       stuff_fft(ibuf, abuf[cb ^ 1] + c, stride, info.channels, hamming);
-      stuff_fft(ibuf + stride, abuf[cb] + c, stride, info.channels, hamming + stride);
+      stuff_fft(ibuf + stride, abuf[cb] + c, stride, info.channels, hamming ? hamming + stride : NULL);
       fftw_execute(plan);
       printf("%d", c);
       for (i = 1; i < (stride * 2 + 1) / 2; i += vscale) {
