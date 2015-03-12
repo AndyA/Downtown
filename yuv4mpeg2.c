@@ -127,11 +127,13 @@ void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms) 
 }
 
 y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
+  static uint8_t pl_fill[Y4M2_N_PLANE] = { 16, 128, 128 };
   y4m2_frame *frame = jd_alloc(sizeof(y4m2_frame));
   uint8_t *buf = frame->buf = jd_alloc(info->size);
 
   for (int i = 0; i < Y4M2_N_PLANE; i++) {
     frame->plane[i] = buf;
+    memset(buf, pl_fill[i], info->plane[i].size);
     buf += info->plane[i].size;
   }
 
