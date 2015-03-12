@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 void die(const char *msg, ...);
+void *alloc(size_t size);
 
 #ifdef __cplusplus
 }
