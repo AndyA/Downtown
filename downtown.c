@@ -23,9 +23,11 @@ static void callback(y4m2_reason reason,
   context *c = ctx;
 
   switch (reason) {
+
   case Y4M2_START:
     y4m2_emit_start(c->next, parms);
     break;
+
   case Y4M2_FRAME:
     if (!c->buf) c->buf = y4m2_like_frame(frame);
     for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
@@ -35,10 +37,12 @@ static void callback(y4m2_reason reason,
     }
     y4m2_emit_frame(c->next, parms, c->buf);
     break;
+
   case Y4M2_END:
     if (c->buf) y4m2_release_frame(c->buf);
     y4m2_emit_end(c->next);
     break;
+
   }
 }
 
