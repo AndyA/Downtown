@@ -149,10 +149,10 @@ static void fft2b(uint8_t *out, int step, fft_context *c, int omin, int omax) {
   }
 }
 
-static void scroll_left(uint8_t *buf, int w, int h) {
+static void scroll_left(uint8_t *buf, int w, int h, uint8_t fill) {
   for (int y = 0; y < h; y++) {
     memmove(buf + y * w, buf + y * w + 1, w - 1);
-    buf[y * w + w - 1] = 0;
+    buf[y * w + w - 1] = fill;
   }
 }
 
@@ -181,7 +181,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     zigzag_permute(frame->plane[pl], c->buf->plane[pl], w, h);
     b2da(fc->ibuf, c->buf->plane[pl], len);
     fftw_execute(fc->plan);
-    scroll_left(ofr->plane[pl], ow, oh);
+    scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
     fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240);
   }
   c->frame_count++;
