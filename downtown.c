@@ -9,6 +9,7 @@
 #include <fftw3.h>
 
 #include "downtown.h"
+#include "merge.h"
 #include "util.h"
 #include "yuv4mpeg2.h"
 #include "zigzag.h"
@@ -44,6 +45,7 @@ static permute_func cfg_permute = zigzag_permute;
 static int cfg_mono = 0;
 static int cfg_width = OUTWIDTH;
 static int cfg_height = OUTHEIGHT;
+static int cfg_merge = 1;
 
 static permute_method permuters[] = {
   { .name = "zigzag",  .f = zigzag_permute },
@@ -57,6 +59,7 @@ static void usage() {
           "  -h, --help                See this message\n"
           "  -g, --gain <gain>         Signal gain\n"
           "  -m, --mono                Only process luma\n"
+          "  -M, --merge <n>           Merge every <n> input frames\n"
           "  -p, --permute <algo>      Select permution algorithm\n"
           "  -s, --size <w>x<h>        Output size\n"
           "\n"
@@ -292,12 +295,13 @@ static void parse_options(int *argc, char ***argv) {
     {"help", no_argument, NULL, 'h'},
     {"gain", required_argument, NULL, 'g'},
     {"mono", no_argument, NULL, 'm'},
+    {"merge", required_argument, NULL, 'M'},
     {"permute", required_argument, NULL, 'p'},
     {"size", required_argument, NULL, 's'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:p:s:h", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:p:s:M:mh", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'g':
@@ -306,6 +310,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'm':
       cfg_mono = 1;
+      break;
+
+    case 'M':
+      cfg_merge = (int) parse_double(optarg);
       break;
 
     case 'p':
@@ -339,6 +347,7 @@ int main(int argc, char *argv[]) {
   ctx.next = y4m2_output_file(stdout);
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
+  if (cfg_merge > 1) out = filter_merge(out, cfg_merge);
   y4m2_parse(stdin, out);
   y4m2_free_output(ctx.next);
 
