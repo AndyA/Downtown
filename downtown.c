@@ -46,6 +46,7 @@ int main(void) {
   context ctx;
 
   ctx.next = y4m2_output_file(stdout);
+  ctx.buf = NULL;
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
   y4m2_parse(stdin, out);
