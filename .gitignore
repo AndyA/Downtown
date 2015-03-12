@@ -41,6 +41,7 @@
 /core
 /depcomp
 /downtown
+/downtown_filter
 /install-sh
 /libtool
 /ltmain.sh
