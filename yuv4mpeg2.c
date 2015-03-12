@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "colour.h"
+#include "util.h"
 #include "yuv4mpeg2.h"
 
 static const char *tag[] = {
@@ -64,10 +65,7 @@ const char *y4m2_get_parm(const y4m2_parameters *parms, const char *name) {
 
 void y4m2_set_parm(y4m2_parameters *parms, const char *name, const char *value) {
   int idx = y4m2__get_index(name);
-  if (idx < 0) {
-    fprintf(stderr, "Bad parameter name: %s\n", name);
-    exit(1);
-  }
+  if (idx < 0) die("Bad parameter name: %s", name);
   y4m2__set(&(parms->parm[idx]), value);
 }
 
@@ -77,8 +75,8 @@ static unsigned parse_num(const char *s) {
     unsigned n = (unsigned) strtoul(s, &ep, 10);
     if (ep > s && *ep == '\0') return n;
   }
-  fprintf(stderr, "Bad number");
-  exit(1);
+  die("Bad number");
+  return 0;
 }
 
 static void set_planes(y4m2_frame_info *info,
@@ -123,8 +121,7 @@ void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms) 
     set_planes(info, 1, 1, 1, 1, 1, 1);
   }
   else {
-    fprintf(stderr, "Unknown colourspace %s\n", cs);
-    exit(1);
+    die("Unknown colourspace %s\n", cs);
   }
 
   for (int i = 0; i < Y4M2_N_PLANE; i++) {
@@ -198,7 +195,6 @@ void y4m2__parse_parms(y4m2_parameters *parms, char *buf) {
     while (*buf > ' ') buf++;
     char t = *buf;
     *buf = '\0';
-    /*    fprintf(stderr,"%s=%s\n",name,vp);*/
     y4m2_set_parm(parms, name, vp);
     *buf = t;
   }
@@ -254,18 +250,14 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       y4m2_frame *frame = y4m2_new_frame(merged);
       frame->sequence = sequence++;
       size_t got = fread(frame->buf, 1, frame->i.size, in);
-      if (got != frame->i.size) {
-        fprintf(stderr, "Short read");
-        exit(1);
-      }
+      if (got != frame->i.size) die("Short read");
       y4m2_emit_frame(out, parms, frame);
       y4m2_release_frame(frame);
       y4m2_free_parms(parms);
       y4m2_free_parms(merged);
     }
     else {
-      fprintf(stderr, "Bad stream");
-      exit(1);
+      die("Bad stream");
     }
   }
 
