@@ -32,17 +32,24 @@ typedef struct {
 } fft_context;
 
 typedef struct {
+  double min, max, total;
+  unsigned long count;
+} range_stats;
+
+typedef struct {
   unsigned long frame_count;
   y4m2_output *next;
   y4m2_frame *buf;
   y4m2_frame *out_buf;
   y4m2_parameters *out_parms;
   fft_context fftc[Y4M2_N_PLANE];
+  range_stats stats[Y4M2_N_PLANE];
 } context;
 
 static double cfg_gain = 1.0;
 static permute_func cfg_permute = zigzag_permute;
 static int cfg_mono = 0;
+static int cfg_auto = 0;
 static int cfg_width = OUTWIDTH;
 static int cfg_height = OUTHEIGHT;
 static int cfg_merge = 1;
@@ -170,11 +177,31 @@ static void min_max(const double *d, size_t len, double *pmin, double *pmax, dou
   if (pavg) *pavg = total / len;
 }
 
-static void fft2b(uint8_t *out, int step, fft_context *c, int omin, int omax) {
+static void put_stats(range_stats *st, double min, double max, double avg) {
+  if (st->count++ == 0) {
+    st->min = min;
+    st->max = max;
+    st->total = avg;
+  }
+  else {
+    if (min < st->min) st->min = min;
+    if (max > st->max) st->max = max;
+    st->total += avg;
+  }
+}
+
+static void fft2b(uint8_t *out, int step, fft_context *c, int omin, int omax, range_stats *st) {
   double min, max, avg;
 
   double *sb = scale_fft(c);
+
   min_max(sb, c->osize, &min, &max, &avg);
+  put_stats(st, min, max, avg);
+
+  if (!cfg_auto) {
+    min = 0;
+    max = 500;
+  }
 
   for (int i = 0; i < c->osize; i++) {
     double dv = cfg_gain * (sb[i] - min) / (max - min);
@@ -218,9 +245,22 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     b2da(fc->ibuf, c->buf->plane[pl], len);
     fftw_execute(fc->plan);
     scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
-    fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240);
+    fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240, &c->stats[pl]);
   }
   c->frame_count++;
+}
+
+
+static void dump_stats(context *c) {
+  static const char *plane_name[] = { "Y", "Cb", "Cr" };
+  int max_plane = cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE;
+  for (int pl = 0; pl < max_plane; pl++) {
+    range_stats *st = &c->stats[pl];
+    if (pl) fprintf(stderr, ", ");
+    fprintf(stderr, "%s: (min=%.3f, avg=%.3f, max=%.3f)",
+            plane_name[pl], st->min, st->total / st->count, st->max);
+  }
+  fprintf(stderr, "\n");
 }
 
 static void callback(y4m2_reason reason,
@@ -245,6 +285,7 @@ static void callback(y4m2_reason reason,
 
   case Y4M2_END:
     y4m2_emit_end(c->next);
+    dump_stats(c);
     free_context(c);
     break;
 
@@ -294,6 +335,7 @@ static void parse_options(int *argc, char ***argv) {
   static struct option opts[] = {
     {"help", no_argument, NULL, 'h'},
     {"gain", required_argument, NULL, 'g'},
+    {"auto", no_argument, NULL, 'a'},
     {"mono", no_argument, NULL, 'm'},
     {"merge", required_argument, NULL, 'M'},
     {"permute", required_argument, NULL, 'p'},
@@ -301,8 +343,12 @@ static void parse_options(int *argc, char ***argv) {
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:p:s:M:mh", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:p:s:M:amh", opts, &oidx), ch != -1) {
     switch (ch) {
+
+    case 'a':
+      cfg_auto = 1;
+      break;
 
     case 'g':
       cfg_gain = parse_double(optarg);
