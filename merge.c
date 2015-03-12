@@ -7,7 +7,7 @@
 #include "yuv4mpeg2.h"
 
 typedef struct {
-  const y4m2_output *next;
+  y4m2_output *next;
   int frames;
   int phase;
   double *buf;
@@ -15,7 +15,7 @@ typedef struct {
   const y4m2_parameters *last_parms;
 } context;
 
-static context *ctx_new(const y4m2_output *next, int frames) {
+static context *ctx_new(y4m2_output *next, int frames) {
   context *ctx = alloc(sizeof(context));
   ctx->next = next;
   ctx->frames = frames;
@@ -82,7 +82,7 @@ static void callback(y4m2_reason reason,
   }
 }
 
-y4m2_output *filter_merge(const y4m2_output *next, int frames) {
+y4m2_output *filter_merge(y4m2_output *next, int frames) {
   return y4m2_output_next(callback, ctx_new(next, frames));
 }
 
