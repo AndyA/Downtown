@@ -1,6 +1,9 @@
 /* zigzag.c */
 
 #include <stdio.h>
+#include <string.h>
+
+#include "downtown.h"
 #include "zigzag.h"
 
 void zigzag_permute(const uint8_t *in, uint8_t *out, int w, int h) {
@@ -24,6 +27,26 @@ void zigzag_permute(const uint8_t *in, uint8_t *out, int w, int h) {
       inp += stride;
     }
   }
+}
+
+void zigzag_raster(const uint8_t *in, uint8_t *out, int w, int h) {
+  memcpy(out, in, w * h);
+}
+
+static void _reverse(uint8_t *buf, size_t size) {
+  uint8_t *left = buf;
+  uint8_t *right = buf + size - 1;
+  while (left < right) {
+    uint8_t t = *left;
+    *left++ = *right;
+    *right-- = t;
+  }
+}
+
+void zigzag_weave(const uint8_t *in, uint8_t *out, int w, int h) {
+  zigzag_raster(in, out, w, h);
+  for (int y = 0; y < h; y += 2)
+    _reverse(out + y * w, w);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

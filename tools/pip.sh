@@ -8,7 +8,7 @@ for src in "$@"; do
     echo "$src -> $dst"
     tmp="$dst.tmp.mov"
 
-    ffmpeg -i "$src" -pix_fmt yuv420p -s 256x256 -t $DURATION -f yuv4mpegpipe - \
+    ffmpeg -i "$src" -pix_fmt yuv444p -s 256x256 -t $DURATION -f yuv4mpegpipe - \
       | ./downtown \
       | ffmpeg \
           -f yuv4mpegpipe -i - \

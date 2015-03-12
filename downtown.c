@@ -1,5 +1,6 @@
 /* downtown.c */
 
+#include <getopt.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,12 +8,17 @@
 
 #include <fftw3.h>
 
+#include "downtown.h"
 #include "util.h"
 #include "yuv4mpeg2.h"
 #include "zigzag.h"
 
+#define PROG      "downtown"
 #define OUTWIDTH  1920
 #define OUTHEIGHT 1080
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef struct {
   fftw_plan plan;
@@ -33,6 +39,30 @@ typedef struct {
   fft_context fftc[Y4M2_N_PLANE];
 } context;
 
+static double cfg_gain = 1.0;
+static permute_func cfg_permute = zigzag_permute;
+static int cfg_mono = 0;
+static int cfg_width = OUTWIDTH;
+static int cfg_height = OUTHEIGHT;
+
+static permute_method permuters[] = {
+  { .name = "zigzag",  .f = zigzag_permute },
+  { .name = "raster",  .f = zigzag_raster },
+  { .name = "weave",  .f = zigzag_weave },
+};
+
+static void usage() {
+  fprintf(stderr, "Usage: " PROG " [options] <file>...\n\n"
+          "Options:\n"
+          "  -h, --help                See this message\n"
+          "  -g, --gain <gain>         Signal gain\n"
+          "  -m, --mono                Only process luma\n"
+          "  -p, --permute <algo>      Select permution algorithm\n"
+          "  -s, --size <w>x<h>        Output size\n"
+          "\n"
+         );
+  exit(1);
+}
 
 static y4m2_parameters *parm_adj_size(const y4m2_parameters *parms, unsigned w, unsigned h) {
   y4m2_parameters *np = y4m2_clone_parms(parms);
@@ -144,7 +174,9 @@ static void fft2b(uint8_t *out, int step, fft_context *c, int omin, int omax) {
   min_max(sb, c->osize, &min, &max, &avg);
 
   for (int i = 0; i < c->osize; i++) {
-    *out = (sb[i] - min) * (omax - omin) / (max - min) + omin;
+    double dv = cfg_gain * (sb[i] - min) / (max - min);
+    int iv = dv * (omax - omin) + omin;
+    *out = MIN(MAX(omin, iv), omax);
     out += step;
   }
 }
@@ -164,8 +196,9 @@ static void process_frame(context *c, const y4m2_frame *frame) {
   }
 
   y4m2_frame *ofr = c->out_buf;
+  int max_plane = cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE;
 
-  for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
+  for (int pl = 0; pl < max_plane; pl++) {
     if (c->frame_count & (frame->i.plane[pl].xs - 1)) continue;
     fft_context *fc = &c->fftc[pl];
     int w = frame->i.width / frame->i.plane[pl].xs;
@@ -178,7 +211,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
     if (!fc->plan) init_fft_context(fc, len, oh);
 
-    zigzag_permute(frame->plane[pl], c->buf->plane[pl], w, h);
+    cfg_permute(frame->plane[pl], c->buf->plane[pl], w, h);
     b2da(fc->ibuf, c->buf->plane[pl], len);
     fftw_execute(fc->plan);
     scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
@@ -198,7 +231,7 @@ static void callback(y4m2_reason reason,
   switch (reason) {
 
   case Y4M2_START:
-    c->out_parms = parm_adj_size(parms, OUTWIDTH, OUTHEIGHT);
+    c->out_parms = parm_adj_size(parms, cfg_width, cfg_height);
     y4m2_emit_start(c->next, c->out_parms);
     break;
 
@@ -215,8 +248,91 @@ static void callback(y4m2_reason reason,
   }
 }
 
-int main(void) {
+static double parse_double(const char *num) {
+  char *ep;
+  double v = strtod(num, &ep);
+  if (ep == num || *ep) die("Bad number: %s", num);
+  return v;
+}
+
+static permute_func parse_permute(const char *perm) {
+  for (unsigned i = 0; i < sizeof(permuters) / sizeof(permuters[0]); i++) {
+    if (0 == strcmp(permuters[i].name, perm)) return permuters[i].f;
+  }
+  die("Bad permuter: %s", perm);
+  return NULL;
+}
+
+static void parse_size(const char *size, int *wp, int *hp) {
+  const char *sp;
+  char *ep;
+
+  int w = strtoul(size, &ep, 10);
+  if (ep == size || (*ep != ':' && *ep != 'x')) goto bad;
+
+  sp = ep + 1;
+
+  int h = strtoul(sp, &ep, 10);
+  if (ep == sp || *ep) goto bad;
+
+  *wp = w;
+  *hp = h;
+
+  return;
+
+bad:
+  die("Bad size: %s", size);
+
+}
+
+static void parse_options(int *argc, char ***argv) {
+  int ch, oidx;
+
+  static struct option opts[] = {
+    {"help", no_argument, NULL, 'h'},
+    {"gain", required_argument, NULL, 'g'},
+    {"mono", no_argument, NULL, 'm'},
+    {"permute", required_argument, NULL, 'p'},
+    {"size", required_argument, NULL, 's'},
+    {NULL, 0, NULL, 0}
+  };
+
+  while (ch = getopt_long(*argc, *argv, "g:p:s:h", opts, &oidx), ch != -1) {
+    switch (ch) {
+
+    case 'g':
+      cfg_gain = parse_double(optarg);
+      break;
+
+    case 'm':
+      cfg_mono = 1;
+      break;
+
+    case 'p':
+      cfg_permute = parse_permute(optarg);
+      break;
+
+    case 's':
+      parse_size(optarg, &cfg_width, &cfg_height);
+      break;
+
+    case 'h':
+    default:
+      usage();
+      break;
+
+    }
+  }
+
+  *argc -= optind;
+  *argv += optind;
+}
+
+int main(int argc, char *argv[]) {
   context ctx;
+
+  parse_options(&argc, &argv);
+  if (argc != 0) usage();
 
   memset(&ctx, 0, sizeof(ctx));
 
