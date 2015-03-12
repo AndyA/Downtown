@@ -12,6 +12,7 @@ bin_PROGRAMS = downtown
 
 libdowntown_la_SOURCES = \
 	colour.h colour.c \
+	util.h util.c \
 	yuv4mpeg2.h yuv4mpeg2.c \
 	zigzag.h zigzag.c
 
