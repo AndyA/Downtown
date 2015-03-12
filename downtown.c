@@ -54,7 +54,7 @@ static permute_method permuters[] = {
 };
 
 static void usage() {
-  fprintf(stderr, "Usage: " PROG " [options] <file>...\n\n"
+  fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
           "Options:\n"
           "  -h, --help                See this message\n"
           "  -g, --gain <gain>         Signal gain\n"
