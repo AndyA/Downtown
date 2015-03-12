@@ -6,6 +6,7 @@
 void zigzag_permute(const uint8_t *in, uint8_t *out, int w, int h) {
   unsigned limit = w + h - 1;
   uint8_t *op = out;
+
   for (unsigned x = 0; x < limit; x++) {
     int x0 = x;
     if (x0 >= w) x0 = w - 1;
@@ -14,19 +15,13 @@ void zigzag_permute(const uint8_t *in, uint8_t *out, int w, int h) {
     if (y1 >= h) y1 = h - 1;
     int x1 = x - y1;
 
-    if (x & 1) {
-      while (x0 >= x1) {
-        *op++ = in[ y0 * w + x0 ];
-        x0--;
-        y0++;
-      }
-    }
-    else {
-      while (x1 <= x0) {
-        *op++ = in[ y1 * w + x1];
-        x1++;
-        y1--;
-      }
+    const uint8_t *inp = (x & 1) ? (in + y0 * w + x0) : (in + y1 * w + x1);
+    int stride = (x & 1) ? (w - 1) : (1 - w);
+    unsigned count = x0 - x1 + 1;
+
+    for (unsigned i = 0; i < count; i++) {
+      *op++ = *inp;
+      inp += stride;
     }
   }
 }
