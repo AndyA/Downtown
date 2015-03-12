@@ -103,6 +103,8 @@ static void set_planes(y4m2_frame_info *info,
 }
 
 void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms) {
+  static uint8_t pl_fill[Y4M2_N_PLANE] = { 16, 128, 128 };
+
   info->width = parse_num(y4m2_get_parm(parms, "W"));
   info->height = parse_num(y4m2_get_parm(parms, "H"));
 
@@ -124,16 +126,19 @@ void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms) 
     fprintf(stderr, "Unknown colourspace %s\n", cs);
     exit(1);
   }
+
+  for (int i = 0; i < Y4M2_N_PLANE; i++) {
+    info->plane[i].fill = pl_fill[i];
+  }
 }
 
 y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
-  static uint8_t pl_fill[Y4M2_N_PLANE] = { 16, 128, 128 };
   y4m2_frame *frame = jd_alloc(sizeof(y4m2_frame));
   uint8_t *buf = frame->buf = jd_alloc(info->size);
 
   for (int i = 0; i < Y4M2_N_PLANE; i++) {
     frame->plane[i] = buf;
-    memset(buf, pl_fill[i], info->plane[i].size);
+    memset(buf, info->plane[i].fill, info->plane[i].size);
     buf += info->plane[i].size;
   }
 

@@ -25,6 +25,7 @@ typedef struct {
   struct {
     unsigned xs, ys;
     size_t size;
+    unsigned fill;
   } plane[Y4M2_N_PLANE];
 } y4m2_frame_info;
 
