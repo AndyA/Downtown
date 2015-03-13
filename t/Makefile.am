@@ -1,4 +1,4 @@
-TESTBIN = basic yuv4mpeg2 colour zigzag
+TESTBIN = basic yuv4mpeg2 colour zigzag sampler
 
 TESTPERL =
 

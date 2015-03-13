@@ -12,9 +12,10 @@ bin_PROGRAMS = downtown downtown_filter
 
 libdowntown_la_SOURCES = \
 	colour.h colour.c \
-	util.h util.c \
-	merge.h merge.c \
 	delta.h delta.c \
+	merge.h merge.c \
+	sampler.h sampler.c \
+	util.h util.c \
 	yuv4mpeg2.h yuv4mpeg2.c \
 	zigzag.h zigzag.c
 
