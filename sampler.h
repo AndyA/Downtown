@@ -7,20 +7,45 @@
 extern "C" {
 #endif
 
-typedef struct sampler_params sampler_params;
+#include <stdint.h>
 
+typedef struct sampler_params sampler_params;
 struct sampler_params {
   sampler_params *next;
   char *name;
   double value;
 };
 
+typedef struct sampler_context sampler_context;
+
+typedef void (*sampler_init_func)(sampler_context *ctx);
+typedef double *(*sampler_sample_func)(sampler_context *ctx, const uint8_t *in);
+typedef void (*sampler_free_func)(sampler_context *ctx);
+
 typedef struct {
-} sampler;
+  const char *name;
+  sampler_init_func init;
+  sampler_sample_func sample;
+  sampler_free_func free;
+} sampler_info;
+
+struct sampler_context {
+  const sampler_info *class;
+  sampler_params *params;
+  unsigned width, height;
+  double *buf;
+  void *user;
+};
 
 sampler_params *sampler_new_params();
 sampler_params *sampler_parse_params(const char *spec);
 void sampler_free_params(sampler_params *sp);
+
+void sampler_register(const sampler_info *info);
+
+sampler_context *sampler_new(const char *spec);
+void sampler_free(sampler_context *ctx);
+sampler_context *sampler_init(sampler_context *ctx, unsigned w, unsigned h);
 
 #ifdef __cplusplus
 }

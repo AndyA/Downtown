@@ -35,7 +35,7 @@ void diag(const char *fmt, ...) {
   va_end(ap);
 }
 
-void die(const char *fmt, ...) {
+static void die(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   vfpf(stderr, fmt, ap);
