@@ -4,8 +4,9 @@
 #include <string.h>
 
 #include "framework.h"
-#include "tap.h"
 #include "sampler.h"
+#include "tap.h"
+#include "util.h"
 
 static void test_param(void) {
   sampler_params *sp = sampler_parse_params("a=1.24,b=-3,c=99999");
