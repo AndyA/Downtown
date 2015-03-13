@@ -49,5 +49,9 @@ void zigzag_weave(const uint8_t *in, uint8_t *out, int w, int h) {
     _reverse(out + y * w, w);
 }
 
+size_t zigzag_unity(int w, int h) {
+  return (size_t)(w * h);
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */

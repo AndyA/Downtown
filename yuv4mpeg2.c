@@ -168,7 +168,7 @@ void y4m2_free_frame(y4m2_frame *frame) {
 }
 
 y4m2_frame *y4m2_retain_frame(y4m2_frame *frame) {
-  frame->refcnt ++;
+  if (frame) frame->refcnt++;
   return frame;
 }
 

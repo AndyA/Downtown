@@ -13,6 +13,8 @@ void zigzag_permute(const uint8_t *in, uint8_t *out, int w, int h);
 void zigzag_raster(const uint8_t *in, uint8_t *out, int w, int h);
 void zigzag_weave(const uint8_t *in, uint8_t *out, int w, int h);
 
+size_t zigzag_unity(int w, int h);
+
 #ifdef __cplusplus
 }
 #endif

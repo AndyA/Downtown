@@ -15,7 +15,7 @@ for src in "$@"; do
     scaled="$src.$size.y4m2"
     rm -rf "$scaled"
 
-    for gain in 10; do
+    for gain in 5; do
       for chans in 'y'; do
         for permute in 'zigzag'; do
 

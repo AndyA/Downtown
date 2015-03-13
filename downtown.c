@@ -18,11 +18,9 @@
 #define OUTWIDTH  1920
 #define OUTHEIGHT 1080
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
 typedef struct {
   fftw_plan plan;
+  uint8_t *pbuf;
   double *ibuf, *obuf;
   double *work;
   int len;
@@ -39,26 +37,25 @@ typedef struct {
 typedef struct {
   unsigned long frame_count;
   y4m2_output *next;
-  y4m2_frame *buf;
   y4m2_frame *out_buf;
   y4m2_parameters *out_parms;
   fft_context fftc[Y4M2_N_PLANE];
   range_stats stats[Y4M2_N_PLANE];
 } context;
 
+static permute_method permuters[] = {
+  { .name = "zigzag",  .f = zigzag_permute, .sf = zigzag_unity },
+  { .name = "raster",  .f = zigzag_raster, .sf = zigzag_unity },
+  { .name = "weave",  .f = zigzag_weave, .sf = zigzag_unity },
+};
+
 static double cfg_gain = 1.0;
-static permute_func cfg_permute = zigzag_permute;
+static permute_method *cfg_permute = &permuters[0];
 static int cfg_mono = 0;
 static int cfg_auto = 0;
 static int cfg_width = OUTWIDTH;
 static int cfg_height = OUTHEIGHT;
 static int cfg_merge = 1;
-
-static permute_method permuters[] = {
-  { .name = "zigzag",  .f = zigzag_permute },
-  { .name = "raster",  .f = zigzag_raster },
-  { .name = "weave",  .f = zigzag_weave },
-};
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -118,11 +115,11 @@ static void free_fft_context(fft_context *c) {
   fftw_free(c->ibuf);
   fftw_free(c->obuf);
   fftw_free(c->work);
+  free(c->pbuf);
 }
 
 
 static void free_context(context *c) {
-  if (c->buf) y4m2_release_frame(c->buf);
   if (c->out_buf) y4m2_release_frame(c->out_buf);
   y4m2_free_parms(c->out_parms);
   y4m2_emit_end(c->next);
@@ -133,7 +130,7 @@ static void free_context(context *c) {
 
 static void b2da(double *out, const uint8_t *in, size_t len) {
   for (unsigned i = 0; i < len; i++) {
-    out[i] = (double) in[i] / 255;
+    out[i] = (double)(in[i] - 128) / 128;
   }
 }
 
@@ -222,7 +219,6 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
   if (!c->out_buf) {
     c->out_buf = y4m2_new_frame(c->out_parms);
-    c->buf = y4m2_like_frame(frame);
   }
 
   y4m2_frame *ofr = c->out_buf;
@@ -231,6 +227,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
   for (int pl = 0; pl < max_plane; pl++) {
     if (c->frame_count & (frame->i.plane[pl].xs - 1)) continue;
     fft_context *fc = &c->fftc[pl];
+
     int w = frame->i.width / frame->i.plane[pl].xs;
     int h = frame->i.height / frame->i.plane[pl].ys;
 
@@ -239,10 +236,12 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
     int len = w * h;
 
+    if (!fc->pbuf) fc->pbuf = alloc(cfg_permute->sf(w, h));
+
     if (!fc->plan) init_fft_context(fc, len, oh);
 
-    cfg_permute(frame->plane[pl], c->buf->plane[pl], w, h);
-    b2da(fc->ibuf, c->buf->plane[pl], len);
+    cfg_permute->f(frame->plane[pl], fc->pbuf, w, h);
+    b2da(fc->ibuf, fc->pbuf, len);
     fftw_execute(fc->plan);
     scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
     fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240, &c->stats[pl]);
@@ -299,9 +298,9 @@ static double parse_double(const char *num) {
   return v;
 }
 
-static permute_func parse_permute(const char *perm) {
+static permute_method *parse_permute(const char *perm) {
   for (unsigned i = 0; i < sizeof(permuters) / sizeof(permuters[0]); i++) {
-    if (0 == strcmp(permuters[i].name, perm)) return permuters[i].f;
+    if (0 == strcmp(permuters[i].name, perm)) return &permuters[i];
   }
   die("Bad permuter: %s", perm);
   return NULL;
