@@ -1,7 +1,7 @@
 /* delta.h */
 
-#ifndef MERGE_H_
-#define MERGE_H_
+#ifndef DELTA_H_
+#define DELTA_H_
 
 #ifdef __cplusplus
 extern "C" {
