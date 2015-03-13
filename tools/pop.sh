@@ -18,7 +18,7 @@ for src in "$@"; do
     for gain in 5; do
       for chans in 'y'; do
         for permute in 'zigzag'; do
-          for delta in 'delta'; do
+          for delta in 'nodelta' 'delta'; do
 
             tag="$permute-$gain-$chans-$size-$delta"
             dst="$src.$tag.mov"
