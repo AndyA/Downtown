@@ -14,8 +14,10 @@ libdowntown_la_SOURCES = \
 	colour.h colour.c \
 	delta.h delta.c \
 	merge.h merge.c \
+	quadtree.h quadtree.c \
 	sampler.h sampler.c \
 	util.h util.c \
+	voronoi.h voronoi.c \
 	yuv4mpeg2.h yuv4mpeg2.c \
 	zigzag.h zigzag.c
 
