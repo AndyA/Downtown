@@ -36,20 +36,25 @@ static void test_quadtree(void) {
     }
   }
 
-
   for (int x = 0; x < width; x += 3) {
     for (int y = 0; y < height; y += 5) {
       struct prox pt[4];
 
-      pt[0].x = pt[2].x = x / grid;
-      pt[0].y = pt[1].y = y / grid;
-      pt[1].x = pt[3].x = x / grid + grid;
-      pt[2].y = pt[3].y = y / grid + grid;
+      diag("near %d, %d", x, y);
+
+      pt[0].x = pt[2].x = grid * (x / grid);
+      pt[0].y = pt[1].y = grid * (y / grid);
+      pt[1].x = pt[3].x = grid * (x / grid) + grid;
+      pt[2].y = pt[3].y = grid * (y / grid) + grid;
 
       int best = 9999;
       for (int i = 0; i < 4; i++) {
         pt[i].dist = dist(x, y, pt[i].x, pt[i].y);
         if (pt[i].dist < best) best = pt[i].dist;
+      }
+
+      for (int i = 0; i < 4; i++) {
+        diag("  %d, %d, %d", pt[i].x, pt[i].y, pt[i].dist);
       }
 
       quadtree_point *near = quadtree_nearest(qt, x, y);

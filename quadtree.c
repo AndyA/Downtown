@@ -117,8 +117,8 @@ quadtree_point *_nearest(quadtree_node *nd, int x, int y,
 
     if (x < x3 && y < y3) _nearest(nd->kids[0], x, y, x0, y0, x2, y2, best, best_pt);
     if (x >= x1 && y < y3) _nearest(nd->kids[1], x, y, x2, y0, x4, y2, best, best_pt);
-    if (x < x3 && y >= y1) _nearest(nd->kids[0], x, y, x0, y2, x2, y4, best, best_pt);
-    if (x >= x1 && y >= y1) _nearest(nd->kids[1], x, y, x2, y2, x4, y4, best, best_pt);
+    if (x < x3 && y >= y1) _nearest(nd->kids[2], x, y, x0, y2, x2, y4, best, best_pt);
+    if (x >= x1 && y >= y1) _nearest(nd->kids[3], x, y, x2, y2, x4, y4, best, best_pt);
   }
 
   for (unsigned i = 0; i < nd->used; i++) {
