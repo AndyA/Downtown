@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "framework.h"
+#include "sampler.h"
 #include "tap.h"
 #include "zigzag.h"
 
@@ -49,12 +50,12 @@ static int next_zz(test_zz *zz, int *x, int *y) {
   return 1;
 }
 
-static void permute(const uint8_t *in, uint8_t *out, int w, int h) {
+static void permute(const uint8_t *in, double *out, int w, int h) {
   test_zz zz;
   int x, y;
   init_zz(&zz, w, h);
   while (next_zz(&zz, &x, &y)) {
-    *out++ = in[x + y * w];
+    *out++ = ((double)in[x + y * w] - 128) / 128;
   }
 }
 
@@ -68,46 +69,44 @@ static void dump_grid(uint8_t *grid, int w, int h) {
   }
 }
 
+static void dump_dgrid(double *grid, int w, int h) {
+  for (int y = 0; y < h; y++) {
+    fprintf(stderr, "#     %3d |", y);
+    for (int x = 0; x < w; x++) {
+      fprintf(stderr, " %7.3f", grid[x + y * w]);
+    }
+    fprintf(stderr, " |\n");
+  }
+}
+
 static void test_grid(int w, int h) {
   uint8_t in[w * h];
-  uint8_t out[w * h];
-  uint8_t ref[w * h];
+  double ref[w * h];
 
   for (int i = 0; i < w * h; i++) in[i] = i + 1;
 
   permute(in, ref, w, h);
-  zigzag_permute(in, out, w, h);
 
+  sampler_context *ctx = sampler_new("zigzag");
+  size_t size = sampler_init(ctx, w, h);
+  double *out = sampler_sample(ctx, in);
+
+  ok(size == (size_t)(w * h), "size OK");
 
   if (!ok(0 == memcmp(ref, out, w * h), "%d x %d", w, h)) {
     diag("In:");
     dump_grid(in, w, h);
     diag("Wanted:");
-    dump_grid(ref, w, h);
+    dump_dgrid(ref, w, h);
     diag("Got:");
-    dump_grid(out, w, h);
+    dump_dgrid(out, w, h);
   }
-}
-
-
-static void test_small(int w, int h) {
-  uint8_t in[] = { 10, 20, 30, 40};
-  uint8_t out[] = { 0, 0, 0, 0 };
-
-  zigzag_permute(in, out, w, h);
-  if (!ok(0 == memcmp(in, out, w * h), "%d x %d", w, h)) {
-    diag("In:");
-    dump_grid(in, w, h);
-    diag("Out:");
-    dump_grid(out, w, h);
-  }
+  sampler_free(ctx);
 }
 
 static void test_zigzag(void) {
-  test_small(1, 1);
-  test_small(1, 2);
-  test_small(2, 1);
-  test_small(2, 2);
+  zigzag_register();
+
   test_grid(1, 1);
   test_grid(1, 2);
   test_grid(2, 1);
