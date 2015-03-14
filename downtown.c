@@ -8,9 +8,10 @@
 
 #include <fftw3.h>
 
-#include "downtown.h"
 #include "delta.h"
+#include "downtown.h"
 #include "merge.h"
+#include "sampler.h"
 #include "util.h"
 #include "yuv4mpeg2.h"
 #include "zigzag.h"
@@ -22,9 +23,10 @@
 typedef struct {
   fftw_plan plan;
   uint8_t *pbuf;
+  sampler_context *sampler;
   double *ibuf, *obuf;
   double *work;
-  int len;
+  size_t len;
   int osize;
   int vscale;
   int voffset;
@@ -44,14 +46,8 @@ typedef struct {
   range_stats stats[Y4M2_N_PLANE];
 } context;
 
-static permute_method permuters[] = {
-  { .name = "zigzag",  .f = zigzag_permute, .sf = zigzag_unity },
-  { .name = "raster",  .f = zigzag_raster, .sf = zigzag_unity },
-  { .name = "weave",  .f = zigzag_weave, .sf = zigzag_unity },
-};
-
 static double cfg_gain = 1.0;
-static permute_method *cfg_permute = &permuters[0];
+static char *cfg_sampler = "zigzag";
 static int cfg_mono = 0;
 static int cfg_auto = 0;
 static int cfg_delta = 0;
@@ -67,7 +63,7 @@ static void usage() {
           "  -g, --gain <gain>         Signal gain\n"
           "  -m, --mono                Only process luma\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
-          "  -p, --permute <algo>      Select permution algorithm\n"
+          "  -S, --sampler <algo>      Select sampler algorithm\n"
           "  -s, --size <w>x<h>        Output size\n"
           "\n"
          );
@@ -91,16 +87,15 @@ static y4m2_parameters *parm_adj_size(const y4m2_parameters *parms, unsigned w, 
   return np;
 }
 
-static void init_fft_context(fft_context *c, int len, int stripe) {
-  c->len = len;
-  c->ibuf = fftw_malloc(sizeof(double) * len);
+static void init_fft_context(fft_context *c, int stripe) {
+  c->ibuf = fftw_malloc(sizeof(double) * c->len);
   if (!c->ibuf) goto oom;
-  c->obuf = fftw_malloc(sizeof(double) * len);
+  c->obuf = fftw_malloc(sizeof(double) * c->len);
   if (!c->obuf) goto oom;
-  c->plan = fftw_plan_r2r_1d(len, c->ibuf, c->obuf, FFTW_R2HC, 0);
+  c->plan = fftw_plan_r2r_1d(c->len, c->ibuf, c->obuf, FFTW_R2HC, 0);
   if (!c->plan) die("Can't create FFTW_R2HC plan");
 
-  int olen = len / 2;
+  int olen = c->len / 2;
   c->vscale = 1;
   while (olen / c->vscale > stripe)
     c->vscale *= 2;
@@ -119,8 +114,8 @@ static void free_fft_context(fft_context *c) {
   fftw_free(c->obuf);
   fftw_free(c->work);
   free(c->pbuf);
+  sampler_free(c->sampler);
 }
-
 
 static void free_context(context *c) {
   if (c->out_buf) y4m2_release_frame(c->out_buf);
@@ -128,12 +123,6 @@ static void free_context(context *c) {
   y4m2_emit_end(c->next);
   for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
     free_fft_context(&c->fftc[pl]);
-  }
-}
-
-static void b2da(double *out, const uint8_t *in, size_t len) {
-  for (unsigned i = 0; i < len; i++) {
-    out[i] = (double)(in[i] - 128) / 128;
   }
 }
 
@@ -237,14 +226,15 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     int ow = ofr->i.width / ofr->i.plane[pl].xs;
     int oh = ofr->i.height / ofr->i.plane[pl].ys;
 
-    int len = w * h;
+    if (!fc->sampler) {
+      fc->sampler = sampler_new(cfg_sampler);
+      fc->len = sampler_init(fc->sampler, w, h);
+    }
+    double *sam = sampler_sample(fc->sampler, frame->plane[pl]);
 
-    if (!fc->pbuf) fc->pbuf = alloc(cfg_permute->sf(w, h));
+    if (!fc->plan) init_fft_context(fc,  oh);
 
-    if (!fc->plan) init_fft_context(fc, len, oh);
-
-    cfg_permute->f(frame->plane[pl], fc->pbuf, w, h);
-    b2da(fc->ibuf, fc->pbuf, len);
+    memcpy(fc->ibuf, sam, fc->len);
     fftw_execute(fc->plan);
     scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
     fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240, &c->stats[pl]);
@@ -301,14 +291,6 @@ static double parse_double(const char *num) {
   return v;
 }
 
-static permute_method *parse_permute(const char *perm) {
-  for (unsigned i = 0; i < sizeof(permuters) / sizeof(permuters[0]); i++) {
-    if (0 == strcmp(permuters[i].name, perm)) return &permuters[i];
-  }
-  die("Bad permuter: %s", perm);
-  return NULL;
-}
-
 static void parse_size(const char *size, int *wp, int *hp) {
   const char *sp;
   char *ep;
@@ -341,12 +323,12 @@ static void parse_options(int *argc, char ***argv) {
     {"auto", no_argument, NULL, 'a'},
     {"mono", no_argument, NULL, 'm'},
     {"merge", required_argument, NULL, 'M'},
-    {"permute", required_argument, NULL, 'p'},
+    {"sampler", required_argument, NULL, 'S'},
     {"size", required_argument, NULL, 's'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:p:s:M:admh", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:s:S:M:admh", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'a':
@@ -369,8 +351,8 @@ static void parse_options(int *argc, char ***argv) {
       cfg_merge = (int) parse_double(optarg);
       break;
 
-    case 'p':
-      cfg_permute = parse_permute(optarg);
+    case 'S':
+      cfg_sampler = optarg;
       break;
 
     case 's':
@@ -389,8 +371,14 @@ static void parse_options(int *argc, char ***argv) {
   *argv += optind;
 }
 
+static void register_samplers() {
+  zigzag_register();
+}
+
 int main(int argc, char *argv[]) {
   context ctx;
+
+  register_samplers();
 
   parse_options(&argc, &argv);
   if (argc != 0) usage();

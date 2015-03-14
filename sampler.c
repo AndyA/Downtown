@@ -116,11 +116,15 @@ void sampler_free(sampler_context *ctx) {
   free(ctx);
 }
 
-sampler_context *sampler_init(sampler_context *ctx, unsigned w, unsigned h) {
+size_t sampler_init(sampler_context *ctx, unsigned w, unsigned h) {
   ctx->width = w;
   ctx->height = h;
-  if (ctx->class->init) ctx->class->init(ctx);
-  return ctx;
+  if (ctx->class->init) return ctx->class->init(ctx);
+  return 0;
+}
+
+double *sampler_sample(sampler_context *ctx, const uint8_t *in) {
+  return ctx->class->sample(ctx, in);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

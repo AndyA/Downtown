@@ -9,6 +9,8 @@ extern "C" {
 
 #include <stdint.h>
 
+#define sampler_byte2double(x) ((((double) x) - 128) / 128)
+
 typedef struct sampler_params sampler_params;
 struct sampler_params {
   sampler_params *next;
@@ -18,7 +20,7 @@ struct sampler_params {
 
 typedef struct sampler_context sampler_context;
 
-typedef void (*sampler_init_func)(sampler_context *ctx);
+typedef size_t (*sampler_init_func)(sampler_context *ctx);
 typedef double *(*sampler_sample_func)(sampler_context *ctx, const uint8_t *in);
 typedef void (*sampler_free_func)(sampler_context *ctx);
 
@@ -45,7 +47,8 @@ void sampler_register(const sampler_info *info);
 
 sampler_context *sampler_new(const char *spec);
 void sampler_free(sampler_context *ctx);
-sampler_context *sampler_init(sampler_context *ctx, unsigned w, unsigned h);
+size_t sampler_init(sampler_context *ctx, unsigned w, unsigned h);
+double *sampler_sample(sampler_context *ctx, const uint8_t *in);
 
 #ifdef __cplusplus
 }

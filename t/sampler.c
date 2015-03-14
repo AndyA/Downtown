@@ -28,13 +28,14 @@ static void test_param(void) {
 static int done_init = 0;
 static int done_free = 0;
 
-void test_sampler_init(sampler_context *ctx) {
+size_t test_sampler_init(sampler_context *ctx) {
   (void) ctx;
   ok(0 == strcmp(ctx->class->name, "test_sampler"), "name matchs in init");
 
   ctx->buf = alloc(sizeof(double) * ctx->width * ctx->height);
 
   done_init++;
+  return ctx->width * ctx->height;
 }
 
 double *test_sampler_sample(sampler_context *ctx, const uint8_t *in)  {
@@ -68,12 +69,17 @@ static void test_register(void) {
   ok(0 == strcmp(ctx->params->name, "x"), "param name matches");
   ok(ctx->params->value = 99, "param value matches");
 
-  sampler_init(ctx, 1000, 800);
+  size_t size = sampler_init(ctx, 1000, 800);
   ok(1 == done_init, "init called");
   ok(0 == done_free, "free not called");
   is(ctx->width, 1000, "width set");
   is(ctx->height, 800, "height set");
   ok(ctx->buf != NULL, "buf set");
+  if (!is(size, 1000 * 800, "size returned")) 
+    diag("wanted %d, got %lu", 1000 * 800, (unsigned long) size);
+
+  double *buf = sampler_sample(ctx, NULL);
+  ok(buf == ctx->buf, "buf returned");
 
   sampler_free(ctx);
 }

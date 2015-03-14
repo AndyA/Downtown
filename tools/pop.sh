@@ -18,14 +18,14 @@ for src in "$@"; do
 
       for gain in 5; do
         for chans in 'y'; do
-          for permute in 'zigzag'; do
+          for sampler in 'zigzag'; do
             for delta in 'n' 'y'; do
 
               tag="chans=${chans}"
               tag="${tag}.delta=${delta}"
               tag="${tag}.gain=${gain}"
               tag="${tag}.merge=${merge}"
-              tag="${tag}.permute=${permute}"
+              tag="${tag}.sampler=${sampler}"
               tag="${tag}.size=${size}"
 
               dst="$src.$tag.mov"
@@ -45,7 +45,7 @@ for src in "$@"; do
                     -pix_fmt yuv444p -s ${size}x${size} -f yuv4mpegpipe -y "$scaled"
                 fi
 
-                dt_config="--size $outsize --permute $permute --gain $gain"
+                dt_config="--size $outsize --sampler $sampler --gain $gain"
                 [ "$chans" = 'y' ] && dt_config="$dt_config --mono"
                 [ "$delta" = 'y' ] && dt_config="$dt_config --delta"
 
@@ -64,7 +64,7 @@ for src in "$@"; do
               fi
 
             done #delta
-          done #permute
+          done #sampler
         done #chans
       done #gain
 
