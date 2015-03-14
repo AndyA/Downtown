@@ -16,8 +16,8 @@ for src in "$@"; do
       scaled="$src.scaled.$size.$merge.y4m2"
       rm -rf "$scaled"
 
-      for gain in 5; do
-        for chans in 'y'; do
+      for gain in 10; do
+        for chans in 'y' 'yuv'; do
           for sampler in 'zigzag'; do
             for delta in 'n' 'y'; do
 
