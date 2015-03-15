@@ -1,6 +1,7 @@
 /* quadtree.c */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "util.h"
 #include "quadtree.h"
@@ -39,7 +40,11 @@ static void _dump(quadtree_node *nd, FILE *out, unsigned depth, int x0, int y0, 
     for (i = 0; i < depth; i++) fprintf(out, "  ");
     fprintf(out, "[%d, %d, %d, %d]", x0, y0, x1, y1);
     if (nd->internal) fprintf(out, " internal");
-    for (i = 0; i < nd->used; i++) fprintf(out, " <%u> [%d, %d]", nd->pt[i].tag, nd->pt[i].x, nd->pt[i].y);
+    for (i = 0; i < nd->used; i++)
+      fprintf(out, " <%u> [%d, %d]%s", nd->pt[i].tag, nd->pt[i].x, nd->pt[i].y,
+              (nd->pt[i].x < x0 || nd->pt[i].x >= x1 || nd->pt[i].y < y0 || nd->pt[i].y >= y1)
+              ? " **** OUTSIDE PARENT ****" : ""
+             );
     fprintf(out, "\n");
 
     int xm = (x0 + x1) / 2;
@@ -58,9 +63,9 @@ void quadtree_dump(quadtree *qt, FILE *out) {
 }
 
 static quadtree_node *_add(quadtree_node *nd, const quadtree_point *pt, int x0, int y0, int x1, int y1) {
-  if (!nd) nd = alloc(sizeof(quadtree_node));
-
   if (x0 == x1) die("Tree overloaded");
+
+  if (!nd) nd = alloc(sizeof(quadtree_node));
 
   if (nd->internal) {
     int xm = (x0 + x1) / 2;
@@ -86,7 +91,7 @@ static quadtree_node *_add(quadtree_node *nd, const quadtree_point *pt, int x0, 
   for (unsigned i = 0; i < nd->used; i++)
     nd = _add(nd, &nd->pt[i], x0, y0, x1, y1);
   nd->used = 0;
-  return nd;
+  return _add(nd, pt, x0, y0, x1, y1);
 }
 
 void quadtree_add_point(quadtree *qt, const quadtree_point *pt) {
@@ -102,42 +107,85 @@ void quadtree_add(quadtree *qt, int x, int y, unsigned tag) {
   quadtree_add_point(qt, &pt);
 }
 
-quadtree_point *_nearest(quadtree_node *nd, int x, int y,
-                         int x0, int y0, int x4, int y4,
-                         int *best, quadtree_point **best_pt) {
-  if (!nd) return NULL;
+static int _dist(int x0, int y0, int x1, int y1) {
+  int dx = x0 - x1;
+  int dy = y0 - y1;
+  return dx * dx + dy * dy;
+}
+
+struct nearest_work {
+  int best;
+  const quadtree_point *best_pt;
+  unsigned checked;
+};
+
+struct nearest_node {
+  quadtree_node *nd;
+  int x0, y0, x2, y2;
+  int dist;
+};
+
+static int node_dist(const struct nearest_node *nd, int x, int y) {
+  int dx = x < nd->x0 ? nd->x0 - x : x >= nd->x2 ? nd->x2 - x - 1 : 0;
+  int dy = y < nd->y0 ? nd->y0 - y : y >= nd->y2 ? nd->y2 - y - 1 : 0;
+  return dx * dx + dy * dy;
+}
+
+static int cmp_nn_dist(const void *a, const void *b) {
+  const struct nearest_node *an = a;
+  const struct nearest_node *bn = b;
+  return an->dist < bn->dist ? -1 : an->dist > bn->dist ? 1 : 0;
+}
+
+static void _nearest(const quadtree_node *nd, int x, int y,
+                     int x0, int y0, int x4, int y4,
+                     struct nearest_work *wrk) {
+  if (!nd) return;
 
   if (nd->internal) {
-    int x2 = (x0 + x4) / 2;
-    int y2 = (y0 + y4) / 2;
-    int x1 = (x0 + x2) / 2;
-    int y1 = (x0 + x2) / 2;
-    int x3 = (x2 + x4) / 2;
-    int y3 = (y2 + y4) / 2;
+    struct nearest_node near[4];
+    unsigned near_used = 0;
+    unsigned i;
 
-    if (x < x3 && y < y3) _nearest(nd->kids[0], x, y, x0, y0, x2, y2, best, best_pt);
-    if (x >= x1 && y < y3) _nearest(nd->kids[1], x, y, x2, y0, x4, y2, best, best_pt);
-    if (x < x3 && y >= y1) _nearest(nd->kids[2], x, y, x0, y2, x2, y4, best, best_pt);
-    if (x >= x1 && y >= y1) _nearest(nd->kids[3], x, y, x2, y2, x4, y4, best, best_pt);
-  }
+    int kw = (x4 - x0) / 2;
+    int kh = (y4 - y0) / 2;
+    for (i = 0; i < 4; i++) {
+      if (!nd->kids[i]) continue;
+      int dx = (i & 1) ? kw : 0;
+      int dy = (i & 2) ? kh : 0;
+      near[near_used].nd = nd->kids[i];
+      near[near_used].x0 = x0 + dx;
+      near[near_used].y0 = y0 + dy;
+      near[near_used].x2 = near[near_used].x0 + kw;
+      near[near_used].y2 = near[near_used].y0 + kh;
+      near[near_used].dist = node_dist(&near[near_used], x, y);
+      near_used++;
+    }
 
-  for (unsigned i = 0; i < nd->used; i++) {
-    int dx = nd->pt[i].x - x;
-    int dy = nd->pt[i].y - y;
-    int dist = dx * dx + dy * dy;
-    if (NULL == *best_pt || dist < *best) {
-      *best = dist;
-      *best_pt = &nd->pt[i];
+    qsort(near, near_used, sizeof(struct nearest_node), cmp_nn_dist);
+
+    for (i = 0; i < near_used; i++) {
+      if (wrk->best_pt && wrk->best < node_dist(&near[i], x, y)) break;
+      _nearest(near[i].nd, x, y, near[i].x0, near[i].y0, near[i].x2, near[i].y2, wrk);
     }
   }
 
-  return *best_pt;
+  for (unsigned i = 0; i < nd->used; i++) {
+    int dist = _dist(x, y, nd->pt[i].x, nd->pt[i].y);
+    if (NULL == wrk->best_pt || dist < wrk->best) {
+      wrk->best = dist;
+      wrk->best_pt = &nd->pt[i];
+    }
+  }
+  wrk->checked += nd->used;
 }
 
 quadtree_point *quadtree_nearest(quadtree *qt, int x, int y) {
-  int best = 0;
-  quadtree_point *best_pt = NULL;
-  return _nearest(qt->root, x, y, 0, 0, qt->dim, qt->dim, &best, &best_pt);
+  struct nearest_work work;
+  memset(&work, 0, sizeof(work));
+  _nearest(qt->root, x, y, 0, 0, qt->dim, qt->dim, &work);
+  /*  fprintf(stderr, "# checked %u\n", work.checked);*/
+  return work.best_pt;
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

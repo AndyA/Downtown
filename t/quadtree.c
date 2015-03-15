@@ -36,11 +36,18 @@ static void test_quadtree(void) {
     }
   }
 
-  for (int x = 0; x < width; x += 3) {
-    for (int y = 0; y < height; y += 5) {
-      struct prox pt[4];
+  for (int x = 0; x < width; x += grid) {
+    for (int y = 0; y < height; y += grid) {
+      quadtree_point *near = quadtree_nearest(qt, x, y);
+      if (!ok(near->x == x && near->y == y, "found %d, %d", x, y)) {
+        diag("expected %d, %d; got %d, %d", x, y, near->x, near->y);
+      }
+    }
+  }
 
-      diag("near %d, %d", x, y);
+  for (int x = 0; x < width - grid; x += 3) {
+    for (int y = 0; y < height - grid; y += 5) {
+      struct prox pt[4];
 
       pt[0].x = pt[2].x = grid * (x / grid);
       pt[0].y = pt[1].y = grid * (y / grid);
@@ -53,21 +60,18 @@ static void test_quadtree(void) {
         if (pt[i].dist < best) best = pt[i].dist;
       }
 
-      for (int i = 0; i < 4; i++) {
-        diag("  %d, %d, %d", pt[i].x, pt[i].y, pt[i].dist);
-      }
-
       quadtree_point *near = quadtree_nearest(qt, x, y);
       int ndist = dist(x, y, near->x, near->y);
       if (!ok(ndist == best, "Found best point")) {
+        diag("for %d, %d", x, y);
         for (int i = 0; i < 4; i++) {
-          if (pt[i].dist == best) diag("expected %d, %d", pt[i].x, pt[i].y);
+          if (pt[i].dist == best) diag("  expected %d, %d", pt[i].x, pt[i].y);
         }
-        diag("got %d, %d", near->x, near->y);
+        diag("  got %d, %d", near->x, near->y);
       }
     }
   }
-  quadtree_dump(qt, stderr);
+  /*  quadtree_dump(qt, stderr);*/
 
   quadtree_free(qt);
 }
