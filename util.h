@@ -12,6 +12,7 @@ extern "C" {
 
 void die(const char *msg, ...);
 void *alloc(size_t size);
+char *sstrdup(const char *s);
 
 #ifdef __cplusplus
 }

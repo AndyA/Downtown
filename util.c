@@ -25,5 +25,13 @@ void *alloc(size_t size) {
   return m;
 }
 
+char *sstrdup(const char *s) {
+  if (!s) return NULL;
+  size_t sz = strlen(s) + 1;
+  char *ss = alloc(sz);
+  memcpy(ss, s, sz);
+  return ss;
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */
