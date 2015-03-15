@@ -72,23 +72,6 @@ static void usage() {
   exit(1);
 }
 
-static y4m2_parameters *parm_adj_size(const y4m2_parameters *parms, unsigned w, unsigned h) {
-  y4m2_parameters *np = y4m2_clone_parms(parms);
-  y4m2_parameters *delta = y4m2_new_parms();
-  char nbuf[30];
-
-  sprintf(nbuf, "%u", w);
-  y4m2_set_parm(delta, "W", nbuf);
-
-  sprintf(nbuf, "%u", h);
-  y4m2_set_parm(delta, "H", nbuf);
-
-  y4m2_merge_parms(np, delta);
-  y4m2_free_parms(delta);
-
-  return np;
-}
-
 static void free_fft_context(fft_context *c) {
   fftw_destroy_plan(c->plan);
   fftw_free(c->ibuf);
@@ -265,14 +248,15 @@ static void callback(y4m2_reason reason,
                      const y4m2_parameters *parms,
                      y4m2_frame *frame,
                      void *ctx) {
-  (void) parms;
-  (void) frame;
   context *c = ctx;
+  char *ar;
 
   switch (reason) {
 
   case Y4M2_START:
-    c->out_parms = parm_adj_size(parms, cfg_width, cfg_height);
+    ar = aspect_ratio(cfg_width, cfg_height);
+    c->out_parms = y4m2_adjust_parms(parms, "W%d H%d A%s", cfg_width, cfg_height, ar);
+    free(ar);
     y4m2_emit_start(c->next, c->out_parms);
     break;
 
