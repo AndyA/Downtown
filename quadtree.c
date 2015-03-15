@@ -94,19 +94,22 @@ static quadtree_node *_add(quadtree_node *nd, const quadtree_point *pt, int x0, 
   return _add(nd, pt, x0, y0, x1, y1);
 }
 
-void quadtree_add_point(quadtree *qt, const quadtree_point *pt) {
+int quadtree_add_point(quadtree *qt, const quadtree_point *pt) {
+  qt->added++;
   if (pt->x >= 0 && pt->x < qt->w && pt->y >= 0 && pt->y <= qt->h) {
     qt->root = _add(qt->root, pt, 0, 0, qt->dim, qt->dim);
     qt->used++;
+    return 1;
   }
+  return 0;
 }
 
-void quadtree_add(quadtree *qt, int x, int y, unsigned tag) {
+int quadtree_add(quadtree *qt, int x, int y, unsigned tag) {
   quadtree_point pt;
   pt.x = x;
   pt.y = y;
   pt.tag = tag;
-  quadtree_add_point(qt, &pt);
+  return quadtree_add_point(qt, &pt);
 }
 
 static int _dist(int x0, int y0, int x1, int y1) {
@@ -192,6 +195,10 @@ const quadtree_point *quadtree_nearest(quadtree *qt, int x, int y) {
 
 unsigned quadtree_used(quadtree *qt) {
   return qt->used;
+}
+
+unsigned quadtree_added(quadtree *qt) {
+  return qt->added;
 }
 
 static quadtree_point *_get(quadtree_node *nd, quadtree_point *pt) {

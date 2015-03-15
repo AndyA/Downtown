@@ -1,6 +1,7 @@
 /* voronoi.c */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "quadtree.h"
 #include "sampler.h"

@@ -29,15 +29,17 @@ extern "C" {
     int w, h;
     int dim;
     unsigned used;
+    unsigned added; /* may be greater than used because of clipping */
   } quadtree;
 
   quadtree *quadtree_new(int w, int h);
   void quadtree_free(quadtree *qt);
-  void quadtree_add_point(quadtree *qt, const quadtree_point *pt);
-  void quadtree_add(quadtree *qt, int x, int y, unsigned tag);
+  int quadtree_add_point(quadtree *qt, const quadtree_point *pt);
+  int quadtree_add(quadtree *qt, int x, int y, unsigned tag);
   void quadtree_dump(quadtree *qt, FILE *out);
   const quadtree_point *quadtree_nearest(quadtree *qt, int x, int y);
   unsigned quadtree_used(quadtree *qt);
+  unsigned quadtree_added(quadtree *qt);
   void quadtree_get(quadtree *qt, quadtree_point *pt);
   void quadtree_get_sorted(quadtree *qt, quadtree_point *pt);
 
