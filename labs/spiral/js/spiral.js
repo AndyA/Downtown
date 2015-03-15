@@ -69,7 +69,7 @@ $(function() {
       if (px < 0 || px >= sz.w || py < 0 || py >= sz.h) break;
       dp.draw(px, py);
       a += 2 / r;
-      r += 0.2 / r;
+      r += 0.5 / r;
     }
 
     dp.flush();
