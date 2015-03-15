@@ -54,9 +54,6 @@ sampler_params *sampler_parse_params(const char *spec) {
     vn = ve;
   }
 
-  v = strtod(cp, &ep);
-  if (ep == cp) die("Bad number");
-
   sp->name = alloc(ne - np + 1);
   memcpy(sp->name, np, ne - np);
   sp->text = alloc(ve - vp + 1);
