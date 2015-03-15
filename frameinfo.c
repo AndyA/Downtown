@@ -104,7 +104,7 @@ y4m2_output *frameinfo_filter(y4m2_output *next) {
 }
 
 frameinfo *frameinfo_get(const y4m2_frame *frame, const char *name) {
-  void *note = y4m2_find_note(frame, name);
+  void *note = y4m2_need_note(frame, name);
   return (frameinfo *) note;
 }
 

@@ -98,6 +98,7 @@ void y4m2_release_frame(y4m2_frame *frame);
 void y4m2_set_note(y4m2_frame *frame, const char *name, void *value, y4m2_free_func destructor);
 void y4m2_remove_notes(y4m2_frame *frame);
 void *y4m2_find_note(const y4m2_frame *frame, const char *name);
+void *y4m2_need_note(const y4m2_frame *frame, const char *name);
 
 /* Pipeline */
 

@@ -252,6 +252,12 @@ void *y4m2_find_note(const y4m2_frame *frame, const char *name) {
   return NULL;
 }
 
+void *y4m2_need_note(const y4m2_frame *frame, const char *name) {
+  void *note = y4m2_find_note(frame, name);
+  if (!note) die("Can't find note %s", name);
+  return note;
+}
+
 static char *is_word(char *buf, const char *match) {
   size_t l = strlen(match);
   if (strlen(buf) >= l && memcmp(buf, match, l) == 0 && buf[l] <= ' ')
