@@ -55,8 +55,12 @@ typedef struct {
   } o;
 } y4m2_output;
 
+/* Internal, exported for tests */
+
 void y4m2__parse_parms(y4m2_parameters *parms, char *buf);
 void y4m2__format_parms(FILE *out, const y4m2_parameters *parms);
+
+/* Paramter handling */
 
 y4m2_parameters *y4m2_new_parms(void);
 void y4m2_free_parms(y4m2_parameters *parms);
@@ -65,6 +69,9 @@ y4m2_parameters *y4m2_clone_parms(const y4m2_parameters *orig);
 const char *y4m2_get_parm(const y4m2_parameters *parms, const char *name);
 void y4m2_set_parm(y4m2_parameters *parm, const char *name, const char *value);
 y4m2_parameters *y4m2_adjust_parms(const y4m2_parameters *parms, const char *fmt, ...);
+
+/* Frame lifecycle */
+
 void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms);
 y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info);
 y4m2_frame *y4m2_new_frame(const y4m2_parameters *parms);
@@ -74,6 +81,9 @@ y4m2_frame *y4m2_clear_frame(y4m2_frame *frame);
 void y4m2_free_frame(y4m2_frame *frame);
 y4m2_frame *y4m2_retain_frame(y4m2_frame *frame);
 void y4m2_release_frame(y4m2_frame *frame);
+
+/* Pipeline */
+
 int y4m2_parse(FILE *in, y4m2_output *out);
 int y4m2_emit_start(y4m2_output *out, const y4m2_parameters *parms);
 int y4m2_emit_frame(y4m2_output *out, const y4m2_parameters *parms, y4m2_frame *frame);
@@ -84,6 +94,8 @@ int y4m2_emit(y4m2_output *out, y4m2_reason reason,
 y4m2_output *y4m2_output_file(FILE *out);
 y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx);
 void y4m2_free_output(y4m2_output *out);
+
+/* To, from float */
 
 size_t y4m2_frame_to_float(const y4m2_frame *in, colour_floats *out);
 void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out);
