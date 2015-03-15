@@ -89,27 +89,6 @@ static y4m2_parameters *parm_adj_size(const y4m2_parameters *parms, unsigned w, 
   return np;
 }
 
-static void init_fft_context(fft_context *c, int stripe) {
-  c->ibuf = fftw_malloc(sizeof(double) * c->len);
-  if (!c->ibuf) goto oom;
-  c->obuf = fftw_malloc(sizeof(double) * c->len);
-  if (!c->obuf) goto oom;
-  c->plan = fftw_plan_r2r_1d(c->len, c->ibuf, c->obuf, FFTW_R2HC, 0);
-  if (!c->plan) die("Can't create FFTW_R2HC plan");
-
-  int olen = c->len / 2;
-  c->vscale = 1;
-  while (olen / c->vscale > stripe)
-    c->vscale *= 2;
-
-  c->voffset = (stripe - olen / c->vscale) / 2;
-
-  return;
-
-oom:
-  die("Out of memory");
-}
-
 static void free_fft_context(fft_context *c) {
   fftw_destroy_plan(c->plan);
   fftw_free(c->ibuf);
@@ -130,7 +109,7 @@ static void free_context(context *c) {
 
 static double *scale_fft(fft_context *c) {
   int size = (c->len + 1) / 2;
-  int osize = size / c->vscale;
+  int osize = (size + c->vscale - 1) / c->vscale;
 
   if (!c->work) {
     c->osize = osize;
@@ -140,7 +119,7 @@ static double *scale_fft(fft_context *c) {
 
   for (int i = 1; i < size; i += c->vscale) {
     double sum = 0;
-    for (int j = 0; j < c->vscale; j++) {
+    for (int j = 0; j < c->vscale && i + j < size; j++) {
       double sr = c->obuf[i + j];
       double si = c->obuf[c->len - i - j];
       sum += sqrt(sr * sr + si * si);
@@ -209,8 +188,30 @@ static void scroll_left(uint8_t *buf, int w, int h, uint8_t fill) {
   }
 }
 
-static void process_frame(context *c, const y4m2_frame *frame) {
+static void init_fft_context(fft_context *c, int stripe) {
+  c->ibuf = fftw_malloc(sizeof(double) * c->len);
+  if (!c->ibuf) goto oom;
+  c->obuf = fftw_malloc(sizeof(double) * c->len);
+  if (!c->obuf) goto oom;
+  c->plan = fftw_plan_r2r_1d(c->len, c->ibuf, c->obuf, FFTW_R2HC, 0);
+  if (!c->plan) die("Can't create FFTW_R2HC plan");
 
+  int olen = c->len / 2;
+  c->vscale = 1;
+  while (olen / c->vscale > stripe)
+    c->vscale *= 2;
+
+  c->voffset = (stripe - olen / c->vscale) / 2;
+
+  log_debug("init_fft_context: len=%lu, vscale=%d, voffset=%d", (unsigned long) c->len, c->vscale, c->voffset);
+
+  return;
+
+oom:
+  die("Out of memory");
+}
+
+static void process_frame(context *c, const y4m2_frame *frame) {
   if (!c->out_buf) {
     c->out_buf = y4m2_new_frame(c->out_parms);
   }
@@ -233,6 +234,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
       fc->sampler = sampler_new(cfg_sampler);
       log_debug("Init sampler");
       fc->len = sampler_init(fc->sampler, w, h);
+      log_debug("Sampler will return %u samples", fc->len);
     }
     double *sam = sampler_sample(fc->sampler, frame->plane[pl]);
 
