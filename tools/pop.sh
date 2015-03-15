@@ -17,8 +17,8 @@ for src in "$@"; do
       rm -rf "$scaled"
 
       for gain in 10; do
-        for chans in 'y' 'yuv'; do
-          for sampler in 'zigzag'; do
+        for chans in 'y'; do
+          for sampler in 'zigzag' 'spiral'; do
             for delta in 'n' 'y'; do
 
               tag="chans=${chans}"
