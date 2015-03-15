@@ -9,7 +9,7 @@ extern "C" {
 
 #include "yuv4mpeg2.h"
 
-y4m2_output *filter_delta(y4m2_output *next);
+y4m2_output *delta_filter(y4m2_output *next);
 
 #ifdef __cplusplus
 }

@@ -146,7 +146,7 @@ static void callback(y4m2_reason reason,
   }
 }
 
-y4m2_output *filter_centre(y4m2_output *next) {
+y4m2_output *centre_filter(y4m2_output *next) {
   return y4m2_output_next(callback, ctx_new(next));
 }
 

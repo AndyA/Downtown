@@ -390,10 +390,10 @@ int main(int argc, char *argv[]) {
   ctx.next = y4m2_output_file(stdout);
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
-  if (cfg_centre) out = filter_centre(out);
-  if (cfg_delta) out = filter_delta(out);
-  if (cfg_merge > 1) out = filter_merge(out, cfg_merge);
-  out = filter_frameinfo(out);
+  if (cfg_centre) out = centre_filter(out);
+  if (cfg_delta) out = delta_filter(out);
+  if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
+  out = frameinfo_filter(out);
   y4m2_parse(stdin, out);
   y4m2_free_output(ctx.next);
 

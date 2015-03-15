@@ -9,7 +9,7 @@ extern "C" {
 
 #include "yuv4mpeg2.h"
 
-y4m2_output *filter_merge(y4m2_output *next, int frames);
+y4m2_output *merge_filter(y4m2_output *next, int frames);
 
 #ifdef __cplusplus
 }

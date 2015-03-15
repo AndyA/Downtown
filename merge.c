@@ -80,7 +80,7 @@ static void callback(y4m2_reason reason,
   }
 }
 
-y4m2_output *filter_merge(y4m2_output *next, int frames) {
+y4m2_output *merge_filter(y4m2_output *next, int frames) {
   return y4m2_output_next(callback, ctx_new(next, frames));
 }
 

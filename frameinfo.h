@@ -17,7 +17,7 @@ extern "C" {
     double energy;
   } frameinfo;
 
-  y4m2_output *filter_frameinfo(y4m2_output *next);
+  y4m2_output *frameinfo_filter(y4m2_output *next);
 
 #ifdef __cplusplus
 }

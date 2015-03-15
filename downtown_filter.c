@@ -83,9 +83,9 @@ int main(int argc, char *argv[]) {
   if (argc != 0) usage();
 
   y4m2_output *out = y4m2_output_file(stdout);
-  if (cfg_centre) out = filter_centre(out);
-  if (cfg_delta) out = filter_delta(out);
-  if (cfg_merge > 1) out = filter_merge(out, cfg_merge);
+  if (cfg_centre) out = centre_filter(out);
+  if (cfg_delta) out = delta_filter(out);
+  if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
   y4m2_parse(stdin, out);
 
   return 0;
