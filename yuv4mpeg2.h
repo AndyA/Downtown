@@ -70,6 +70,7 @@ y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info);
 y4m2_frame *y4m2_new_frame(const y4m2_parameters *parms);
 y4m2_frame *y4m2_like_frame(const y4m2_frame *frame);
 y4m2_frame *y4m2_clone_frame(const y4m2_frame *frame);
+y4m2_frame *y4m2_clear_frame(y4m2_frame *frame);
 void y4m2_free_frame(y4m2_frame *frame);
 y4m2_frame *y4m2_retain_frame(y4m2_frame *frame);
 void y4m2_release_frame(y4m2_frame *frame);

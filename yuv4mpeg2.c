@@ -147,18 +147,23 @@ void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms) 
   }
 }
 
+y4m2_frame *y4m2_clear_frame(y4m2_frame *frame) {
+  for (int i = 0; i < Y4M2_N_PLANE; i++)
+    memset(frame->plane[i], frame->i.plane[i].fill, frame->i.plane[i].size);
+  return frame;
+}
+
 y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
   y4m2_frame *frame = jd_alloc(sizeof(y4m2_frame));
   uint8_t *buf = frame->buf = jd_alloc(info->size);
 
   for (int i = 0; i < Y4M2_N_PLANE; i++) {
     frame->plane[i] = buf;
-    memset(buf, info->plane[i].fill, info->plane[i].size);
     buf += info->plane[i].size;
   }
 
   frame->i = *info;
-  return y4m2_retain_frame(frame);
+  return y4m2_clear_frame(y4m2_retain_frame(frame));
 }
 
 y4m2_frame *y4m2_like_frame(const y4m2_frame *frame) {
