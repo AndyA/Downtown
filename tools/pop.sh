@@ -18,8 +18,8 @@ for src in "$@"; do
 
       for gain in 10; do
         for chans in 'y'; do
-          for sampler in 'zigzag' 'spiral'; do
-            for delta in 'n' 'y'; do
+          for sampler in 'spiral'; do
+            for delta in 'n'; do
 
               tag="chans=${chans}"
               tag="${tag}.delta=${delta}"
