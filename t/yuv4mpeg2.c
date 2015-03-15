@@ -126,11 +126,61 @@ static void test_float(void) {
   y4m2_free_parms(p);
 }
 
+static unsigned free_called = 0;
+static void my_free(void *p) {
+  free_called++;
+  free(p);
+}
+
+static void test_notes(void) {
+  y4m2_parameters *p = y4m2_new_parms();
+  char pstr[] = "W1280 H720 A1:1 Ip F25:1 C420\n";
+  y4m2__parse_parms(p, pstr);
+
+  y4m2_frame *frame = y4m2_new_frame(p);
+
+  ok(y4m2_find_note(frame, "a.note") == NULL, "NULL for missing note");
+
+  y4m2_set_note(frame, "a.note", "This is a message", NULL);
+  y4m2_set_note(frame, "b.note", "This is another message", NULL);
+
+  void *a_note = y4m2_find_note(frame, "a.note");
+  ok(a_note && !strcmp(a_note, "This is a message"), "a.note found");
+
+  void *b_note = y4m2_find_note(frame, "b.note");
+  ok(b_note && !strcmp(b_note, "This is another message"), "b.note found");
+
+  y4m2_set_note(frame, "a.note", "Everything changes", NULL);
+
+  a_note = y4m2_find_note(frame, "a.note");
+  ok(a_note && !strcmp(a_note, "Everything changes"), "a.note updated");
+
+  b_note = y4m2_find_note(frame, "b.note");
+  ok(b_note && !strcmp(b_note, "This is another message"), "b.note unchanged");
+
+  free_called = 0;
+  y4m2_set_note(frame, "b.note", sstrdup("Allocated"), my_free);
+
+  ok(free_called == 0, "free not called yet");
+  b_note = y4m2_find_note(frame, "b.note");
+  ok(b_note && !strcmp(b_note, "Allocated"), "b.note changed");
+
+  y4m2_set_note(frame, "b.note", NULL, NULL);
+  ok(!y4m2_find_note(frame, "b.note"), "b.note deleted");
+  ok(free_called == 1, "which called free");
+
+  a_note = y4m2_find_note(frame, "a.note");
+  ok(a_note && !strcmp(a_note, "Everything changes"), "a.note still there");
+
+  y4m2_release_frame(frame);
+}
+
 void test_main(void) {
   test_parms();
   test_adjust_parms();
   test_parse();
   test_float();
+  test_notes();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

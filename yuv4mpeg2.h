@@ -29,12 +29,23 @@ typedef struct {
   } plane[Y4M2_N_PLANE];
 } y4m2_frame_info;
 
+typedef void (*y4m2_free_func)(void *);
+
+typedef struct y4m2_note y4m2_note;
+struct y4m2_note {
+  y4m2_note *next;
+  char *name;
+  void *value;
+  y4m2_free_func destructor;
+};
+
 typedef struct {
   unsigned refcnt;
   y4m2_frame_info i;
   uint8_t *buf;
   uint8_t *plane[Y4M2_N_PLANE];
   uint64_t sequence;
+  y4m2_note *notes;
 } y4m2_frame;
 
 typedef enum { Y4M2_START, Y4M2_FRAME, Y4M2_END } y4m2_reason;
@@ -81,6 +92,12 @@ y4m2_frame *y4m2_clear_frame(y4m2_frame *frame);
 void y4m2_free_frame(y4m2_frame *frame);
 y4m2_frame *y4m2_retain_frame(y4m2_frame *frame);
 void y4m2_release_frame(y4m2_frame *frame);
+
+/* Frame notes */
+
+void y4m2_set_note(y4m2_frame *frame, const char *name, void *value, y4m2_free_func destructor);
+void y4m2_remove_notes(y4m2_frame *frame);
+void *y4m2_find_note(y4m2_frame *frame, const char *name);
 
 /* Pipeline */
 

@@ -1,6 +1,5 @@
 /* yuv4mpeg2.c */
 
-#include <jd_pretty.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,23 +13,23 @@ static const char *tag[] = {
 };
 
 y4m2_parameters *y4m2_new_parms(void) {
-  return jd_alloc(sizeof(y4m2_parameters));
+  return alloc(sizeof(y4m2_parameters));
 }
 
 void y4m2_free_parms(y4m2_parameters *parms) {
   int i;
   if (parms) {
     for (i = 0; i < Y4M2_PARMS; i++)
-      jd_free(parms->parm[i]);
-    jd_free(parms);
+      free(parms->parm[i]);
+    free(parms);
   }
 }
 
 static void y4m2__set(char **slot, const char *value) {
-  if (*slot) jd_free(*slot);
+  if (*slot) free(*slot);
   if (value) {
     size_t l = strlen(value);
-    *slot = jd_alloc(l + 1);
+    *slot = alloc(l + 1);
     memcpy(*slot, value, l + 1);
   }
   else {
@@ -154,8 +153,8 @@ y4m2_frame *y4m2_clear_frame(y4m2_frame *frame) {
 }
 
 y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
-  y4m2_frame *frame = jd_alloc(sizeof(y4m2_frame));
-  uint8_t *buf = frame->buf = jd_alloc(info->size);
+  y4m2_frame *frame = alloc(sizeof(y4m2_frame));
+  uint8_t *buf = frame->buf = alloc(info->size);
 
   for (int i = 0; i < Y4M2_N_PLANE; i++) {
     frame->plane[i] = buf;
@@ -185,8 +184,9 @@ y4m2_frame *y4m2_clone_frame(const y4m2_frame *frame) {
 
 void y4m2_free_frame(y4m2_frame *frame) {
   if (frame) {
-    jd_free(frame->buf);
-    jd_free(frame);
+    y4m2_remove_notes(frame);
+    free(frame->buf);
+    free(frame);
   }
 }
 
@@ -198,6 +198,58 @@ y4m2_frame *y4m2_retain_frame(y4m2_frame *frame) {
 void y4m2_release_frame(y4m2_frame *frame) {
   if (frame && --frame->refcnt == 0)
     y4m2_free_frame(frame);
+}
+
+static void _free_note(y4m2_note *note) {
+  if (note) {
+    free(note->name);
+    if (note->destructor) note->destructor(note->value);
+    free(note);
+  }
+}
+
+static void _free_notes(y4m2_note *note) {
+  if (note) {
+    _free_notes(note->next);
+    _free_note(note);
+  }
+}
+
+void y4m2_remove_notes(y4m2_frame *frame) {
+  _free_notes(frame->notes);
+  frame->notes = NULL;
+}
+
+static y4m2_note *_set_note(y4m2_note *note, const char *name, void *value, y4m2_free_func destructor) {
+  if (!note) {
+    if (!value) return NULL;
+    note = alloc(sizeof(y4m2_note));
+    note->name = sstrdup(name);
+  }
+  else if (strcmp(note->name, name)) {
+    note->next = _set_note(note->next, name, value, destructor);
+    return note;
+  }
+  if (!value) {
+    y4m2_note *next = note->next;
+    _free_note(note);
+    return next;
+  }
+  if (note->destructor) note->destructor(note->value);
+  note->value = value;
+  note->destructor = destructor;
+  return note;
+}
+
+void y4m2_set_note(y4m2_frame *frame, const char *name, void *value, y4m2_free_func destructor) {
+  frame->notes = _set_note(frame->notes, name, value, destructor);
+}
+
+void *y4m2_find_note(y4m2_frame *frame, const char *name) {
+  for (y4m2_note *note = frame->notes; note; note = note->next)
+    if (0 == strcmp(note->name, name))
+      return note->value;
+  return NULL;
 }
 
 static char *is_word(char *buf, const char *match) {
@@ -348,14 +400,14 @@ int y4m2_emit(y4m2_output *out, y4m2_reason reason,
 }
 
 y4m2_output *y4m2_output_file(FILE *out) {
-  y4m2_output *o = jd_alloc(sizeof(y4m2_output));
+  y4m2_output *o = alloc(sizeof(y4m2_output));
   o->type = Y4M2_OUTPUT_FILE;
   o->o.f = out;
   return o;
 }
 
 y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx) {
-  y4m2_output *o = jd_alloc(sizeof(y4m2_output));
+  y4m2_output *o = alloc(sizeof(y4m2_output));
   o->type = Y4M2_OUTPUT_NEXT;
   o->o.n.cb = cb;
   o->o.n.ctx = ctx;
@@ -363,7 +415,7 @@ y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx) {
 }
 
 void y4m2_free_output(y4m2_output *out) {
-  jd_free(out);
+  free(out);
 }
 
 static unsigned y4m2__log2(unsigned x) {
