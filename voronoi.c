@@ -1,8 +1,10 @@
 /* voronoi.c */
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "log.h"
 #include "quadtree.h"
 #include "sampler.h"
 #include "util.h"
@@ -42,9 +44,33 @@ static void _setup(sampler_context *ctx) {
   }
 }
 
-static size_t _voronoi_init(sampler_context *ctx) {
+static size_t _spiral_init(sampler_context *ctx) {
   voronoi_context *vc = _init(ctx);
+
+  int cx = ctx->width / 2;
+  int cy = ctx->height / 2;
+
   /* compute points */
+  double a = 0;
+  double r = 1;
+  int lx = 0, ly = 0;
+  unsigned tag = 0;
+  for (;;) {
+    int px = cx + (int)(sin(a) * r);
+    int py = cy + (int)(cos(a) * r);
+
+    log_debug("a=%f, r=%f, px=%d, py=%d", a, r, px, py);
+
+    a += 2 / r;
+    r += 0.01;
+
+    if (px == lx && py == ly) continue;
+    lx = px;
+    ly = py;
+
+    if (!quadtree_add(vc->qt, px, py, tag++)) break;
+  }
+
   _setup(ctx);
   return vc->n_points;
 }
@@ -72,14 +98,14 @@ static void _free(sampler_context *ctx) {
 }
 
 void voronoi_register(void) {
-  sampler_info voronoi = {
-    .name = "voronoi",
-    .init = _voronoi_init,
+  sampler_info spiral = {
+    .name = "spiral",
+    .init = _spiral_init,
     .sample = _sample,
     .free = _free
   };
 
-  sampler_register(&voronoi);
+  sampler_register(&spiral);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
