@@ -6,6 +6,7 @@
 #include "colour.h"
 #include "framework.h"
 #include "tap.h"
+#include "util.h"
 #include "yuv4mpeg2.h"
 
 static void test_parms(void) {
