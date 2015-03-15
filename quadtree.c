@@ -95,8 +95,10 @@ static quadtree_node *_add(quadtree_node *nd, const quadtree_point *pt, int x0, 
 }
 
 void quadtree_add_point(quadtree *qt, const quadtree_point *pt) {
-  if (pt->x >= 0 && pt->x < qt->w && pt->y >= 0 && pt->y <= qt->h)
+  if (pt->x >= 0 && pt->x < qt->w && pt->y >= 0 && pt->y <= qt->h) {
     qt->root = _add(qt->root, pt, 0, 0, qt->dim, qt->dim);
+    qt->used++;
+  }
 }
 
 void quadtree_add(quadtree *qt, int x, int y, unsigned tag) {
@@ -180,12 +182,39 @@ static void _nearest(const quadtree_node *nd, int x, int y,
   wrk->checked += nd->used;
 }
 
-quadtree_point *quadtree_nearest(quadtree *qt, int x, int y) {
+const quadtree_point *quadtree_nearest(quadtree *qt, int x, int y) {
   struct nearest_work work;
   memset(&work, 0, sizeof(work));
   _nearest(qt->root, x, y, 0, 0, qt->dim, qt->dim, &work);
   /*  fprintf(stderr, "# checked %u\n", work.checked);*/
   return work.best_pt;
+}
+
+unsigned quadtree_used(quadtree *qt) {
+  return qt->used;
+}
+
+static quadtree_point *_get(quadtree_node *nd, quadtree_point *pt) {
+  if (!nd) return pt;
+  for (unsigned i = 0; i < 4; i++)
+    pt = _get(nd->kids[i], pt);
+  memcpy(pt, nd->pt, sizeof(quadtree_point) * nd->used);
+  return pt + nd->used;
+}
+
+void quadtree_get(quadtree *qt, quadtree_point *pt) {
+  _get(qt->root, pt);
+}
+
+static int cmp_tag(const void *a, const void *b) {
+  const quadtree_point *pa = a;
+  const quadtree_point *pb = b;
+  return pa->tag < pb->tag ? -1 : pa->tag > pb->tag ? 1 : 0;
+}
+
+void quadtree_get_sorted(quadtree *qt, quadtree_point *pt) {
+  quadtree_get(qt, pt);
+  qsort(pt, qt->used, sizeof(quadtree_point), cmp_tag);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

@@ -28,6 +28,7 @@ extern "C" {
     quadtree_node *root;
     int w, h;
     int dim;
+    unsigned used;
   } quadtree;
 
   quadtree *quadtree_new(int w, int h);
@@ -35,7 +36,10 @@ extern "C" {
   void quadtree_add_point(quadtree *qt, const quadtree_point *pt);
   void quadtree_add(quadtree *qt, int x, int y, unsigned tag);
   void quadtree_dump(quadtree *qt, FILE *out);
-  quadtree_point *quadtree_nearest(quadtree *qt, int x, int y);
+  const quadtree_point *quadtree_nearest(quadtree *qt, int x, int y);
+  unsigned quadtree_used(quadtree *qt);
+  void quadtree_get(quadtree *qt, quadtree_point *pt);
+  void quadtree_get_sorted(quadtree *qt, quadtree_point *pt);
 
 #ifdef __cplusplus
 }

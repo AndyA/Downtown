@@ -36,9 +36,16 @@ static void test_quadtree(void) {
     }
   }
 
+  unsigned used = quadtree_used(qt);
+  quadtree_point *pt = alloc(sizeof(quadtree_point) * used);
+  quadtree_get_sorted(qt, pt);
+  for (unsigned i = 0; i < used; i++) {
+    ok(pt[i].tag == i + 1, "sorted list, tag %u", i + 1);
+  }
+
   for (int x = 0; x < width; x += grid) {
     for (int y = 0; y < height; y += grid) {
-      quadtree_point *near = quadtree_nearest(qt, x, y);
+      const quadtree_point *near = quadtree_nearest(qt, x, y);
       if (!ok(near->x == x && near->y == y, "found %d, %d", x, y)) {
         diag("expected %d, %d; got %d, %d", x, y, near->x, near->y);
       }
@@ -60,7 +67,7 @@ static void test_quadtree(void) {
         if (pt[i].dist < best) best = pt[i].dist;
       }
 
-      quadtree_point *near = quadtree_nearest(qt, x, y);
+      const quadtree_point *near = quadtree_nearest(qt, x, y);
       int ndist = dist(x, y, near->x, near->y);
       if (!ok(ndist == best, "Found best point")) {
         diag("for %d, %d", x, y);
