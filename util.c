@@ -33,5 +33,40 @@ char *sstrdup(const char *s) {
   return ss;
 }
 
+char *vssprintf(const char *fmt, va_list ap) {
+  char tmp[1];
+  char *buf = NULL;
+  va_list ap2;
+
+  va_copy(ap2, ap);
+  int len = vsnprintf(tmp, 0, fmt, ap);
+  buf = alloc(len + 1);
+  vsnprintf(buf, len + 1, fmt, ap2);
+  return buf;
+}
+
+char *ssprintf(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  char *buf = vssprintf(fmt, ap);
+  va_end(ap);
+  return buf;
+}
+
+int gcd(int a, int b) {
+  int c;
+  while (a != 0) {
+    c = a;
+    a = b % a;
+    b = c;
+  }
+  return b;
+}
+
+char *aspect_ratio(int w, int h) {
+  int g = gcd(w, h);
+  return ssprintf("%d:%d", w / g, h / g);
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */
