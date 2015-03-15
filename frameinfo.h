@@ -11,7 +11,10 @@ extern "C" {
 
   typedef struct {
     double average;
-    double variance;
+    double min, max;
+
+    double rms;
+    double energy;
   } frameinfo;
 
   y4m2_output *filter_frameinfo(y4m2_output *next);
