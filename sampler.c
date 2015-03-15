@@ -29,7 +29,8 @@ sampler_params *sampler_parse_params(const char *spec) {
   sampler_params *sp = sampler_new_params();
   const char *cp = spec;
   char *ep;
-  double v;
+
+  sp->value = NAN;
 
   const char *np = cp;
   while (*cp && (isalpha(*cp) || (cp != np && isdigit(*cp)))) cp++;
@@ -51,15 +52,14 @@ sampler_params *sampler_parse_params(const char *spec) {
     ve = strchr(vp, ',');
     if (!ve) ve = vp + strlen(vp);
     vn = ve;
+    double v = strtod(vp, &ep);
+    if (ep == ve) sp->value = v;
   }
 
   sp->name = alloc(ne - np + 1);
   memcpy(sp->name, np, ne - np);
   sp->text = alloc(ve - vp + 1);
   memcpy(sp->text, vp, ve - vp);
-
-  v = strtod(sp->text, &ep);
-  sp->value = ep == sp->text ? NAN : v;
 
   cp = vn;
   if (*cp == ',') {
