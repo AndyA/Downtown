@@ -42,10 +42,6 @@ static void _setup(sampler_context *ctx) {
       vc->xlate[x + y * ctx->width] = pt->tag;
     }
   }
-
-  for (unsigned i = 0; i < vc->n_points; i++) {
-    log_debug("point %u, area %f", i, vc->area[i]);
-  }
 }
 
 static size_t _spiral_init(sampler_context *ctx) {
@@ -66,7 +62,7 @@ static size_t _spiral_init(sampler_context *ctx) {
     /*    log_debug("a=%f, r=%f, px=%d, py=%d", a, r, px, py);*/
 
     a += 2 / r;
-    r += 0.01;
+    r += 1 / r;
 
     if (px == lx && py == ly) continue;
     lx = px;
