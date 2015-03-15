@@ -22,9 +22,8 @@ sampler_params *sampler_new_params() {
 
 /* Parse sampler params. Param strings look like
  *
- *   name1=123.4,name2=91203
+ *   name1=123.4,name2=91203,name3='Some text'
  *
- * Parameters must currently be numeric.
  */
 sampler_params *sampler_parse_params(const char *spec) {
   sampler_params *sp = sampler_new_params();
