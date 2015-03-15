@@ -41,6 +41,29 @@ static void test_parms(void) {
   y4m2_free_parms(p2);
 }
 
+static void test_adjust_parms(void) {
+  y4m2_parameters *p = y4m2_new_parms();
+
+  ok(p != NULL, "y4m2_new_parms");
+
+  y4m2_set_parm(p, "W", "1920");
+  y4m2_set_parm(p, "H", "1080");
+  y4m2_set_parm(p, "A", "1:1");
+
+  ok(!strcmp("1920", y4m2_get_parm(p, "W")), "get original W");
+  ok(!strcmp("1080", y4m2_get_parm(p, "H")), "get original H");
+  ok(!strcmp("1:1", y4m2_get_parm(p, "A")), "get original A");
+
+  y4m2_parameters *p2 = y4m2_adjust_parms(p, "W%u H%u", 1280, 720);
+
+  ok(!strcmp("1280", y4m2_get_parm(p2, "W")), "get adjusted W");
+  ok(!strcmp("720", y4m2_get_parm(p2, "H")), "get adjusted H");
+  ok(!strcmp("1:1", y4m2_get_parm(p2, "A")), "get adjusted A");
+
+  y4m2_free_parms(p);
+  y4m2_free_parms(p2);
+}
+
 static void test_parse(void) {
   y4m2_parameters *p = y4m2_new_parms();
 
@@ -105,6 +128,7 @@ static void test_float(void) {
 
 void test_main(void) {
   test_parms();
+  test_adjust_parms();
   test_parse();
   test_float();
 }
