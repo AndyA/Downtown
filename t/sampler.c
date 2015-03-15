@@ -1,5 +1,6 @@
 /* t/sampler.c */
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,7 +10,7 @@
 #include "util.h"
 
 static void test_param(void) {
-  sampler_params *sp = sampler_parse_params("a=1.24,b=-3,c=99999");
+  sampler_params *sp = sampler_parse_params("a=1.24,b=-3,c='Hello, World',d=\"Boo\",e=true");
 
   ok(0 == strcmp(sp->name, "a"), "a: name matches");
   ok(sp->value == 1.24, "a: value matches");
@@ -18,9 +19,18 @@ static void test_param(void) {
   ok(sp->next->value == -3, "b: value matches");
 
   ok(0 == strcmp(sp->next->next->name, "c"), "c: name matches");
-  ok(sp->next->next->value == 99999, "c: value matches");
+  ok(isnan(sp->next->next->value), "c: value matches");
+  ok(!strcmp(sp->next->next->text, "Hello, World"), "c: text matches");
 
-  ok(sp->next->next->next == NULL, "list ends");
+  ok(0 == strcmp(sp->next->next->next->name, "d"), "d: name matches");
+  ok(isnan(sp->next->next->next->value), "d: value matches");
+  ok(!strcmp(sp->next->next->next->text, "Boo"), "d: text matches");
+
+  ok(0 == strcmp(sp->next->next->next->next->name, "e"), "e: name matches");
+  ok(isnan(sp->next->next->next->next->value), "e: value matches");
+  ok(!strcmp(sp->next->next->next->next->text, "true"), "e: text matches");
+
+  ok(sp->next->next->next->next->next == NULL, "list ends");
 
   sampler_free_params(sp);
 }
@@ -75,7 +85,7 @@ static void test_register(void) {
   is(ctx->width, 1000, "width set");
   is(ctx->height, 800, "height set");
   ok(ctx->buf != NULL, "buf set");
-  if (!is(size, 1000 * 800, "size returned")) 
+  if (!is(size, 1000 * 800, "size returned"))
     diag("wanted %d, got %lu", 1000 * 800, (unsigned long) size);
 
   double *buf = sampler_sample(ctx, NULL);
