@@ -45,6 +45,7 @@ extern "C" {
   sampler_params *sampler_find_param(sampler_params *sp, const char *name);
   sampler_params *sampler_set_param(sampler_params *sp, const char *name, const char *text, double value);
   sampler_params *sampler_merge_params(const sampler_params *a, const sampler_params *b);
+  sampler_params *sampler_clone_params(const sampler_params *sp);
   void sampler_free_params(sampler_params *sp);
 
   void sampler_register(const sampler_info *info);
