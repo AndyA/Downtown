@@ -22,7 +22,7 @@ static voronoi_context *_init(sampler_context *ctx) {
 
   vc->qt = quadtree_new(ctx->width, ctx->height);
 
-  ctx->user = ctx;
+  ctx->user = vc;
   return vc;
 }
 
@@ -42,6 +42,10 @@ static void _setup(sampler_context *ctx) {
       vc->xlate[x + y * ctx->width] = pt->tag;
     }
   }
+
+  for (unsigned i = 0; i < vc->n_points; i++) {
+    log_debug("point %u, area %f", i, vc->area[i]);
+  }
 }
 
 static size_t _spiral_init(sampler_context *ctx) {
@@ -59,7 +63,7 @@ static size_t _spiral_init(sampler_context *ctx) {
     int px = cx + (int)(sin(a) * r);
     int py = cy + (int)(cos(a) * r);
 
-    log_debug("a=%f, r=%f, px=%d, py=%d", a, r, px, py);
+    /*    log_debug("a=%f, r=%f, px=%d, py=%d", a, r, px, py);*/
 
     a += 2 / r;
     r += 0.01;
@@ -80,11 +84,11 @@ static double *_sample(sampler_context *ctx, const uint8_t *in)  {
   size_t limit = ctx->width * ctx->height;
   unsigned i;
 
-  memset(ctx->buf, 0, sizeof(double) * limit);
+  memset(ctx->buf, 0, sizeof(double) * vc->n_points);
   for (i = 0; i < limit; i++)
     ctx->buf[vc->xlate[i]] += sampler_byte2double(in[i]);
-  for (i = 0; i < vc->n_points; vc++)
-    ctx->buf[i] /= vc->area[i];
+  for (i = 0; i < vc->n_points; i++)
+    if (vc->area[i]) ctx->buf[i] /= vc->area[i];
 
   return ctx->buf;
 }
