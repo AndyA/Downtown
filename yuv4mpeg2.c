@@ -245,7 +245,7 @@ void y4m2_set_note(y4m2_frame *frame, const char *name, void *value, y4m2_free_f
   frame->notes = _set_note(frame->notes, name, value, destructor);
 }
 
-void *y4m2_find_note(y4m2_frame *frame, const char *name) {
+void *y4m2_find_note(const y4m2_frame *frame, const char *name) {
   for (y4m2_note *note = frame->notes; note; note = note->next)
     if (0 == strcmp(note->name, name))
       return note->value;
