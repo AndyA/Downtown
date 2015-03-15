@@ -11,6 +11,7 @@ noinst_LTLIBRARIES = libdowntown.la
 bin_PROGRAMS = downtown downtown_filter
 
 libdowntown_la_SOURCES = \
+	centre.h centre.c \
 	colour.h colour.c \
 	delta.h delta.c \
 	log.h log.c \
