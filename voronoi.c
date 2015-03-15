@@ -24,10 +24,12 @@ static voronoi_context *_init(sampler_context *ctx) {
 
 static void _setup(sampler_context *ctx) {
   voronoi_context *vc = ctx->user;
+  (void) vc;
 }
 
 static size_t _voronoi_init(sampler_context *ctx) {
   voronoi_context *vc = _init(ctx);
+  (void) vc;
   /* compute points */
   _setup(ctx);
   return ctx->width * ctx->height;
@@ -45,6 +47,7 @@ static double *_sample(sampler_context *ctx, const uint8_t *in)  {
 
 static void _free(sampler_context *ctx) {
   voronoi_context *vc = ctx->user;
+  (void) vc;
   (void) ctx;
 }
 
