@@ -10,9 +10,11 @@
 
 #include "delta.h"
 #include "downtown.h"
+#include "log.h"
 #include "merge.h"
 #include "sampler.h"
 #include "util.h"
+#include "voronoi.h"
 #include "yuv4mpeg2.h"
 #include "zigzag.h"
 
@@ -227,7 +229,9 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     int oh = ofr->i.height / ofr->i.plane[pl].ys;
 
     if (!fc->sampler) {
+      log_debug("Creating sampler: %s", cfg_sampler);
       fc->sampler = sampler_new(cfg_sampler);
+      log_debug("Init sampler");
       fc->len = sampler_init(fc->sampler, w, h);
     }
     double *sam = sampler_sample(fc->sampler, frame->plane[pl]);
@@ -373,10 +377,13 @@ static void parse_options(int *argc, char ***argv) {
 
 static void register_samplers() {
   zigzag_register();
+  voronoi_register();
 }
 
 int main(int argc, char *argv[]) {
   context ctx;
+
+  log_info("Starting " PROG);
 
   register_samplers();
 
