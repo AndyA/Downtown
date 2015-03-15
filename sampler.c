@@ -1,6 +1,7 @@
 /* sampler.c */
 
 #include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -36,14 +37,35 @@ sampler_params *sampler_parse_params(const char *spec) {
   if (np == cp) die("Missing name");
   if (*cp != '=') die("Missing '='");
   const char *ne = cp++;
+
+  const char *vp, *ve, *vn;
+
+  if (*cp == '"' || *cp == '\'') {
+    char quote = *cp++;
+    vp = cp;
+    ve = strchr(vp, quote);
+    if (!ve) die("Missing %c", quote);
+    vn = ve + 1;
+  }
+  else {
+    vp = cp;
+    ve = strchr(vp, ',');
+    if (!ve) ve = vp + strlen(vp);
+    vn = ve;
+  }
+
   v = strtod(cp, &ep);
   if (ep == cp) die("Bad number");
 
   sp->name = alloc(ne - np + 1);
   memcpy(sp->name, np, ne - np);
-  sp->value = v;
+  sp->text = alloc(ve - vp + 1);
+  memcpy(sp->text, vp, ve - vp);
 
-  cp = ep;
+  v = strtod(sp->text, &ep);
+  sp->value = ep == sp->text ? NAN : v;
+
+  cp = vn;
   if (*cp == ',') {
     sp->next = sampler_parse_params(cp + 1);
     return sp;
@@ -58,6 +80,7 @@ void sampler_free_params(sampler_params *sp) {
   if (sp) {
     sampler_free_params(sp->next);
     free(sp->name);
+    free(sp->text);
     free(sp);
   }
 }
