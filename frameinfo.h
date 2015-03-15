@@ -18,6 +18,7 @@ extern "C" {
   } frameinfo;
 
   y4m2_output *frameinfo_filter(y4m2_output *next);
+  frameinfo *frameinfo_get(const y4m2_frame *frame, const char *name);
 
 #ifdef __cplusplus
 }

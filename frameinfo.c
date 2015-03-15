@@ -103,5 +103,10 @@ y4m2_output *frameinfo_filter(y4m2_output *next) {
   return y4m2_output_next(callback, ctx_new(next));
 }
 
+frameinfo *frameinfo_get(const y4m2_frame *frame, const char *name) {
+  void *note = y4m2_find_note(frame, name);
+  return (frameinfo *) note;
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */
