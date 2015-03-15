@@ -72,7 +72,6 @@ static int done_init = 0;
 static int done_free = 0;
 
 size_t test_sampler_init(sampler_context *ctx) {
-  (void) ctx;
   ok(0 == strcmp(ctx->class->name, "test_sampler"), "name matchs in init");
 
   ctx->buf = alloc(sizeof(double) * ctx->width * ctx->height);
@@ -87,7 +86,6 @@ double *test_sampler_sample(sampler_context *ctx, const uint8_t *in)  {
 }
 
 void test_sampler_free(sampler_context *ctx) {
-  (void) ctx;
   ok(0 == strcmp(ctx->class->name, "test_sampler"), "name matchs in free");
 
   /* ctx->buf is freed for us */

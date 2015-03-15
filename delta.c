@@ -36,8 +36,6 @@ static void callback(y4m2_reason reason,
                      const y4m2_parameters *parms,
                      y4m2_frame *frame,
                      void *ctx) {
-  (void) parms;
-  (void) frame;
   context *c = ctx;
 
   switch (reason) {
