@@ -81,6 +81,41 @@ void sampler_free_params(sampler_params *sp) {
   }
 }
 
+sampler_params *sampler_find_param(sampler_params *sp, const char *name) {
+  for (; sp; sp = sp->next) if (0 == strcmp(name, sp->name)) return sp;
+  return NULL;
+}
+
+sampler_params *sampler_set_param(sampler_params *sp, const char *name, const char *text, double value) {
+  if (!sp) {
+    sp = sampler_new_params();
+    sp->name = sstrdup(name);
+  }
+  else if (strcmp(sp->name, name)) {
+    sp->next = sampler_set_param(sp->next, name, text, value);
+    return sp;
+  }
+
+  free(sp->text);
+  sp->text = sstrdup(text);
+  sp->value = value;
+  return sp;
+}
+
+static sampler_params *_merge_params(sampler_params *sp, const sampler_params *delta) {
+  for (; delta; delta = delta->next)
+    sp = sampler_set_param(sp, delta->name, delta->text, delta->value);
+  return sp;
+}
+
+sampler_params *sampler_merge_params(const sampler_params *a, const sampler_params *b) {
+  return _merge_params(_merge_params(NULL, a), b);
+}
+
+sampler_params *sampler_clone_params(const sampler_params *sp) {
+  return sampler_merge_params(sp, NULL);
+}
+
 void sampler_register(const sampler_info *info) {
   sampler_info_list *si = alloc(sizeof(sampler_info_list));
   memcpy(&si->i, info, sizeof(*info));

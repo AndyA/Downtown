@@ -32,7 +32,40 @@ static void test_param(void) {
 
   ok(sp->next->next->next->next->next == NULL, "list ends");
 
+  sampler_params *pp = sampler_find_param(sp, "d");
+  ok(!strcmp(pp->name, "d"), "found d");
+
   sampler_free_params(sp);
+}
+
+static void test_get_set() {
+  sampler_params *spa = sampler_parse_params("delta=3,merge=true,name='Bingo Bopper'");
+  sampler_params *spb = sampler_parse_params("delta=4,value=999");
+  sampler_params *sp;
+
+  sp = sampler_find_param(spa, "name");
+  ok(sp && !strcmp(sp->text, "Bingo Bopper"), "name matches");
+
+  spa = sampler_set_param(spa, "name", "Boost Power", NAN);
+
+  sp = sampler_find_param(spa, "name");
+  ok(sp && !strcmp(sp->text, "Boost Power"), "name updated");
+
+  spa = sampler_set_param(spa, "extra", "12345", 12345);
+
+  sp = sampler_find_param(spa, "extra");
+  ok(sp && !strcmp(sp->text, "12345"), "extra added");
+
+  sampler_params *spm = sampler_merge_params(spa, spb);
+
+  sp = sampler_find_param(spm, "name");
+  ok(sp && !strcmp(sp->text, "Boost Power"), "name merged");
+
+  sp = sampler_find_param(spm, "delta");
+  ok(sp && !strcmp(sp->text, "4"), "delta merged");
+
+  sp = sampler_find_param(spm, "value");
+  ok(sp && !strcmp(sp->text, "999"), "value merged");
 }
 
 static int done_init = 0;
@@ -96,6 +129,7 @@ static void test_register(void) {
 
 void test_main(void) {
   test_param();
+  test_get_set();
   test_register();
 }
 
