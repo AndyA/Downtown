@@ -113,7 +113,7 @@ sampler_params *sampler_merge_params(const sampler_params *a, const sampler_para
 }
 
 sampler_params *sampler_clone_params(const sampler_params *sp) {
-  return sampler_merge_params(sp, NULL);
+  return _merge_params(NULL, sp);
 }
 
 void sampler_register(const sampler_info *info) {
