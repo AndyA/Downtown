@@ -13,6 +13,7 @@ bin_PROGRAMS = downtown downtown_filter
 libdowntown_la_SOURCES = \
 	colour.h colour.c \
 	delta.h delta.c \
+	log.h log.c \
 	merge.h merge.c \
 	quadtree.h quadtree.c \
 	sampler.h sampler.c \
