@@ -8,6 +8,7 @@
 
 #include <fftw3.h>
 
+#include "centre.h"
 #include "delta.h"
 #include "downtown.h"
 #include "log.h"
@@ -51,6 +52,7 @@ typedef struct {
 static double cfg_gain = 1.0;
 static char *cfg_sampler = "zigzag";
 static int cfg_mono = 0;
+static int cfg_centre = 0;
 static int cfg_auto = 0;
 static int cfg_delta = 0;
 static int cfg_width = OUTWIDTH;
@@ -61,6 +63,7 @@ static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
           "Options:\n"
           "  -h, --help                See this message\n"
+          "  -c, --centre              Centre frames\n"
           "  -d, --delta               Work on diff between frames\n"
           "  -g, --gain <gain>         Signal gain\n"
           "  -m, --mono                Only process luma\n"
@@ -308,6 +311,7 @@ static void parse_options(int *argc, char ***argv) {
 
   static struct option opts[] = {
     {"help", no_argument, NULL, 'h'},
+    {"centre", no_argument, NULL, 'c'},
     {"delta", no_argument, NULL, 'd'},
     {"gain", required_argument, NULL, 'g'},
     {"auto", no_argument, NULL, 'a'},
@@ -318,11 +322,15 @@ static void parse_options(int *argc, char ***argv) {
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:s:S:M:admh", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:s:S:M:acdmh", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'a':
       cfg_auto = 1;
+      break;
+
+    case 'c':
+      cfg_centre = 1;
       break;
 
     case 'd':
@@ -381,6 +389,7 @@ int main(int argc, char *argv[]) {
   ctx.next = y4m2_output_file(stdout);
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
+  if (cfg_centre) out = filter_centre(out);
   if (cfg_delta) out = filter_delta(out);
   if (cfg_merge > 1) out = filter_merge(out, cfg_merge);
   y4m2_parse(stdin, out);
