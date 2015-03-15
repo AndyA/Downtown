@@ -11,6 +11,7 @@
 #include "centre.h"
 #include "delta.h"
 #include "downtown.h"
+#include "frameinfo.h"
 #include "log.h"
 #include "merge.h"
 #include "sampler.h"
@@ -392,6 +393,7 @@ int main(int argc, char *argv[]) {
   if (cfg_centre) out = filter_centre(out);
   if (cfg_delta) out = filter_delta(out);
   if (cfg_merge > 1) out = filter_merge(out, cfg_merge);
+  out = filter_frameinfo(out);
   y4m2_parse(stdin, out);
   y4m2_free_output(ctx.next);
 

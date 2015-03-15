@@ -14,6 +14,7 @@ libdowntown_la_SOURCES = \
 	centre.h centre.c \
 	colour.h colour.c \
 	delta.h delta.c \
+	frameinfo.h frameinfo.c \
 	log.h log.c \
 	merge.h merge.c \
 	quadtree.h quadtree.c \
