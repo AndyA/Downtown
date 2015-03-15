@@ -59,8 +59,6 @@ static size_t _spiral_init(sampler_context *ctx) {
     int px = cx + (int)(sin(a) * r);
     int py = cy + (int)(cos(a) * r);
 
-    /*    log_debug("a=%f, r=%f, px=%d, py=%d", a, r, px, py);*/
-
     a += 2 / r;
     r += 1 / r;
 
