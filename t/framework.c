@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "framework.h"
+#include "log.h"
 #include "tap.h"
 
 void tf_die(const char *msg, ...) {
@@ -166,6 +167,8 @@ int main(int argc, char *argv[]) {
     count = atoi(argv[1]);
   else if (tc_env = getenv("TEST_COUNT"), tc_env)
     count = atoi(tc_env);
+
+  log_level = WARNING;;
 
   for (i = 0; i < count; i++)
     test_main();

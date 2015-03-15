@@ -73,21 +73,24 @@ void zigzag_register(void) {
     .name = "zigzag",
     .init = _init,
     .sample = _zigzag_sample,
-    .free = _free
+    .free = _free,
+    .default_config = NULL
   };
 
   sampler_info raster = {
     .name = "raster",
     .init = _init,
     .sample = _raster_sample,
-    .free = _free
+    .free = _free,
+    .default_config = NULL
   };
 
   sampler_info weave = {
     .name = "weave",
     .init = _init,
     .sample = _weave_sample,
-    .free = _free
+    .free = _free,
+    .default_config = NULL
   };
 
   sampler_register(&zigzag);

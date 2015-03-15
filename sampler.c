@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log.h"
 #include "sampler.h"
 #include "util.h"
 
@@ -33,9 +34,9 @@ sampler_params *sampler_parse_params(const char *spec) {
   sp->value = NAN;
 
   const char *np = cp;
-  while (*cp && (isalpha(*cp) || (cp != np && isdigit(*cp)))) cp++;
+  while (*cp && (isalpha(*cp) || *cp == '_' || (cp != np && isdigit(*cp)))) cp++;
   if (np == cp) die("Missing name");
-  if (*cp != '=') die("Missing '='");
+  if (*cp != '=') die("Missing '=' (at %s)", cp);
   const char *ne = cp++;
 
   const char *vp, *ve, *vn;
@@ -84,6 +85,22 @@ void sampler_free_params(sampler_params *sp) {
 sampler_params *sampler_find_param(sampler_params *sp, const char *name) {
   for (; sp; sp = sp->next) if (0 == strcmp(name, sp->name)) return sp;
   return NULL;
+}
+
+static sampler_params *_require(sampler_params *sp, const char *name) {
+  sampler_params *pp = sampler_find_param(sp, name);
+  if (!pp) die("Missing param %s", name);
+  return pp;
+}
+
+double sampler_require_double(sampler_params *sp, const char *name) {
+  sampler_params *pp = _require(sp, name);
+  if (isnan(pp->value)) die("%s is not a number", name);
+  return pp->value;
+}
+
+const char *sampler_require_text(sampler_params *sp, const char *name) {
+  return _require(sp, name)->text;
 }
 
 sampler_params *sampler_set_param(sampler_params *sp, const char *name, const char *text, double value) {
@@ -158,7 +175,21 @@ sampler_context *sampler_new(const char *spec) {
 
   ctx = alloc(sizeof(sampler_context));
   ctx->class = &si->i;
-  ctx->params = sp;
+
+  if (si->i.default_config)  {
+    ctx->params = sampler_merge_params(sampler_parse_params(si->i.default_config), sp);
+    sampler_free_params(sp);
+  }
+  else {
+    ctx->params = sp;
+  }
+
+  log_debug("Sampler: %s", spec);
+  for (sampler_params *pp = ctx->params; pp; pp = pp->next)
+    if (isnan(pp->value))
+      log_debug("  %-15s = '%s'", pp->name, pp->text);
+    else
+      log_debug("  %-15s = %f", pp->name, pp->value);
 
   return ctx;
 }

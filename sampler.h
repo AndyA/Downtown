@@ -27,6 +27,7 @@ extern "C" {
 
   typedef struct {
     const char *name;
+    const char *default_config;
     sampler_init_func init;
     sampler_sample_func sample;
     sampler_free_func free;
@@ -46,6 +47,8 @@ extern "C" {
   sampler_params *sampler_set_param(sampler_params *sp, const char *name, const char *text, double value);
   sampler_params *sampler_merge_params(const sampler_params *a, const sampler_params *b);
   sampler_params *sampler_clone_params(const sampler_params *sp);
+  double sampler_require_double(sampler_params *sp, const char *name);
+  const char *sampler_require_text(sampler_params *sp, const char *name);
   void sampler_free_params(sampler_params *sp);
 
   void sampler_register(const sampler_info *info);

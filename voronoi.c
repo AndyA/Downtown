@@ -53,14 +53,18 @@ static size_t _spiral_init(sampler_context *ctx) {
   /* compute points */
   double a = 0;
   double r = 1;
+
+  double a_rate = sampler_require_double(ctx->params, "a_rate");
+  double r_rate = sampler_require_double(ctx->params, "r_rate");
+
   int lx = 0, ly = 0;
   unsigned tag = 0;
   for (;;) {
     int px = cx + (int)(sin(a) * r);
     int py = cy + (int)(cos(a) * r);
 
-    a += 2 / r;
-    r += 1 / r;
+    a += a_rate / r;
+    r += r_rate / r;
 
     if (px == lx && py == ly) continue;
     lx = px;
@@ -100,11 +104,12 @@ void voronoi_register(void) {
     .name = "spiral",
     .init = _spiral_init,
     .sample = _sample,
-    .free = _free
+    .free = _free,
+    .default_config = "r_rate=1,a_rate=2"
   };
 
   sampler_register(&spiral);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
- */
+*/
