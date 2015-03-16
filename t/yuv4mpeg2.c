@@ -173,7 +173,24 @@ static void test_notes(void) {
   a_note = y4m2_find_note(frame, "a.note");
   ok(a_note && !strcmp(a_note, "Everything changes"), "a.note still there");
 
+  free_called = 0;
+  y4m2_set_note(frame, "c.note", sstrdup("Clone"), my_free);
+  y4m2_frame *frame2 = y4m2_clone_frame(frame);
+  y4m2_copy_notes(frame2, frame);
+
   y4m2_release_frame(frame);
+
+  ok(free_called == 0, "not freed yet");
+
+  a_note = y4m2_find_note(frame2, "a.note");
+  ok(a_note && !strcmp(a_note, "Everything changes"), "a.note cloned");
+
+  void *c_note = y4m2_find_note(frame2, "c.note");
+  ok(c_note && !strcmp(c_note, "Clone"), "c.note cloned");
+
+  y4m2_release_frame(frame2);
+
+  ok(free_called == 1, "freed when clone is destroyed");
 }
 
 void test_main(void) {

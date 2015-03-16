@@ -200,10 +200,33 @@ void y4m2_release_frame(y4m2_frame *frame) {
     y4m2_free_frame(frame);
 }
 
+static y4m2_note_value *_retain_value(y4m2_note_value *v) {
+  if (v) v->refs++;
+  return v;
+}
+
+static void _free_value(y4m2_note_value *v) {
+  if (v->destructor) v->destructor(v->value);
+  free(v);
+}
+
+static void _release_value(y4m2_note_value *v) {
+  if (v && --v->refs == 0)
+    _free_value(v);
+}
+
+static y4m2_note_value *_new_value(void *value, y4m2_free_func destructor) {
+  if (!value) return NULL;
+  y4m2_note_value *v = alloc(sizeof(y4m2_note_value));
+  v->value = value;
+  v->destructor = destructor;
+  return v;
+}
+
 static void _free_note(y4m2_note *note) {
   if (note) {
     free(note->name);
-    if (note->destructor) note->destructor(note->value);
+    _release_value(note->v);
     free(note);
   }
 }
@@ -220,35 +243,39 @@ void y4m2_remove_notes(y4m2_frame *frame) {
   frame->notes = NULL;
 }
 
-static y4m2_note *_set_note(y4m2_note *note, const char *name, void *value, y4m2_free_func destructor) {
+static void _set_note_value(y4m2_note *note, y4m2_note_value *v) {
+  _retain_value(v);
+  _release_value(note->v);
+  note->v = v;
+}
+
+static y4m2_note *_set_note(y4m2_note *note, const char *name, y4m2_note_value *v) {
   if (!note) {
-    if (!value) return NULL;
+    if (!v) return NULL;
     note = alloc(sizeof(y4m2_note));
     note->name = sstrdup(name);
   }
   else if (strcmp(note->name, name)) {
-    note->next = _set_note(note->next, name, value, destructor);
+    note->next = _set_note(note->next, name, v);
     return note;
   }
-  if (!value) {
+  if (!v) {
     y4m2_note *next = note->next;
     _free_note(note);
     return next;
   }
-  if (note->destructor) note->destructor(note->value);
-  note->value = value;
-  note->destructor = destructor;
+  _set_note_value(note, v);
   return note;
 }
 
 void y4m2_set_note(y4m2_frame *frame, const char *name, void *value, y4m2_free_func destructor) {
-  frame->notes = _set_note(frame->notes, name, value, destructor);
+  frame->notes = _set_note(frame->notes, name, _new_value(value, destructor));
 }
 
 void *y4m2_find_note(const y4m2_frame *frame, const char *name) {
   for (y4m2_note *note = frame->notes; note; note = note->next)
     if (0 == strcmp(note->name, name))
-      return note->value;
+      return note->v->value;
   return NULL;
 }
 
@@ -256,6 +283,20 @@ void *y4m2_need_note(const y4m2_frame *frame, const char *name) {
   void *note = y4m2_find_note(frame, name);
   if (!note) die("Can't find note %s", name);
   return note;
+}
+
+static y4m2_note *_clone_note(const y4m2_note *src) {
+  if (!src) return NULL;
+  y4m2_note *dst = alloc(sizeof(y4m2_note));
+  dst->name = sstrdup(src->name);
+  dst->v = _retain_value(src->v);
+  dst->next = _clone_note(src->next);
+  return dst;
+}
+
+void y4m2_copy_notes(y4m2_frame *dst, const y4m2_frame *src) {
+  dst->notes = _clone_note(src->notes);
+
 }
 
 static char *is_word(char *buf, const char *match) {

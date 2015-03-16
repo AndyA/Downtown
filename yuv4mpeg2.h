@@ -31,12 +31,17 @@ typedef struct {
 
 typedef void (*y4m2_free_func)(void *);
 
+typedef struct {
+  void *value;
+  y4m2_free_func destructor;
+  unsigned refs;
+} y4m2_note_value;
+
 typedef struct y4m2_note y4m2_note;
 struct y4m2_note {
   y4m2_note *next;
   char *name;
-  void *value;
-  y4m2_free_func destructor;
+  y4m2_note_value *v;
 };
 
 typedef struct {
@@ -99,6 +104,7 @@ void y4m2_set_note(y4m2_frame *frame, const char *name, void *value, y4m2_free_f
 void y4m2_remove_notes(y4m2_frame *frame);
 void *y4m2_find_note(const y4m2_frame *frame, const char *name);
 void *y4m2_need_note(const y4m2_frame *frame, const char *name);
+void y4m2_copy_notes(y4m2_frame *dst, const y4m2_frame *src);
 
 /* Pipeline */
 
