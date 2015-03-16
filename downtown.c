@@ -48,6 +48,7 @@ typedef struct {
   y4m2_parameters *out_parms;
   fft_context fftc[Y4M2_N_PLANE];
   range_stats stats[Y4M2_N_PLANE];
+  unsigned minutes;
 } context;
 
 typedef struct string_list {
@@ -303,6 +304,10 @@ static void callback(y4m2_reason reason,
     process_frame(c, frame);
     y4m2_copy_notes(c->out_buf, frame);
     y4m2_emit_frame(c->next, c->out_parms, c->out_buf);
+    unsigned new_min = (unsigned)(frame->elapsed / 60);
+    if (c->minutes != new_min)
+      log_debug("processed %f seconds", frame->elapsed);
+    c->minutes = new_min;
     break;
 
   case Y4M2_END:
