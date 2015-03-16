@@ -133,7 +133,8 @@ static struct info_field *_find_info(const char *name) {
   return NULL;
 }
 
-static grapher_context *grapher_ctx_new(y4m2_output *next, const char *note, const char *field) {
+static grapher_context *grapher_ctx_new(y4m2_output *next,
+                                        const char *note, const char *field, const char *colour) {
   struct info_field *f = _find_info(field);
   grapher_context *ctx = alloc(sizeof(grapher_context));
   ctx->next = next;
@@ -141,12 +142,9 @@ static grapher_context *grapher_ctx_new(y4m2_output *next, const char *note, con
   ctx->offset = f->offset;
   ctx->prev = NAN;
 
-  colour_bytes red;
-  red.c[cR] = 255;
-  red.c[cG] = 0;
-  red.c[cB] = 0;
-
-  colour_b_rgb2yuv(&red, &ctx->col);
+  colour_bytes rgb;
+  colour_parse_rgb(&rgb, colour);
+  colour_b_rgb2yuv(&rgb, &ctx->col);
 
   return ctx;
 }
@@ -206,8 +204,9 @@ static void grapher_callback(y4m2_reason reason,
   }
 }
 
-y4m2_output *frameinfo_grapher(y4m2_output *next, const char *note, const char *field) {
-  return y4m2_output_next(grapher_callback, grapher_ctx_new(next, note, field));
+y4m2_output *frameinfo_grapher(y4m2_output *next,
+                               const char *note, const char *field, const char *colour) {
+  return y4m2_output_next(grapher_callback, grapher_ctx_new(next, note, field, colour));
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

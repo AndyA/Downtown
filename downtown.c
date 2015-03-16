@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
   memset(&ctx, 0, sizeof(ctx));
 
   ctx.next = y4m2_output_file(stdout);
-  if (cfg_graph) ctx.next = frameinfo_grapher(ctx.next, "frameinfo.Y", cfg_graph);
+  if (cfg_graph) ctx.next = frameinfo_grapher(ctx.next, "frameinfo.Y", cfg_graph, "#f00");
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
   if (cfg_centre) out = centre_filter(out);

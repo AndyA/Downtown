@@ -19,7 +19,7 @@ typedef struct {
 #undef X
 
 y4m2_output *frameinfo_filter(y4m2_output *next);
-y4m2_output *frameinfo_grapher(y4m2_output *next, const char *note, const char *field);
+y4m2_output *frameinfo_grapher(y4m2_output *next, const char *note, const char *field, const char *colour);
 
 frameinfo *frameinfo_get(const y4m2_frame *frame, const char *name);
 
