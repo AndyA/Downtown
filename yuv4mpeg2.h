@@ -50,6 +50,7 @@ typedef struct {
   uint8_t *buf;
   uint8_t *plane[Y4M2_N_PLANE];
   uint64_t sequence;
+  double elapsed;
   y4m2_note *notes;
 } y4m2_frame;
 

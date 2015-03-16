@@ -332,11 +332,25 @@ void y4m2__format_parms(FILE *out, const y4m2_parameters *parms) {
       fprintf(out, " %c%s", Y4M2_FIRST + i, parms->parm[i]);
 }
 
+static double _frame_duration(y4m2_parameters *parms) {
+  const char *rate = y4m2_get_parm(parms, "F");
+  char *ep;
+
+  if (!rate) return 0;
+
+  double num = strtod(rate, &ep);
+  if (ep == rate || *ep != ':') die("Missing colon in %s", rate);
+  double den = strtod(ep + 1, &ep);
+  if (*ep) die("Bad rate: %s", rate);
+  return den / num; /* wrong way round */
+}
+
 int y4m2_parse(FILE *in, y4m2_output *out) {
   size_t buf_size = 0;
   char *buf = NULL;
   y4m2_parameters *global = NULL;
   uint64_t sequence = 0;
+  double elapsed = 0;
 
   for (;;) {
     int c = getc(in);
@@ -375,6 +389,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
 
       y4m2_frame *frame = y4m2_new_frame(merged);
       frame->sequence = sequence++;
+      frame->elapsed = elapsed += _frame_duration(merged);
       size_t got = fread(frame->buf, 1, frame->i.size, in);
       if (got != frame->i.size) die("Short read");
       y4m2_emit_frame(out, parms, frame);
