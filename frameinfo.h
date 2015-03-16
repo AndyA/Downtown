@@ -3,26 +3,25 @@
 #ifndef FRAMEINFO_H_
 #define FRAMEINFO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "yuv4mpeg2.h"
 
-  typedef struct {
-    double average;
-    double min, max;
+#define FRAMEINFO_FIELDS \
+  X(average) \
+  X(min)     \
+  X(max)     \
+  X(rms)     \
+  X(energy)
 
-    double rms;
-    double energy;
-  } frameinfo;
+#define X(x) double x;
+typedef struct {
+  FRAMEINFO_FIELDS
+} frameinfo;
+#undef X
 
-  y4m2_output *frameinfo_filter(y4m2_output *next);
-  frameinfo *frameinfo_get(const y4m2_frame *frame, const char *name);
+y4m2_output *frameinfo_filter(y4m2_output *next);
+y4m2_output *frameinfo_grapher(y4m2_output *next, const char *note, const char *field);
 
-#ifdef __cplusplus
-}
-#endif
+frameinfo *frameinfo_get(const y4m2_frame *frame, const char *name);
 
 #endif
 
