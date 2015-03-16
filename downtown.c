@@ -201,6 +201,8 @@ oom:
 }
 
 static void process_frame(context *c, const y4m2_frame *frame) {
+  int pl;
+
   if (!c->out_buf) {
     c->out_buf = y4m2_new_frame(c->out_parms);
   }
@@ -208,7 +210,14 @@ static void process_frame(context *c, const y4m2_frame *frame) {
   y4m2_frame *ofr = c->out_buf;
   int max_plane = cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE;
 
-  for (int pl = 0; pl < max_plane; pl++) {
+  for (pl = 0; pl < Y4M2_N_PLANE; pl++) {
+    if (c->frame_count & (frame->i.plane[pl].xs - 1)) continue;
+    int ow = ofr->i.width / ofr->i.plane[pl].xs;
+    int oh = ofr->i.height / ofr->i.plane[pl].ys;
+    scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
+  }
+
+  for (pl = 0; pl < max_plane; pl++) {
     if (c->frame_count & (frame->i.plane[pl].xs - 1)) continue;
     fft_context *fc = &c->fftc[pl];
 
@@ -231,9 +240,9 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
     memcpy(fc->ibuf, sam, fc->len);
     fftw_execute(fc->plan);
-    scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
     fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240, &c->stats[pl]);
   }
+
   c->frame_count++;
 }
 
