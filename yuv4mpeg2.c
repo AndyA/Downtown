@@ -295,8 +295,12 @@ static y4m2_note *_clone_note(const y4m2_note *src) {
 }
 
 void y4m2_copy_notes(y4m2_frame *dst, const y4m2_frame *src) {
+  y4m2_remove_notes(dst);
   dst->notes = _clone_note(src->notes);
+}
 
+int y4m2_has_notes(const y4m2_frame *frame) {
+  return !!frame->notes;
 }
 
 static char *is_word(char *buf, const char *match) {

@@ -105,6 +105,7 @@ void y4m2_remove_notes(y4m2_frame *frame);
 void *y4m2_find_note(const y4m2_frame *frame, const char *name);
 void *y4m2_need_note(const y4m2_frame *frame, const char *name);
 void y4m2_copy_notes(y4m2_frame *dst, const y4m2_frame *src);
+int y4m2_has_notes(const y4m2_frame *frame);
 
 /* Pipeline */
 
