@@ -47,20 +47,21 @@ static void info_for_plane(y4m2_frame *frame, int pl) {
   double min = 0;
   double max = 0;
 
-  double scale = sqrt(255 * 255 * size);
-
   for (i = 0; i < (unsigned) size; i++) {
     total += base[i];
     if (i == 0 || base[i] < min) min = base[i];
     if (i == 0 || base[i] > max) max = base[i];
   }
 
-  info->average = total / (double) size;
-  info->min = min;
-  info->max = max;
+  double scale = sqrt(255 * 255 * size);
+  double average = total / (double) size;
 
-  info->rms = variance_around(base, size, info->average) / scale;
-  info->energy = variance_around(base, size, info->min) / scale;
+  info->average = average / 255;
+  info->min = min / 255;
+  info->max = max / 255;
+
+  info->rms = variance_around(base, size, average) / scale;
+  info->energy = variance_around(base, size, min) / scale;
 
   y4m2_set_note(frame, name, info, free);
 

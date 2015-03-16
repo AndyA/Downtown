@@ -50,6 +50,11 @@ typedef struct {
   range_stats stats[Y4M2_N_PLANE];
 } context;
 
+typedef struct string_list {
+  struct string_list *next;
+  char *v;
+} string_list;
+
 static double cfg_gain = 1.0;
 static char *cfg_sampler = "zigzag";
 static int cfg_mono = 0;
@@ -59,7 +64,7 @@ static int cfg_delta = 0;
 static int cfg_width = OUTWIDTH;
 static int cfg_height = OUTHEIGHT;
 static int cfg_merge = 1;
-static char *cfg_graph = NULL;
+static string_list *cfg_graph = NULL;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -76,6 +81,25 @@ static void usage() {
           "\n"
          );
   exit(1);
+}
+
+static string_list *sl_put(string_list *sl, const char *s) {
+  if (sl) {
+    sl->next = sl_put(sl->next, s);
+    return sl;
+  }
+
+  sl = alloc(sizeof(string_list));
+  sl->v = sstrdup(s);
+  return sl;
+}
+
+static void sl_free(string_list *sl) {
+  if (sl) {
+    sl_free(sl->next);
+    free(sl->v);
+    free(sl);
+  }
 }
 
 static void free_fft_context(fft_context *c) {
@@ -352,7 +376,7 @@ static void parse_options(int *argc, char ***argv) {
       break;
 
     case 'G':
-      cfg_graph = optarg;
+      cfg_graph = sl_put(cfg_graph, optarg);
       break;
 
     case 'g':
@@ -392,6 +416,22 @@ static void register_samplers() {
   voronoi_register();
 }
 
+static y4m2_output *add_graph(y4m2_output *out, const char *spec) {
+  char *sbuf = sstrdup(spec);
+  char *c1 = strchr(sbuf, ':');
+  char *c2 = c1 ? strchr(c1 + 1, ':') : NULL;
+  if (c1) *c1 = '\0';
+  if (c2) *c2 = '\0';
+  const char *note = c2 ? sbuf : "frameinfo.Y";
+  const char *field = c2 ? c1 + 1 : sbuf;
+  const char *colour = c1 ? (c2 ? c2 + 1 : c1 + 1) : "#f00";
+  log_debug("Adding graph: %s:%s:%s", note, field, colour);
+
+  out = frameinfo_grapher(out, note, field, colour);
+  free(sbuf);
+  return out;
+}
+
 int main(int argc, char *argv[]) {
   context ctx;
 
@@ -405,7 +445,8 @@ int main(int argc, char *argv[]) {
   memset(&ctx, 0, sizeof(ctx));
 
   ctx.next = y4m2_output_file(stdout);
-  if (cfg_graph) ctx.next = frameinfo_grapher(ctx.next, "frameinfo.Y", cfg_graph, "#f00");
+  for (string_list *sl = cfg_graph; sl; sl = sl->next)
+    ctx.next = add_graph(ctx.next, sl->v);
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
   if (cfg_centre) out = centre_filter(out);
@@ -414,6 +455,7 @@ int main(int argc, char *argv[]) {
   out = frameinfo_filter(out);
   y4m2_parse(stdin, out);
   /*  y4m2_free_output(ctx.next);*/
+  sl_free(cfg_graph);
 
   return 0;
 }
