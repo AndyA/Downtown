@@ -498,5 +498,128 @@ void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out) {
   }
 }
 
+static void _draw_point(y4m2_frame *frame, int pl, int x, int y, int v) {
+  int xx = x / frame->i.plane[pl].xs;
+  int yy = y / frame->i.plane[pl].ys;
+  int w = frame->i.width / frame->i.plane[pl].xs;
+  int h = frame->i.height / frame->i.plane[pl].ys;
+
+  if (xx >= 0 && xx < w && yy >= 0 && yy < h)
+    *(frame->plane[pl] + xx + yy * w) = v;
+}
+
+void y4m2_draw_point(y4m2_frame *frame, int x, int y, int vy, int vu, int vv) {
+  _draw_point(frame, Y4M2_Y_PLANE, x, y, vy);
+  _draw_point(frame, Y4M2_Cb_PLANE, x, y, vu);
+  _draw_point(frame, Y4M2_Cr_PLANE, x, y, vv);
+}
+
+#define TSWAP(t, x, y) do { t _t = x; x = y; y = _t; } while (0)
+#define SWAP(x, y) TSWAP(int, x, y)
+
+static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1, int vv, int inclast) {
+  int xx0 = x0 / frame->i.plane[pl].xs;
+  int yy0 = y0 / frame->i.plane[pl].ys;
+  int xx1 = x1 / frame->i.plane[pl].xs;
+  int yy1 = y1 / frame->i.plane[pl].ys;
+
+  int w = frame->i.width / frame->i.plane[pl].xs;
+  int h = frame->i.height / frame->i.plane[pl].ys;
+
+  uint8_t *base = frame->plane[pl];
+
+  int dx = xx1 - xx0;
+  int dy = yy1 - yy0;
+  int acc, s, l;
+  int incfirst = 1;
+
+  if (abs(dx) > abs(dy)) {
+    /* closer to horizontal */
+    if (dx < 0) {
+      SWAP(xx0, xx1);
+      SWAP(yy0, yy1);
+      SWAP(incfirst, inclast);
+      dx = -dx;
+      dy = -dy;
+    }
+    if (dy < 0) {
+      s = -1;
+      dy = -dy;
+    }
+    else {
+      s = 1;
+    }
+    acc = (dx + dy) >> 1;
+    l = dx;
+    if (!incfirst) {
+      l--;
+      acc -= dy;
+      if (acc < 0) {
+        acc += dx;
+        yy0 += s;
+      }
+    }
+    if (!inclast) {
+      l--;
+    }
+    while (l-- >= 0) {
+      if (xx0 >= 0 && xx0 < w && yy0 >= 0 && yy0 < h)
+        base[ xx0 + yy0 * w ] = vv;
+      xx0++;
+      acc -= dy;
+      if (acc < 0) {
+        acc += dx;
+        yy0 += s;
+      }
+    }
+  }
+  else {
+    /* closer to vertical */
+    if (dy < 0) {
+      SWAP(xx0, xx1);
+      SWAP(yy0, yy1);
+      SWAP(incfirst, inclast);
+      dx = -dx;
+      dy = -dy;
+    }
+    if (dx < 0) {
+      s = -1;
+      dx = -dx;
+    }
+    else {
+      s = 1;
+    }
+    acc = (dx + dy) >> 1;
+    l = dy;
+    if (!incfirst) {
+      l--;
+      acc -= dx;
+      if (acc < 0) {
+        acc += dy;
+        xx0 += s;
+      }
+    }
+    if (!inclast) {
+      l--;
+    }
+    while (l-- >= 0) {
+      if (xx0 >= 0 && xx0 < w && yy0 >= 0 && yy0 < h)
+        base[ xx0 + yy0 * w ] = vv;
+      yy0++;
+      acc -= dx;
+      if (acc < 0) {
+        acc += dy;
+        xx0 += s;
+      }
+    }
+  }
+}
+
+void y4m2_draw_line(y4m2_frame *frame, int x0, int y0, int x1, int y1, int vy, int vu, int vv) {
+  _draw_line(frame, Y4M2_Y_PLANE, x0, y0, x1, y1, vy, 1);
+  _draw_line(frame, Y4M2_Cb_PLANE, x0, y0, x1, y1, vu, 1);
+  _draw_line(frame, Y4M2_Cr_PLANE, x0, y0, x1, y1, vv, 1);
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */

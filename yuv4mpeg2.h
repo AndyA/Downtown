@@ -118,6 +118,11 @@ void y4m2_free_output(y4m2_output *out);
 size_t y4m2_frame_to_float(const y4m2_frame *in, colour_floats *out);
 void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out);
 
+/* Drawing */
+
+void y4m2_draw_point(y4m2_frame *frame, int x, int y, int vy, int vu, int vv);
+void y4m2_draw_line(y4m2_frame *frame, int x0, int y0, int x1, int y1, int vy, int vu, int vv);
+
 #endif
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
