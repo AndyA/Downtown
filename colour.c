@@ -225,5 +225,48 @@ void colour_b_hsv2yuv(const colour_bytes *in, colour_bytes *out) {
 colour_OPS
 #undef X
 
+static void _parse_hex_rgb(colour_bytes *out, const char *hex) {
+  size_t sl = strlen(hex);
+  char cbuf[3], *ep;
+
+  for (unsigned cl = 1; cl <= 2; cl++) {
+    if (sl == 3 * cl) {
+      for (unsigned d = 0; d < 3; d++) {
+        cbuf[0] = hex[d * cl];
+        cbuf[1] = hex[d * cl + cl - 1];
+        cbuf[2] = 0;
+        out->c[d] = (uint8_t) strtoul(cbuf, &ep, 16);
+        if (ep != cbuf + 2) die("Bad RGB hex");
+      }
+      return;
+    }
+  }
+  die("Hex RGB must be 3 or 6 characters long");
+}
+
+/* convenience helper */
+
+void colour_parse_rgb(colour_bytes *out, const char *rgb) {
+
+  if (*rgb == '#') {
+    _parse_hex_rgb(out, rgb + 1);
+  }
+  else {
+    char *ep;
+    int bp = 0;
+
+    for (;;) {
+      if (bp > 3) die("Too many numbers in RGB");
+      long x = strtol(rgb, &ep, 10);
+      if (ep == rgb || (*ep && *ep != ',') || x < 0 || x > 255) die("Bad RGB byte value");
+      out->c[bp++] = (uint8_t) x;
+      if (!*ep) break;
+      rgb = ep + 1;
+    }
+
+    if (bp != 3) die("Too few numbers in RGB");
+  }
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */

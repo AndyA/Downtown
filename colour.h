@@ -49,6 +49,8 @@ void colour_b2f(const colour_bytes *in, colour_floats *out);
 colour_OPS
 #undef X
 
+void colour_parse_rgb(colour_bytes *out, const char *rgb);
+
 #endif
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

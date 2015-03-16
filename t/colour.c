@@ -181,6 +181,22 @@ static void test_bytes_hsv2rgb(void) {
                   colour_b_hsv2rgb, colour_b_rgb2hsv);
 }
 
+static void is_rgb(const char *spec, int r, int g, int b) {
+  colour_bytes rgb;
+  colour_parse_rgb(&rgb, spec);
+  ok(rgb.c[cR] == r && rgb.c[cG] == g && rgb.c[cB] == b, "%s parses as %d, %d, %d", spec, r, g, b);
+}
+
+static void test_parse() {
+  is_rgb("#fff", 255, 255, 255);
+  is_rgb("#ffffff", 255, 255, 255);
+  is_rgb("#f0e1d2", 240, 225, 210);
+  is_rgb("#000", 0, 0, 0);
+  is_rgb("255,255,255", 255, 255, 255);
+  is_rgb("255,255,255", 255, 255, 255);
+  is_rgb("240,225,210", 240, 225, 210);
+  is_rgb("0,0,0", 0, 0, 0);
+}
 
 void test_main(void) {
   test_floats_rgb2yuv();
@@ -192,6 +208,8 @@ void test_main(void) {
   test_bytes_yuv2rgb();
   test_bytes_rgb2hsv();
   test_bytes_hsv2rgb();
+
+  test_parse();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
