@@ -116,7 +116,6 @@ static void free_fft_context(fft_context *c) {
 static void free_context(context *c) {
   if (c->out_buf) y4m2_release_frame(c->out_buf);
   y4m2_free_parms(c->out_parms);
-  y4m2_emit_end(c->next);
   for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
     free_fft_context(&c->fftc[pl]);
   }
