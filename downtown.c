@@ -59,6 +59,7 @@ static int cfg_delta = 0;
 static int cfg_width = OUTWIDTH;
 static int cfg_height = OUTHEIGHT;
 static int cfg_merge = 1;
+static char *cfg_graph = NULL;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -67,10 +68,11 @@ static void usage() {
           "  -c, --centre              Centre frames\n"
           "  -d, --delta               Work on diff between frames\n"
           "  -g, --gain <gain>         Signal gain\n"
+          "  -G, --graph <field>       Graph field\n"
           "  -m, --mono                Only process luma\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
-          "  -S, --sampler <algo>      Select sampler algorithm\n"
           "  -s, --size <w>x<h>        Output size\n"
+          "  -S, --sampler <algo>      Select sampler algorithm\n"
           "\n"
          );
   exit(1);
@@ -314,6 +316,7 @@ static void parse_options(int *argc, char ***argv) {
     {"help", no_argument, NULL, 'h'},
     {"centre", no_argument, NULL, 'c'},
     {"delta", no_argument, NULL, 'd'},
+    {"graph", required_argument, NULL, 'G'},
     {"gain", required_argument, NULL, 'g'},
     {"auto", no_argument, NULL, 'a'},
     {"mono", no_argument, NULL, 'm'},
@@ -323,7 +326,7 @@ static void parse_options(int *argc, char ***argv) {
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:s:S:M:acdmh", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:G:s:S:M:acdmh", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'a':
@@ -336,6 +339,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'd':
       cfg_delta = 1;
+      break;
+
+    case 'G':
+      cfg_graph = optarg;
       break;
 
     case 'g':
@@ -388,6 +395,7 @@ int main(int argc, char *argv[]) {
   memset(&ctx, 0, sizeof(ctx));
 
   ctx.next = y4m2_output_file(stdout);
+  if (cfg_graph) ctx.next = frameinfo_grapher(ctx.next, "frameinfo.Y", cfg_graph);
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
   if (cfg_centre) out = centre_filter(out);
@@ -395,7 +403,7 @@ int main(int argc, char *argv[]) {
   if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
   out = frameinfo_filter(out);
   y4m2_parse(stdin, out);
-  y4m2_free_output(ctx.next);
+  /*  y4m2_free_output(ctx.next);*/
 
   return 0;
 }
