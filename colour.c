@@ -2,8 +2,10 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "colour.h"
+#include "util.h"
 
 #define MIN2(a, b)    ((a) < (b) ? (a) : (b))
 #define MAX2(a, b)    ((a) > (b) ? (a) : (b))
