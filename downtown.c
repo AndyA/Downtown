@@ -277,6 +277,7 @@ static void callback(y4m2_reason reason,
 
   case Y4M2_FRAME:
     process_frame(c, frame);
+    y4m2_copy_notes(c->out_buf, frame);
     y4m2_emit_frame(c->next, c->out_parms, c->out_buf);
     break;
 
