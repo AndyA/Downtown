@@ -4,6 +4,8 @@ outsize="1920x1080"
 
 for src in "$@"; do
 
+  raw1="$src.raw.1.y4m2"
+
   for merge in 100 20 5 1; do
 
     raw="$src.raw.$merge.y4m2"
@@ -53,10 +55,14 @@ for src in "$@"; do
 
                     tmp="$dst.tmp.mov"
 
+                    if [ ! -e "$raw1" ]; then
+                      ffmpeg -nostdin -i "$src" -f yuv4mpegpipe -y "$raw1" || exit
+                    fi
+
                     if [ ! -e "$raw" ]; then
-                      dt_f_config="--merge $merge"
-                      ffmpeg -nostdin -i "$src" -f yuv4mpegpipe - \
-                        | ./downtown_filter $dt_f_config > "$raw" || exit
+                      dt_f_config="--merge $merge" 
+                      echo "downtown_filter $dt_f_config"
+                      ./downtown_filter $dt_f_config < "$raw" > "$raw" || exit
                     fi
 
                     if [ ! -e "$scaled" ]; then
