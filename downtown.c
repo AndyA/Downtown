@@ -103,12 +103,14 @@ static void sl_free(string_list *sl) {
 }
 
 static void free_fft_context(fft_context *c) {
-  fftw_destroy_plan(c->plan);
-  fftw_free(c->ibuf);
-  fftw_free(c->obuf);
-  fftw_free(c->work);
-  free(c->pbuf);
-  sampler_free(c->sampler);
+  if (c) {
+    fftw_destroy_plan(c->plan);
+    fftw_free(c->ibuf);
+    fftw_free(c->obuf);
+    fftw_free(c->work);
+    free(c->pbuf);
+    sampler_free(c->sampler);
+  }
 }
 
 static void free_context(context *c) {
