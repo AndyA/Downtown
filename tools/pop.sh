@@ -58,12 +58,12 @@ for src in "$@"; do
                     if [ ! -e "$raw" ]; then
                       dt_f_config="--merge $merge"
                       ffmpeg -nostdin -i "$src" -t $DURATION -f yuv4mpegpipe - \
-                        | ./downtown_filter $dt_f_config > "$raw"
+                        | ./downtown_filter $dt_f_config > "$raw" || exit
                     fi
 
                     if [ ! -e "$scaled" ]; then
                       ffmpeg -nostdin -f yuv4mpegpipe -i "$raw" \
-                        -pix_fmt yuv444p -s ${size}x${size} -f yuv4mpegpipe -y "$scaled"
+                        -pix_fmt yuv444p -s ${size}x${size} -f yuv4mpegpipe -y "$scaled" || exit
                     fi
 
                     dt_config="--size $outsize --sampler $sampler --gain $gain"
