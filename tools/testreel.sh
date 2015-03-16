@@ -5,16 +5,17 @@ outsize="1920x1080"
 for src in "$@"; do
 
   raw1="$src.raw.1.y4m2"
+  rm -f "$raw1"
 
   for merge in 100 20 5 1; do
 
     raw="$src.raw.$merge.y4m2"
-    rm -rf "$raw"
+    [ "$merge" != "1" ] && rm -f "$raw"
 
     for size in 256; do
 
       scaled="$src.scaled.$size.$merge.y4m2"
-      rm -rf "$scaled"
+      rm -f "$scaled"
 
       for gain in 10; do
         for chans in 'y'; do
@@ -98,14 +99,15 @@ for src in "$@"; do
         done #chans
       done #gain
 
-      rm -rf "$scaled"
+      rm -f "$scaled"
 
     done #size
 
-    rm -rf "$raw"
+    [ "$merge" != "1" ] && rm -f "$raw"
 
   done #merge
 
+  rm -f "$raw1"
 
 done #src
 
