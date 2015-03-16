@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "log.h"
 #include "merge.h"
 #include "util.h"
 #include "yuv4mpeg2.h"
@@ -13,6 +14,7 @@ typedef struct {
   double *buf;
   y4m2_frame *out_frame;
   const y4m2_parameters *last_parms;
+  int warned;
 } context;
 
 static context *ctx_new(y4m2_output *next, int frames) {
@@ -62,6 +64,9 @@ static void callback(y4m2_reason reason,
     break;
 
   case Y4M2_FRAME:
+    if (y4m2_has_notes(frame) && !c->warned++)
+      log_warning("Frame notes will be lost by merge filter");
+
     if (!c->buf) {
       c->buf = alloc(sizeof(double) * frame->i.size);
       c->out_frame = y4m2_like_frame(frame);

@@ -135,6 +135,7 @@ static void callback(y4m2_reason reason,
   case Y4M2_FRAME:
     y4m2_clear_frame(c->frame);
     align_frame(c->frame, frame);
+    y4m2_copy_notes(c->frame, frame);
     y4m2_emit_frame(c->next, c->parms, c->frame);
     break;
 

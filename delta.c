@@ -57,6 +57,7 @@ static void callback(y4m2_reason reason,
       *op++ = MIN(MAX(0, delta), 255);
     }
 
+    y4m2_copy_notes(c->out, frame);
     y4m2_emit_frame(c->next, parms, c->out);
     set_prev(c, frame);
     break;
