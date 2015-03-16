@@ -310,7 +310,6 @@ static void callback(y4m2_reason reason,
     dump_stats(c);
     free_context(c);
     break;
-
   }
 }
 
