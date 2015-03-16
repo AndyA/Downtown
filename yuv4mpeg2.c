@@ -660,10 +660,29 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
   }
 }
 
+static int _clip(int x0, int y0, int x1, int y1, int w, int h) {
+
+  /* corners */
+  if (x0 < 0 && y0 < 0 && (x1 < 0 || y1 < 0)) return 0;
+  if (x0 >= w && y0 < 0 && (x1 >= w || y1 < 0)) return 0;
+  if (x1 < 0 && y0 >= h && (x1 < 0 || y1 >= h)) return 0;
+  if (x1 >= w && y0 >= h && (x1 >= w || y1 >= h)) return 0;
+
+  /* edges */
+  if (x0 < 0 && x1 < 0) return 0;
+  if (y0 < 0 && y1 < 0) return 0;
+  if (x0 >= w && x1 >= w) return 0;
+  if (y0 >= h && y1 >= h) return 0;
+
+  return 1;
+}
+
 void y4m2_draw_line(y4m2_frame *frame, int x0, int y0, int x1, int y1, int vy, int vu, int vv) {
-  _draw_line(frame, Y4M2_Y_PLANE, x0, y0, x1, y1, vy, 1);
-  _draw_line(frame, Y4M2_Cb_PLANE, x0, y0, x1, y1, vu, 1);
-  _draw_line(frame, Y4M2_Cr_PLANE, x0, y0, x1, y1, vv, 1);
+  if (_clip(x0, y0, x1, y1, frame->i.width, frame->i.height)) {
+    _draw_line(frame, Y4M2_Y_PLANE, x0, y0, x1, y1, vy, 1);
+    _draw_line(frame, Y4M2_Cb_PLANE, x0, y0, x1, y1, vu, 1);
+    _draw_line(frame, Y4M2_Cr_PLANE, x0, y0, x1, y1, vv, 1);
+  }
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
