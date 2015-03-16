@@ -195,10 +195,12 @@ sampler_context *sampler_new(const char *spec) {
 }
 
 void sampler_free(sampler_context *ctx) {
-  if (ctx->class->free) ctx->class->free(ctx);
-  sampler_free_params(ctx->params);
-  free(ctx->buf);
-  free(ctx);
+  if (ctx) {
+    if (ctx->class->free) ctx->class->free(ctx);
+    sampler_free_params(ctx->params);
+    free(ctx->buf);
+    free(ctx);
+  }
 }
 
 size_t sampler_init(sampler_context *ctx, unsigned w, unsigned h) {
