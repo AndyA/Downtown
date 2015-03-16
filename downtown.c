@@ -348,6 +348,7 @@ static void parse_options(int *argc, char ***argv) {
   static struct option opts[] = {
     {"help", no_argument, NULL, 'h'},
     {"centre", no_argument, NULL, 'c'},
+    {"center", no_argument, NULL, 'c'},
     {"delta", no_argument, NULL, 'd'},
     {"graph", required_argument, NULL, 'G'},
     {"gain", required_argument, NULL, 'g'},
