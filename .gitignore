@@ -51,6 +51,7 @@
 /tags
 /test.*
 /version.h
+/work/
 Makefile
 Makefile.in
 Session.vim
