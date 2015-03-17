@@ -14,6 +14,7 @@
 #include "downtown.h"
 #include "dumpframe.h"
 #include "frameinfo.h"
+#include "histogram.h"
 #include "log.h"
 #include "merge.h"
 #include "progress.h"
@@ -63,6 +64,7 @@ static const char *plane_name[] = { "Y", "Cb", "Cr" };
 
 static double cfg_gain = 1.0;
 static char *cfg_sampler = "zigzag";
+static int cfg_histogram = 0;
 static int cfg_mono = 0;
 static int cfg_centre = 0;
 static int cfg_auto = 0;
@@ -81,6 +83,7 @@ static void usage() {
           "  -d, --delta               Work on diff between frames\n"
           "  -g, --gain <gain>         Signal gain\n"
           "  -G, --graph <field>       Graph field\n"
+          "  -H, --histogram           Histogram equalisation\n"
           "  -m, --mono                Only process luma\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
           "  -o, --output <file>       FFT output file\n"
@@ -363,6 +366,7 @@ static void parse_options(int *argc, char ***argv) {
     {"graph", required_argument, NULL, 'G'},
     {"gain", required_argument, NULL, 'g'},
     {"auto", no_argument, NULL, 'a'},
+    {"histogram", no_argument, NULL, 'H'},
     {"mono", no_argument, NULL, 'm'},
     {"merge", required_argument, NULL, 'M'},
     {"output", required_argument, NULL, 'o'},
@@ -372,7 +376,7 @@ static void parse_options(int *argc, char ***argv) {
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:G:s:S:M:o:acdmhq", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:G:s:S:M:o:acdmhHq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'a':
@@ -393,6 +397,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'g':
       cfg_gain = parse_double(optarg);
+      break;
+
+    case 'H':
+      cfg_histogram = 1;
       break;
 
     case 'm':
@@ -478,6 +486,7 @@ int main(int argc, char *argv[]) {
 
   if (cfg_centre) out = centre_filter(out);
   if (cfg_delta) out = delta_filter(out);
+  if (cfg_histogram) out = histogram_filter(out);
   if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
 
   out = frameinfo_filter(out);

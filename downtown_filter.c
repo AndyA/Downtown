@@ -20,6 +20,7 @@
 
 static int cfg_centre = 0;
 static int cfg_delta = 0;
+static int cfg_histogram = 0;
 static int cfg_merge = 1;
 
 static void usage() {
@@ -28,6 +29,7 @@ static void usage() {
           "  -h, --help                See this message\n"
           "  -c, --centre              Centre frames\n"
           "  -d, --delta               Work on diff between frames\n"
+          "  -H, --histogram           Histogram equalisation\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
           "  -q, -quiet                No log output\n"
           "\n"
@@ -50,12 +52,13 @@ static void parse_options(int *argc, char ***argv) {
     {"centre", no_argument, NULL, 'c'},
     {"center", no_argument, NULL, 'c'},
     {"delta", no_argument, NULL, 'd'},
+    {"histogram", no_argument, NULL, 'H'},
     {"merge", required_argument, NULL, 'M'},
     {"quiet", no_argument, NULL, 'q'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "M:hcdq", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "M:hHcdq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'c':
@@ -64,6 +67,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'd':
       cfg_delta = 1;
+      break;
+
+    case 'H':
+      cfg_histogram = 1;
       break;
 
     case 'M':
@@ -96,6 +103,7 @@ int main(int argc, char *argv[]) {
 
   if (cfg_centre) out = centre_filter(out);
   if (cfg_delta) out = delta_filter(out);
+  if (cfg_histogram) out = histogram_filter(out);
   if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
 
   out = frameinfo_filter(out);
