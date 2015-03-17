@@ -25,8 +25,8 @@ libdowntown_la_SOURCES = \
 	yuv4mpeg2.h yuv4mpeg2.c \
 	zigzag.h zigzag.c
 
-libsoundchip_la_CPPFLAGS = $(FFTW_CFLAGS)
-libdowntown_la_LDFLAGS = -avoid-version -static $(FFTW_LIBS)
+libsoundchip_la_CPPFLAGS = $(FFTW_CFLAGS) $(PNG_CFLAGS)
+libdowntown_la_LDFLAGS = -avoid-version -static $(FFTW_LIBS) $(PNG_LIBS)
 
 downtown_SOURCES = downtown.c
 downtown_LDADD = libdowntown.la
