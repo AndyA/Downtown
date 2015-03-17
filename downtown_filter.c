@@ -9,8 +9,10 @@
 #include "centre.h"
 #include "delta.h"
 #include "downtown.h"
+#include "frameinfo.h"
 #include "log.h"
 #include "merge.h"
+#include "progress.h"
 #include "util.h"
 #include "yuv4mpeg2.h"
 
@@ -84,9 +86,14 @@ int main(int argc, char *argv[]) {
   if (argc != 0) usage();
 
   y4m2_output *out = y4m2_output_file(stdout);
+
   if (cfg_centre) out = centre_filter(out);
   if (cfg_delta) out = delta_filter(out);
   if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
+
+  out = frameinfo_filter(out);
+  out = progress_filter(out, PROGRESS_RATE);
+
   y4m2_parse(stdin, out);
 
   return 0;

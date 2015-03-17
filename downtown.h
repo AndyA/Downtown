@@ -9,6 +9,8 @@ extern "C" {
 
 #include <stdint.h>
 
+#define PROGRESS_RATE 5
+
 typedef void (*permute_func)(const uint8_t *in, uint8_t *out, int w, int h);
 typedef size_t (*permute_size_func)(int w, int h);
 

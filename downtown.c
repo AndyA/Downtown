@@ -14,6 +14,7 @@
 #include "frameinfo.h"
 #include "log.h"
 #include "merge.h"
+#include "progress.h"
 #include "sampler.h"
 #include "util.h"
 #include "voronoi.h"
@@ -48,7 +49,6 @@ typedef struct {
   y4m2_parameters *out_parms;
   fft_context fftc[Y4M2_N_PLANE];
   range_stats stats[Y4M2_N_PLANE];
-  unsigned minutes;
 } context;
 
 typedef struct string_list {
@@ -281,7 +281,6 @@ static void dump_stats(context *c) {
     log_debug("stats for %s: (min=%.3f, avg=%.3f, max=%.3f)",
               plane_name[pl], st->min, st->total / st->count, st->max);
   }
-  fprintf(stderr, "\n");
 }
 
 static void callback(y4m2_reason reason,
@@ -304,10 +303,6 @@ static void callback(y4m2_reason reason,
     process_frame(c, frame);
     y4m2_copy_notes(c->out_buf, frame);
     y4m2_emit_frame(c->next, c->out_parms, c->out_buf);
-    unsigned new_min = (unsigned)(frame->elapsed / 60);
-    if (c->minutes != new_min)
-      log_debug("processed %f seconds", frame->elapsed);
-    c->minutes = new_min;
     break;
 
   case Y4M2_END:
@@ -450,14 +445,19 @@ int main(int argc, char *argv[]) {
   memset(&ctx, 0, sizeof(ctx));
 
   ctx.next = y4m2_output_file(stdout);
+
   for (string_list *sl = cfg_graph; sl; sl = sl->next)
     ctx.next = add_graph(ctx.next, sl->v);
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
+
   if (cfg_centre) out = centre_filter(out);
   if (cfg_delta) out = delta_filter(out);
   if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
+
   out = frameinfo_filter(out);
+  out = progress_filter(out, PROGRESS_RATE);
+
   y4m2_parse(stdin, out);
   /*  y4m2_free_output(ctx.next);*/
   sl_free(cfg_graph);
