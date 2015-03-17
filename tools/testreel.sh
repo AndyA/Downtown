@@ -63,7 +63,7 @@ for src in "$@"; do
                     if [ ! -e "$raw" ]; then
                       dt_f_config="--merge $merge" 
                       echo "downtown_filter $dt_f_config"
-                      ./downtown_filter $dt_f_config < "$raw" > "$raw" || exit
+                      ./downtown_filter $dt_f_config < "$raw1" > "$raw" || exit
                     fi
 
                     if [ ! -e "$scaled" ]; then
