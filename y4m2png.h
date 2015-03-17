@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#include "yuv4mpeg2.h"
+
   void y4m2_png_write(const y4m2_frame *frame, FILE *out);
   void y4m2_png_write_file(const y4m2_frame *frame, const char *name);
 
