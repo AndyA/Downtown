@@ -103,6 +103,11 @@ const char *sampler_require_text(sampler_params *sp, const char *name) {
   return _require(sp, name)->text;
 }
 
+const char *sampler_optional_text(sampler_params *sp, const char *name) {
+  sampler_params *pp = sampler_find_param(sp, name);
+  return pp ? pp->text : NULL;
+}
+
 sampler_params *sampler_set_param(sampler_params *sp, const char *name, const char *text, double value) {
   if (!sp) {
     sp = sampler_new_params();
