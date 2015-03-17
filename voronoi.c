@@ -35,6 +35,7 @@ static void _setup(sampler_context *ctx) {
   vc->area = alloc(sizeof(double) * vc->n_points);
   ctx->buf = alloc(sizeof(double) * vc->n_points);
 
+  /* build voronoi map */
   for (unsigned y = 0; y < ctx->height; y++) {
     for (unsigned x = 0; x < ctx->width; x++) {
       const quadtree_point *pt = quadtree_nearest(vc->qt, x, y);
@@ -54,8 +55,8 @@ static size_t _spiral_init(sampler_context *ctx) {
   double a = 0;
   double r = 1;
 
-  double a_rate = sampler_require_double(ctx->params, "a_rate");
-  double r_rate = sampler_require_double(ctx->params, "r_rate");
+  double a_rate = sampler_require_double(ctx->params, "a_rate"); /* default 2.0 */
+  double r_rate = sampler_require_double(ctx->params, "r_rate"); /* default 1.0 */
 
   int lx = 0, ly = 0;
   unsigned tag = 0;
