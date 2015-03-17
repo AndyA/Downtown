@@ -76,6 +76,8 @@ typedef struct {
 
 void y4m2__parse_parms(y4m2_parameters *parms, char *buf);
 void y4m2__format_parms(FILE *out, const y4m2_parameters *parms);
+void y4m2__plane_map(const y4m2_frame *in, uint8_t *plane[Y4M2_N_PLANE],
+                     unsigned xs[Y4M2_N_PLANE], unsigned ys[Y4M2_N_PLANE]);
 
 /* Paramter handling */
 

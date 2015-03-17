@@ -490,10 +490,10 @@ static unsigned y4m2__log2(unsigned x) {
   return shift;
 }
 
-static void y4m2__plane_map(const y4m2_frame *in,
-                            uint8_t *plane[Y4M2_N_PLANE],
-                            unsigned xs[Y4M2_N_PLANE],
-                            unsigned ys[Y4M2_N_PLANE]) {
+void y4m2__plane_map(const y4m2_frame *in,
+                     uint8_t *plane[Y4M2_N_PLANE],
+                     unsigned xs[Y4M2_N_PLANE],
+                     unsigned ys[Y4M2_N_PLANE]) {
   uint8_t *bp = in->buf;
 
   for (unsigned p = 0; p < Y4M2_N_PLANE; p++) {
