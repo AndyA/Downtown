@@ -77,6 +77,7 @@ static void usage() {
           "  -G, --graph <field>       Graph field\n"
           "  -m, --mono                Only process luma\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
+          "  -q, -quiet                No log output\n"
           "  -s, --size <w>x<h>        Output size\n"
           "  -S, --sampler <algo>      Select sampler algorithm\n"
           "\n"
@@ -355,12 +356,13 @@ static void parse_options(int *argc, char ***argv) {
     {"auto", no_argument, NULL, 'a'},
     {"mono", no_argument, NULL, 'm'},
     {"merge", required_argument, NULL, 'M'},
+    {"quiet", no_argument, NULL, 'q'},
     {"sampler", required_argument, NULL, 'S'},
     {"size", required_argument, NULL, 's'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:G:s:S:M:acdmh", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:G:s:S:M:acdmhq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'a':
@@ -389,6 +391,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'M':
       cfg_merge = (int) parse_double(optarg);
+      break;
+
+    case 'q':
+      log_level = ERROR;
       break;
 
     case 'S':
@@ -435,12 +441,12 @@ static y4m2_output *add_graph(y4m2_output *out, const char *spec) {
 int main(int argc, char *argv[]) {
   context ctx;
 
-  log_info("Starting " PROG);
-
   register_samplers();
 
   parse_options(&argc, &argv);
   if (argc != 0) usage();
+
+  log_info("Starting " PROG);
 
   memset(&ctx, 0, sizeof(ctx));
 

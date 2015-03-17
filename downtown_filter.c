@@ -29,6 +29,7 @@ static void usage() {
           "  -c, --centre              Centre frames\n"
           "  -d, --delta               Work on diff between frames\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
+          "  -q, -quiet                No log output\n"
           "\n"
          );
   exit(1);
@@ -50,10 +51,11 @@ static void parse_options(int *argc, char ***argv) {
     {"center", no_argument, NULL, 'c'},
     {"delta", no_argument, NULL, 'd'},
     {"merge", required_argument, NULL, 'M'},
+    {"quiet", no_argument, NULL, 'q'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "M:hcd", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "M:hcdq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'c':
@@ -66,6 +68,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'M':
       cfg_merge = (int) parse_double(optarg);
+      break;
+
+    case 'q':
+      log_level = ERROR;
       break;
 
     case 'h':
@@ -81,9 +87,10 @@ static void parse_options(int *argc, char ***argv) {
 }
 
 int main(int argc, char *argv[]) {
-  log_info("Starting " PROG);
   parse_options(&argc, &argv);
   if (argc != 0) usage();
+
+  log_info("Starting " PROG);
 
   y4m2_output *out = y4m2_output_file(stdout);
 
