@@ -184,12 +184,12 @@ sampler_context *sampler_new(const char *spec) {
     ctx->params = sp;
   }
 
-  log_debug("Sampler: %s", spec);
+  log_info("Sampler: %s", spec);
   for (sampler_params *pp = ctx->params; pp; pp = pp->next)
     if (isnan(pp->value))
-      log_debug("  %-15s = '%s'", pp->name, pp->text);
+      log_info("  %-15s = '%s'", pp->name, pp->text);
     else
-      log_debug("  %-15s = %f", pp->name, pp->value);
+      log_info("  %-15s = %f", pp->name, pp->value);
 
   return ctx;
 }
