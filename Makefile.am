@@ -16,6 +16,7 @@ libdowntown_la_SOURCES = \
 	delta.h delta.c \
 	dumpframe.h dumpframe.c \
 	frameinfo.h frameinfo.c \
+	histogram.h histogram.c \
 	log.h log.c \
 	merge.h merge.c \
 	progress.h progress.c \
