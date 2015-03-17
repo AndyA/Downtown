@@ -76,7 +76,7 @@ unsigned log_decode_level(const char *name) {
   jd_throw("Bad log level: %s", name);
 }
 
-static void _log(unsigned level, const char *msg, va_list ap) {
+void log_out(unsigned level, const char *msg, va_list ap) {
   if (level <= log_level) scope {
     if (log_colour == -1)
       log_colour = !!isatty(fileno(stderr));
@@ -120,7 +120,7 @@ static void _log(unsigned level, const char *msg, va_list ap) {
   void name(const char *msg, ...) {  \
     va_list ap;                      \
     va_start(ap, msg);               \
-    _log(level, msg, ap);          \
+    log_out(level, msg, ap);          \
     va_end(ap);                      \
   }
 

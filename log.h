@@ -31,6 +31,8 @@ unsigned log_decode_level(const char *name);
 void log_set_thread(const char *name);
 const char *log_get_thread(void);
 
+void log_out(unsigned level, const char *msg, va_list ap);
+
 void log_debug(const char *msg, ...);
 void log_info(const char *msg, ...);
 void log_warning(const char *msg, ...);
