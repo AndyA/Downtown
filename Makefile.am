@@ -14,6 +14,7 @@ libdowntown_la_SOURCES = \
 	centre.h centre.c \
 	colour.h colour.c \
 	delta.h delta.c \
+	dumpframe.h dumpframe.c \
 	frameinfo.h frameinfo.c \
 	log.h log.c \
 	merge.h merge.c \
@@ -22,6 +23,7 @@ libdowntown_la_SOURCES = \
 	sampler.h sampler.c \
 	util.h util.c \
 	voronoi.h voronoi.c \
+	y4m2png.h y4m2png.c \
 	yuv4mpeg2.h yuv4mpeg2.c \
 	zigzag.h zigzag.c
 
