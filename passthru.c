@@ -12,14 +12,14 @@ typedef struct {
 } context;
 
 static context *ctx_new(y4m2_output *next) {
-  context *ctx = alloc(sizeof(context));
-  ctx->next = next;
-  return ctx;
+  context *c = alloc(sizeof(context));
+  c->next = next;
+  return c;
 }
 
-static void ctx_free(context *ctx) {
-  if (ctx) {
-    free(ctx);
+static void ctx_free(context *c) {
+  if (c) {
+    free(c);
   }
 }
 
