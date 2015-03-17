@@ -75,7 +75,7 @@ y4m2_parameters *y4m2_adjust_parms(const y4m2_parameters *parms, const char *fmt
   char *spec = vssprintf(fmt, ap);
   va_end(ap);
 
-  y4m2_parameters *np = y4m2_clone_parms(parms);
+  y4m2_parameters *np = parms ? y4m2_clone_parms(parms) : y4m2_new_parms();
   y4m2_parameters *delta = y4m2_new_parms();
 
   y4m2__parse_parms(delta, spec);
