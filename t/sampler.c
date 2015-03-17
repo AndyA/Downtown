@@ -103,7 +103,7 @@ static void test_register(void) {
 
   sampler_register(&info);
 
-  sampler_context *ctx = sampler_new("test_sampler:x=99");
+  sampler_context *ctx = sampler_new("test_sampler:x=99", "test");
 
   ok(ctx != NULL, "new");
   ok(0 == strcmp(ctx->class->name, "test_sampler"), "name matchs");

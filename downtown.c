@@ -59,6 +59,8 @@ typedef struct string_list {
   char *v;
 } string_list;
 
+static const char *plane_name[] = { "Y", "Cb", "Cr" };
+
 static double cfg_gain = 1.0;
 static char *cfg_sampler = "zigzag";
 static int cfg_mono = 0;
@@ -261,7 +263,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
     if (!fc->sampler) {
       log_debug("Creating sampler: %s", cfg_sampler);
-      fc->sampler = sampler_new(cfg_sampler);
+      fc->sampler = sampler_new(cfg_sampler, plane_name[pl]);
       log_debug("Init sampler");
       fc->len = sampler_init(fc->sampler, w, h);
       log_debug("Sampler will return %u samples", fc->len);
@@ -283,7 +285,6 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
 
 static void dump_stats(context *c) {
-  static const char *plane_name[] = { "Y", "Cb", "Cr" };
   int max_plane = cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE;
   for (int pl = 0; pl < max_plane; pl++) {
     range_stats *st = &c->stats[pl];

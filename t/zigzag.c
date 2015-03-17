@@ -87,7 +87,7 @@ static void test_grid(int w, int h) {
 
   permute(in, ref, w, h);
 
-  sampler_context *ctx = sampler_new("zigzag");
+  sampler_context *ctx = sampler_new("zigzag", "zigzag");
   size_t size = sampler_init(ctx, w, h);
   double *out = sampler_sample(ctx, in);
 

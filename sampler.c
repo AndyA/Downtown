@@ -157,7 +157,7 @@ static sampler_info_list *find_sampler(const char *name) {
  *   <name>[:<params>]
  *
  */
-sampler_context *sampler_new(const char *spec) {
+sampler_context *sampler_new(const char *spec, const char *name) {
   sampler_info_list *si;
   sampler_params *sp;
   sampler_context *ctx;
@@ -180,6 +180,7 @@ sampler_context *sampler_new(const char *spec) {
 
   ctx = alloc(sizeof(sampler_context));
   ctx->class = &si->i;
+  ctx->name = sstrdup(name);
 
   if (si->i.default_config)  {
     ctx->params = sampler_merge_params(sampler_parse_params(si->i.default_config), sp);
@@ -203,6 +204,7 @@ void sampler_free(sampler_context *ctx) {
   if (ctx) {
     if (ctx->class->free) ctx->class->free(ctx);
     sampler_free_params(ctx->params);
+    free(ctx->name);
     free(ctx->buf);
     free(ctx);
   }
