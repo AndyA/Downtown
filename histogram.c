@@ -7,6 +7,8 @@
 #include "util.h"
 #include "yuv4mpeg2.h"
 
+/*#define DEBUG_HIST*/
+
 typedef struct {
   y4m2_output *next;
 } context;
@@ -53,6 +55,7 @@ static void _remap(uint8_t *buf, size_t size, double *lut) {
   }
 }
 
+#ifdef DEBUG_HIST
 static void _show_hist(y4m2_frame *frame, const double *hist, colour_bytes *col) {
   double max_hist = hist[255];
   int lx, ly;
@@ -66,6 +69,7 @@ static void _show_hist(y4m2_frame *frame, const double *hist, colour_bytes *col)
     ly = y;
   }
 }
+#endif
 
 static void _eq_frame(y4m2_frame *frame) {
   double hist[256];
@@ -75,7 +79,8 @@ static void _eq_frame(y4m2_frame *frame) {
     _scale_hist(hist, 16, 235);
     _remap(frame->plane[pl], frame->i.plane[pl].size, hist);
 
-    if (1) {
+#ifdef DEBUG_HIST
+    {
       colour_bytes before, after, rgb;
       double hist2[256];
 
@@ -90,6 +95,7 @@ static void _eq_frame(y4m2_frame *frame) {
       _show_hist(frame, hist, &before);
       _show_hist(frame, hist2, &after);
     }
+#endif
   }
 }
 
