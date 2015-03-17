@@ -1,6 +1,7 @@
 /* downtown.c */
 
 #include <getopt.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +50,7 @@ typedef struct {
   y4m2_parameters *out_parms;
   fft_context fftc[Y4M2_N_PLANE];
   range_stats stats[Y4M2_N_PLANE];
+  FILE *fo;
 } context;
 
 typedef struct string_list {
@@ -66,6 +68,7 @@ static int cfg_width = OUTWIDTH;
 static int cfg_height = OUTHEIGHT;
 static int cfg_merge = 1;
 static string_list *cfg_graph = NULL;
+static char *cfg_output = NULL;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -77,6 +80,7 @@ static void usage() {
           "  -G, --graph <field>       Graph field\n"
           "  -m, --mono                Only process luma\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
+          "  -o, --output <file>       FFT output file\n"
           "  -q, -quiet                No log output\n"
           "  -s, --size <w>x<h>        Output size\n"
           "  -S, --sampler <algo>      Select sampler algorithm\n"
@@ -267,6 +271,9 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
     memcpy(fc->ibuf, sam, fc->len);
     fftw_execute(fc->plan);
+
+
+
     fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240, &c->stats[pl]);
   }
 
@@ -356,13 +363,14 @@ static void parse_options(int *argc, char ***argv) {
     {"auto", no_argument, NULL, 'a'},
     {"mono", no_argument, NULL, 'm'},
     {"merge", required_argument, NULL, 'M'},
+    {"output", required_argument, NULL, 'o'},
     {"quiet", no_argument, NULL, 'q'},
     {"sampler", required_argument, NULL, 'S'},
     {"size", required_argument, NULL, 's'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "g:G:s:S:M:acdmhq", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "g:G:s:S:M:o:acdmhq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'a':
@@ -391,6 +399,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'M':
       cfg_merge = (int) parse_double(optarg);
+      break;
+
+    case 'o':
+      cfg_output = optarg;
       break;
 
     case 'q':
@@ -450,6 +462,11 @@ int main(int argc, char *argv[]) {
 
   memset(&ctx, 0, sizeof(ctx));
 
+  if (cfg_output) {
+    ctx.fo = fopen(cfg_output, "w");
+    if (!ctx.fo) die("Can't write %s: %s", cfg_output, strerror(errno));
+  }
+
   ctx.next = y4m2_output_file(stdout);
 
   for (string_list *sl = cfg_graph; sl; sl = sl->next)
@@ -467,6 +484,7 @@ int main(int argc, char *argv[]) {
   y4m2_parse(stdin, out);
   /*  y4m2_free_output(ctx.next);*/
   sl_free(cfg_graph);
+  if (ctx.fo) fclose(ctx.fo);
 
   return 0;
 }
