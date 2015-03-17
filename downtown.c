@@ -278,8 +278,6 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     memcpy(fc->ibuf, sam, fc->len);
     fftw_execute(fc->plan);
 
-
-
     fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240, &c->stats[pl]);
   }
 
