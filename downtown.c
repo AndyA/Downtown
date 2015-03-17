@@ -12,6 +12,7 @@
 #include "centre.h"
 #include "delta.h"
 #include "downtown.h"
+#include "dumpframe.h"
 #include "frameinfo.h"
 #include "log.h"
 #include "merge.h"
@@ -480,6 +481,7 @@ int main(int argc, char *argv[]) {
 
   out = frameinfo_filter(out);
   out = progress_filter(out, PROGRESS_RATE);
+  /*  out = dumpframe_filter(out, "dump/fr%08d.png", 25);*/
 
   y4m2_parse(stdin, out);
   /*  y4m2_free_output(ctx.next);*/
