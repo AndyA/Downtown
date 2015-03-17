@@ -82,6 +82,7 @@ y4m2_parameters *y4m2_adjust_parms(const y4m2_parameters *parms, const char *fmt
 
   y4m2_merge_parms(np, delta);
   y4m2_free_parms(delta);
+  free(spec);
 
   return np;
 }
