@@ -17,6 +17,7 @@ libdowntown_la_SOURCES = \
 	frameinfo.h frameinfo.c \
 	log.h log.c \
 	merge.h merge.c \
+	progress.h progress.c \
 	quadtree.h quadtree.c \
 	sampler.h sampler.c \
 	util.h util.c \
