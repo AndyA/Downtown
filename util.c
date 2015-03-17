@@ -5,15 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log.h"
 #include "util.h"
 
 void die(const char *msg, ...) {
   va_list ap;
 
   va_start(ap, msg);
-  fprintf(stderr, "Fatal: ");
-  vfprintf(stderr, msg, ap);
-  fprintf(stderr, "\n");
+  log_out(FATAL, msg, ap);
   va_end(ap);
   exit(1);
 }
