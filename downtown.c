@@ -279,8 +279,8 @@ static void dump_stats(context *c) {
   int max_plane = cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE;
   for (int pl = 0; pl < max_plane; pl++) {
     range_stats *st = &c->stats[pl];
-    log_debug("stats for %s: (min=%.3f, avg=%.3f, max=%.3f)",
-              plane_name[pl], st->min, st->total / st->count, st->max);
+    log_info("stats for %s: (min=%.3f, avg=%.3f, max=%.3f)",
+             plane_name[pl], st->min, st->total / st->count, st->max);
   }
 }
 
