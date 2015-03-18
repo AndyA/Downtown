@@ -1,0 +1,28 @@
+{
+   "author" : "Andy Armstrong <andy@hexten.net>",
+   "bin" : {},
+   "bugs" : {
+      "url" : "https://github.com/AndyA/Downtown/issues"
+   },
+   "contributors" : [],
+   "dependencies" : {
+      "canvas" : "1.2.1",
+      "chai" : "2.1.2"
+   },
+   "description" : "Programmatic Movie Maker",
+   "devDependencies" : {},
+   "keywords" : [
+      "video",
+      "canvas"
+   ],
+   "license" : "MIT",
+   "main" : "lib/MovieMaker.js",
+   "name" : "MovieMaker",
+   "private" : true,
+   "repository" : {
+      "type" : "git",
+      "url" : "https://github.com/AndyA/Downtown"
+   },
+   "scripts" : {},
+   "version" : "0.0.1"
+}
