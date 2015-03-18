@@ -25,8 +25,8 @@ module.exports = (function() {
 
   ClipBase.prototype.bindProperty = function(name, prop) {
     if (prop instanceof DynamicPropertyBase) {
-      this.bindProperty(name, function(framenum, portion) {
-        return prop.evaluate(framenum, portion);
+      this.bindProperty(name, function(framenum, portion, obj) {
+        return prop.evaluate(framenum, portion, obj);
       });
       return;
     }
@@ -38,7 +38,7 @@ module.exports = (function() {
           if (this._prop_cache.hasOwnProperty(name)) return this._prop_cache[name];
           var framenum = this._current_frame;
           var nframes = this.getFrames(); // cache?
-          return this._prop_cache[name] = prop(framenum, framenum / nframes);
+          return this._prop_cache[name] = prop(framenum, framenum / nframes, this);
         }
       });
     } else {
