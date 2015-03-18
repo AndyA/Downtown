@@ -230,21 +230,22 @@ module.exports = (function() {
     }
   }
 
-  exports.MovieMaker = function(filename, width, height, clip) {
-    this.filename = filename;
-    this.width = width;
-    this.height = height;
-    this.clip = clip;
+  exports.MovieStream = function(out, width, height, clip) {
+    this.init(out, width, height, clip);
   }
 
-  exports.MovieMaker.prototype = {
+  exports.MovieStream.prototype = {
+    init: function(out, width, height, clip) {
+      this.out = out;
+      this.width = width;
+      this.height = height;
+      this.clip = clip;
+    },
     render: function() {
 
       var framenum = 0;
       var frames = this.clip.getFrames();
       var self = this;
-
-      var out = fs.createWriteStream(this.filename);
 
       function drawFrame() {
         var canvas = new Canvas(self.width, self.height);
@@ -256,7 +257,7 @@ module.exports = (function() {
         var stream = canvas.createJPEGStream();
 
         stream.on('data', function(chunk) {
-          out.write(chunk);
+          self.out.write(chunk);
         });
 
         stream.on('end', function() {
@@ -267,6 +268,13 @@ module.exports = (function() {
       drawFrame();
     }
   }
+
+  exports.MovieMaker = function(filename, width, height, clip) {
+    var out = fs.createWriteStream(filename);
+    this.init(out, width, height, clip);
+  }
+
+  exports.MovieMaker.prototype = new exports.MovieStream(null, 0, 0, null);
 
   return exports
 })();
