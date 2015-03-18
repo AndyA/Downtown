@@ -6,11 +6,13 @@
    },
    "contributors" : [],
    "dependencies" : {
-      "canvas" : "1.2.1",
-      "chai" : "2.1.2"
+      "canvas" : "^1.2.1"
    },
    "description" : "Programmatic Movie Maker",
-   "devDependencies" : {},
+   "devDependencies" : {
+      "chai" : "^2.1.2",
+      "chai-subset" : "^0.3.0"
+   },
    "keywords" : [
       "video",
       "canvas"
