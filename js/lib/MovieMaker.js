@@ -6,6 +6,17 @@ module.exports = (function() {
 
   function DynamicPropertyBase() {}
 
+  exports.RampProperty = function(min, max) {
+    this.min = min
+    this.max = max
+  }
+
+  exports.RampProperty.prototype = new DynamicPropertyBase();
+
+  exports.RampProperty.evaluate = function(framenum, portion) {
+    return (max - min) * portion + min;
+  }
+
   function ClipBase() {}
 
   ClipBase.prototype.clearPropertyCache = function() {
