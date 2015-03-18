@@ -2,7 +2,9 @@ var expect = require("chai").expect;
 var MM = require("../lib/MovieMaker.js");
 
 describe("MovieMaker", function() {
+
   describe("ClipBase", function() {
+
     it("should handle bound properties", function() {
 
       var calls_x = 0;
@@ -81,5 +83,64 @@ describe("MovieMaker", function() {
       }
 
     });
+
+    it("should throw an exception for circular references", function() {
+
+      var stuff = [];
+
+      function render(canvas, ctx, framenum) {
+        stuff.push(this.eric);
+      }
+
+      var c = new MM.Clip(render, 100);
+
+      c.bindProperty('eric', function(framenum, portion, clip) {
+        return clip.ernie + 1;
+      });
+
+      c.bindProperty('ernie', function(framenum, portion, clip) {
+        return clip.eric + 1;
+      });
+
+      expect(function() {
+        c.makeFrame(null, null, 0)
+      }).to.Throw(MM.CircularReferenceError);
+
+    });
+
+    it("should be OK to have a long chain of references", function() {
+
+      var stuff = [];
+
+      function render(canvas, ctx, framenum) {
+        stuff.push(this.prop9)
+      }
+
+      var c = new MM.Clip(render, 100);
+      var calls_to = {};
+
+      c.bindProperty('prop0', function(framenum, portion, clip) {
+        calls_to['prop0']++;
+        return framenum * 2;
+      });
+
+      function bindChain(prop) {
+        var last_prop = "prop" + (prop - 1);
+        var this_prop = "prop" + prop;
+
+        c.bindProperty(this_prop, function(framenum, portion, clip) {
+          calls_to[this_prop]++;
+          return clip[last_prop] + 5;
+        });
+      }
+
+      for (var prop = 1; prop < 10; prop++) bindChain(prop);
+
+      c.makeFrame(null, null, 1);
+
+      expect(stuff).to.deep.equal([47]);
+    });
+
   });
+
 });
