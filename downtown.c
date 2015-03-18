@@ -296,7 +296,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
   y4m2_frame *ofr = c->out_buf;
 
   for (pl = 0; pl < Y4M2_N_PLANE; pl++) {
-    if (c->frame_count & (frame->i.plane[pl].xs - 1)) continue;
+    if (c->frame_count & (ofr->i.plane[pl].xs - 1)) continue;
     int ow = ofr->i.width / ofr->i.plane[pl].xs;
     int oh = ofr->i.height / ofr->i.plane[pl].ys;
     scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
