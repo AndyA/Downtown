@@ -33,9 +33,13 @@ typedef struct {
   uint8_t *pbuf;
   sampler_context *sampler;
   double *ibuf, *obuf;
-  double *work;
   size_t len;
-  int osize;
+
+  double *raw_sig;;
+  int rs_size;
+  double *display_sig;
+  int ds_size;
+
   int vscale;
   int voffset;
 } fft_context;
@@ -119,7 +123,8 @@ static void free_fft_context(fft_context *c) {
     fftw_destroy_plan(c->plan);
     fftw_free(c->ibuf);
     fftw_free(c->obuf);
-    fftw_free(c->work);
+    fftw_free(c->raw_sig);
+    fftw_free(c->display_sig);
     free(c->pbuf);
     sampler_free(c->sampler);
   }
@@ -133,28 +138,39 @@ static void free_context(context *c) {
   }
 }
 
-static double *scale_fft(fft_context *c) {
-  int size = (c->len + 1) / 2;
-  int osize = (size + c->vscale - 1) / c->vscale;
+static void process_fft(fft_context *c) {
+  int size = (c->len + 1) / 2 - 1;
 
-  if (!c->work) {
-    c->osize = osize;
-    c->work = fftw_malloc(sizeof(double) * osize);
+  if (!c->raw_sig) {
+    c->rs_size = size;
+    c->raw_sig = fftw_malloc(sizeof(double) * c->rs_size);
   }
-  double *out = c->work;
 
-  for (int i = 1; i < size; i += c->vscale) {
+  double *out = c->raw_sig;
+  for (int i = 1; i <= size; i++) {
+    double sr = c->obuf[i];
+    double si = c->obuf[c->len - i];
+    *out++ = sqrt(sr * sr + si * si);
+  }
+}
+
+static void scale_fft(fft_context *c) {
+  int size = (c->len + 1) / 2 - 1;
+
+  if (!c->display_sig) {
+    c->ds_size = (size + c->vscale - 1) / c->vscale;
+    c->display_sig = fftw_malloc(sizeof(double) * c->ds_size);
+  }
+
+  double *out = c->display_sig;
+  for (int i = 0; i < c->rs_size; i++) {
     double sum = 0;
-    for (int j = 0; j < c->vscale && i + j < size; j++) {
-      double sr = c->obuf[i + j];
-      double si = c->obuf[c->len - i - j];
-      sum += sqrt(sr * sr + si * si);
-    }
+    for (int j = 0; j < c->vscale && i + j < c->rs_size; j++)
+      sum += c->raw_sig[i + j];
     *out++ = sum / c->vscale;
   }
-
-  return c->work;
 }
+
 
 static void min_max(const double *d, size_t len, double *pmin, double *pmax, double *pavg) {
   double min, max, total = 0;
@@ -189,9 +205,12 @@ static void put_stats(range_stats *st, double min, double max, double avg) {
 static void fft2b(uint8_t *out, int step, fft_context *c, int omin, int omax, range_stats *st) {
   double min, max, avg;
 
-  double *sb = scale_fft(c);
+  process_fft(c);
+  scale_fft(c);
 
-  min_max(sb, c->osize, &min, &max, &avg);
+  double *sb = c->display_sig;
+
+  min_max(sb, c->ds_size, &min, &max, &avg);
   put_stats(st, min, max, avg);
 
   if (!cfg_auto) {
@@ -199,7 +218,7 @@ static void fft2b(uint8_t *out, int step, fft_context *c, int omin, int omax, ra
     max = 500;
   }
 
-  for (int i = 0; i < c->osize; i++) {
+  for (int i = 0; i < c->ds_size; i++) {
     double dv = cfg_gain * (sb[i] - min) / (max - min);
     int iv = dv * (omax - omin) + omin;
     *out = MIN(MAX(omin, iv), omax);
