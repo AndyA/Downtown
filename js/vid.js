@@ -1,4 +1,4 @@
-var MM = require(__dirname + '/lib/MovieMaker');
+var MM = require('../lib/MovieMaker.js');
 
 function drawSpiral(ctx, limit, r, a, r_rate, a_rate) {
   ctx.beginPath();
@@ -60,8 +60,17 @@ function mediumText(ctx) {
   ctx.font = "36px sans-serif";
 }
 
-var title = new MM.TitleClip("JavaScript Video Generator", 200, 0.5, 0.5);
-var credit = new MM.TitleClip("Andy Armstong, andy@hexten.net", 300, 0.8, 0.9, mediumText);
+function makeWibbler(origin, freq, amp) {
+  return function(framenum, portion) {
+    return origin + Math.sin(framenum * freq) * amp;
+  }
+}
+
+var title = new MM.TitleClip("Javascript Video Generator", 200, 0.5, 0.5);
+var credit = new MM.OverlayClip(
+new MM.TitleClip("Code: https://github.com/AndyA/Downtown/tree/master/js", 300, makeWibbler(0.5, 0.05, 0.05), 0.3, mediumText), //
+new MM.TitleClip("Andy Armstong, andy@hexten.net", 300, 0.5, 0.8, mediumText) //
+);
 
 var spiral_clip = new MM.Clip(spiral, spiral_limit);
 var spinner_clip = new MM.Clip(spinner, 200);
