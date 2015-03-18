@@ -18,6 +18,7 @@
 #include "log.h"
 #include "merge.h"
 #include "progress.h"
+#include "resample.h"
 #include "sampler.h"
 #include "util.h"
 #include "voronoi.h"
@@ -27,21 +28,23 @@
 #define PROG      "downtown"
 #define OUTWIDTH  1920
 #define OUTHEIGHT 1080
+#define MARGIN    32
+#define GUTTER    16
 
 typedef struct {
   fftw_plan plan;
-  uint8_t *pbuf;
   sampler_context *sampler;
   double *ibuf, *obuf;
   size_t len;
 
   double *raw_sig;;
   int rs_size;
-  double *display_sig;
-  int ds_size;
 
-  int vscale;
-  int voffset;
+  double *display_sig;
+  int vpos;
+  int vsize;
+  colour_bytes col;
+
 } fft_context;
 
 typedef struct {
@@ -54,7 +57,7 @@ typedef struct {
   y4m2_output *next;
   y4m2_frame *out_buf;
   y4m2_parameters *out_parms;
-  fft_context fftc[Y4M2_N_PLANE];
+  fft_context plane_info[Y4M2_N_PLANE];
   range_stats stats[Y4M2_N_PLANE];
   FILE *fo;
 } context;
@@ -67,7 +70,7 @@ typedef struct string_list {
 static const char *plane_name[] = { "Y", "Cb", "Cr" };
 
 static double cfg_gain = 1.0;
-static char *cfg_sampler = "zigzag";
+static char *cfg_sampler = "spiral";
 static int cfg_histogram = 0;
 static int cfg_mono = 0;
 static int cfg_centre = 0;
@@ -78,6 +81,8 @@ static int cfg_height = OUTHEIGHT;
 static int cfg_merge = 1;
 static string_list *cfg_graph = NULL;
 static char *cfg_output = NULL;
+
+#define MAX_PLANE (cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE)
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -125,16 +130,16 @@ static void free_fft_context(fft_context *c) {
     fftw_free(c->obuf);
     fftw_free(c->raw_sig);
     fftw_free(c->display_sig);
-    free(c->pbuf);
     sampler_free(c->sampler);
   }
 }
 
 static void free_context(context *c) {
+  if (c->fo) fclose(c->fo);
   if (c->out_buf) y4m2_release_frame(c->out_buf);
   y4m2_free_parms(c->out_parms);
   for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
-    free_fft_context(&c->fftc[pl]);
+    free_fft_context(&c->plane_info[pl]);
   }
 }
 
@@ -153,24 +158,6 @@ static void process_fft(fft_context *c) {
     *out++ = sqrt(sr * sr + si * si);
   }
 }
-
-static void scale_fft(fft_context *c) {
-  int size = (c->len + 1) / 2 - 1;
-
-  if (!c->display_sig) {
-    c->ds_size = (size + c->vscale - 1) / c->vscale;
-    c->display_sig = fftw_malloc(sizeof(double) * c->ds_size);
-  }
-
-  double *out = c->display_sig;
-  for (int i = 0; i < c->rs_size; i++) {
-    double sum = 0;
-    for (int j = 0; j < c->vscale && i + j < c->rs_size; j++)
-      sum += c->raw_sig[i + j];
-    *out++ = sum / c->vscale;
-  }
-}
-
 
 static void min_max(const double *d, size_t len, double *pmin, double *pmax, double *pavg) {
   double min, max, total = 0;
@@ -202,30 +189,6 @@ static void put_stats(range_stats *st, double min, double max, double avg) {
   }
 }
 
-static void fft2b(uint8_t *out, int step, fft_context *c, int omin, int omax, range_stats *st) {
-  double min, max, avg;
-
-  process_fft(c);
-  scale_fft(c);
-
-  double *sb = c->display_sig;
-
-  min_max(sb, c->ds_size, &min, &max, &avg);
-  put_stats(st, min, max, avg);
-
-  if (!cfg_auto) {
-    min = 0;
-    max = 500;
-  }
-
-  for (int i = 0; i < c->ds_size; i++) {
-    double dv = cfg_gain * (sb[i] - min) / (max - min);
-    int iv = dv * (omax - omin) + omin;
-    *out = MIN(MAX(omin, iv), omax);
-    out += step;
-  }
-}
-
 static void scroll_left(uint8_t *buf, int w, int h, uint8_t fill) {
   for (int y = 0; y < h; y++) {
     memmove(buf + y * w, buf + y * w + 1, w - 1);
@@ -233,22 +196,52 @@ static void scroll_left(uint8_t *buf, int w, int h, uint8_t fill) {
   }
 }
 
-static void init_fft_context(fft_context *c, int stripe) {
+static void layout_display(context *c, const y4m2_frame *frame) {
+  double avail = frame->i.height - MARGIN * 2 - GUTTER * MAX_PLANE - 1;
+  double lanes = 0;
+  unsigned pl;
+
+
+  static const char *lane_colour[] = { "#fff", "#99f", "#f99" };
+
+  for (pl = 0; pl < Y4M2_N_PLANE; pl++) {
+    colour_bytes rgb;
+    colour_parse_rgb(&rgb, lane_colour[pl]);
+    colour_b_rgb2yuv(&rgb, &c->plane_info[pl].col);
+  }
+
+  for (pl = 0; pl < MAX_PLANE; pl++)
+    lanes += 1.0 / (double)(frame->i.plane[pl].xs * frame->i.plane[pl].ys);
+
+  double lane_width = avail / lanes;
+  double ypos = MARGIN;
+
+  for (pl = 0; pl < MAX_PLANE; pl++) {
+    fft_context *fc = &c->plane_info[pl];
+    fc->vpos = (int)(ypos + 0.5);
+    double vsize = lane_width / (frame->i.plane[pl].xs * frame->i.plane[pl].ys);
+    fc->vsize = (int) vsize;
+    log_debug("lane for %s is at %d, height %d", plane_name[pl], fc->vpos, fc->vsize);
+    ypos += GUTTER + vsize;
+  }
+}
+
+static void create_sampler(fft_context *fc, const char *spec, const char *name, int w, int h) {
+  fc->sampler = sampler_new(spec, name);
+  fc->len = sampler_init(fc->sampler, w, h);
+  log_debug("Sampler for %s will return %u samples", name, fc->len);
+}
+
+static void init_fft_context(fft_context *c) {
+
   c->ibuf = fftw_malloc(sizeof(double) * c->len);
   if (!c->ibuf) goto oom;
+
   c->obuf = fftw_malloc(sizeof(double) * c->len);
   if (!c->obuf) goto oom;
+
   c->plan = fftw_plan_r2r_1d(c->len, c->ibuf, c->obuf, FFTW_R2HC, 0);
   if (!c->plan) die("Can't create FFTW_R2HC plan");
-
-  int olen = c->len / 2;
-  c->vscale = 1;
-  while (olen / c->vscale > stripe)
-    c->vscale *= 2;
-
-  c->voffset = (stripe - olen / c->vscale) / 2;
-
-  log_debug("init_fft_context: len=%lu, vscale=%d, voffset=%d", (unsigned long) c->len, c->vscale, c->voffset);
 
   return;
 
@@ -256,15 +249,51 @@ oom:
   die("Out of memory");
 }
 
+static void write_log(context *c, FILE *fl, const y4m2_frame *frame) {
+  fprintf(fl, "{\"frame\":%llu,\"planes\":[", (unsigned long long) frame->sequence);
+  for (unsigned pl = 0; pl < MAX_PLANE; pl++) {
+    fft_context *fc = &c->plane_info[pl];
+    fprintf(fl, "%s[", pl ? ", " : "");
+    for (unsigned i = 0; i < (unsigned) fc->rs_size; i++)
+      fprintf(fl, "%s%g", i ? ", " : "", fc->raw_sig[i]);
+    fprintf(fl, "]");
+  }
+  fprintf(fl, "]}\n");
+}
+
+static void plot_frame_sig(fft_context *c, y4m2_frame *frame, range_stats *st) {
+  double min, max, avg;
+
+  double *sb = c->display_sig;
+
+  min_max(sb, c->vsize, &min, &max, &avg);
+  put_stats(st, min, max, avg);
+
+  if (!cfg_auto) {
+    min = 0;
+    max = 500;
+  }
+
+  int omin = 16;
+  int omax = 240;
+
+  for (int i = 0; i < c->vsize; i++) {
+    double dv = cfg_gain * (sb[i] - min) / (max - min);
+    int iv = dv * (omax - omin) + omin;
+    y4m2_draw_point(frame, frame->i.width - 1, frame->i.height - 1 - c->vpos - i,
+                    MIN(MAX(omin, iv), omax), c->col.c[cCb], c->col.c[cCr]);
+  }
+}
+
 static void process_frame(context *c, const y4m2_frame *frame) {
   int pl;
 
   if (!c->out_buf) {
     c->out_buf = y4m2_new_frame(c->out_parms);
+    layout_display(c, c->out_buf);
   }
 
   y4m2_frame *ofr = c->out_buf;
-  int max_plane = cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE;
 
   for (pl = 0; pl < Y4M2_N_PLANE; pl++) {
     if (c->frame_count & (frame->i.plane[pl].xs - 1)) continue;
@@ -273,40 +302,37 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     scroll_left(ofr->plane[pl], ow, oh, ofr->i.plane[pl].fill);
   }
 
-  for (pl = 0; pl < max_plane; pl++) {
+  for (pl = 0; pl < MAX_PLANE; pl++) {
     if (c->frame_count & (frame->i.plane[pl].xs - 1)) continue;
-    fft_context *fc = &c->fftc[pl];
+    fft_context *fc = &c->plane_info[pl];
 
     int w = frame->i.width / frame->i.plane[pl].xs;
     int h = frame->i.height / frame->i.plane[pl].ys;
 
-    int ow = ofr->i.width / ofr->i.plane[pl].xs;
-    int oh = ofr->i.height / ofr->i.plane[pl].ys;
+    if (!fc->sampler) create_sampler(fc, cfg_sampler, plane_name[pl], w, h);
 
-    if (!fc->sampler) {
-      log_debug("Creating sampler: %s", cfg_sampler);
-      fc->sampler = sampler_new(cfg_sampler, plane_name[pl]);
-      log_debug("Init sampler");
-      fc->len = sampler_init(fc->sampler, w, h);
-      log_debug("Sampler will return %u samples", fc->len);
-    }
     double *sam = sampler_sample(fc->sampler, frame->plane[pl]);
 
-    if (!fc->plan) init_fft_context(fc,  oh);
+    if (!fc->plan) init_fft_context(fc);
 
     memcpy(fc->ibuf, sam, fc->len);
     fftw_execute(fc->plan);
+    process_fft(fc);
 
-    fft2b(ofr->plane[pl] + (oh - 1 - fc->voffset) * ow + ow - 1, -ow, fc, 16, 240, &c->stats[pl]);
+    if (!fc->display_sig) fc->display_sig = fftw_malloc(sizeof(double) * fc->vsize);
+    resample_double(fc->display_sig, fc->vsize, fc->raw_sig, fc->rs_size);
+
+    plot_frame_sig(fc, ofr, &c->stats[pl]);
   }
+
+  if (c->fo) write_log(c, c->fo, frame);
 
   c->frame_count++;
 }
 
 
 static void dump_stats(context *c) {
-  int max_plane = cfg_mono ? Y4M2_Y_PLANE + 1 : Y4M2_N_PLANE;
-  for (int pl = 0; pl < max_plane; pl++) {
+  for (int pl = 0; pl < MAX_PLANE; pl++) {
     range_stats *st = &c->stats[pl];
     log_info("stats for %s: (min=%.3f, avg=%.3f, max=%.3f)",
              plane_name[pl], st->min, st->total / st->count, st->max);
@@ -513,7 +539,6 @@ int main(int argc, char *argv[]) {
   y4m2_parse(stdin, out);
   /*  y4m2_free_output(ctx.next);*/
   sl_free(cfg_graph);
-  if (ctx.fo) fclose(ctx.fo);
 
   return 0;
 }
