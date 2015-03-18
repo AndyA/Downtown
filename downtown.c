@@ -96,7 +96,7 @@ static void usage() {
           "  -m, --mono                Only process luma\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
           "  -o, --output <file>       FFT output file\n"
-          "  -q, -quiet                No log output\n"
+          "  -q, --quiet               No log output\n"
           "  -s, --size <w>x<h>        Output size\n"
           "  -S, --sampler <algo>      Select sampler algorithm\n"
           "\n"

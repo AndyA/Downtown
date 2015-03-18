@@ -32,7 +32,7 @@ static void usage() {
           "  -d, --delta               Work on diff between frames\n"
           "  -H, --histogram           Histogram equalisation\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
-          "  -q, -quiet                No log output\n"
+          "  -q, --quiet               No log output\n"
           "\n"
          );
   exit(1);
