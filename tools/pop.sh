@@ -17,7 +17,7 @@ for src in "$@"; do
       rm -rf "$scaled"
 
       for gain in 10 20 50; do
-        for chans in 'y'; do
+        for chans in 'yuv'; do
           for sampler in 'spiral'; do
             for delta in 'n'; do
               for centre in 'n'; do
@@ -34,6 +34,7 @@ for src in "$@"; do
 
 
                   dst="$src.$tag.mov"
+                  dat="$src.$tag.dat"
 
                   if [ "$graph" = "n" ]; then
                     # Rescue output from previous version
@@ -63,7 +64,7 @@ for src in "$@"; do
 
                     if [ ! -e "$scaled" ]; then
                       ffmpeg -nostdin -f yuv4mpegpipe -i "$raw" \
-                        -pix_fmt yuv444p -s ${size}x${size} -f yuv4mpegpipe -y "$scaled" || exit
+                        -pix_fmt yuv420p -s ${size}x${size} -f yuv4mpegpipe -y "$scaled" || exit
                     fi
 
                     dt_config="--size $outsize --sampler $sampler --gain $gain"
@@ -80,7 +81,7 @@ for src in "$@"; do
                     ffmpeg \
                       -nostdin \
                       -f yuv4mpegpipe \
-                      -i <( cat "$scaled" | ./downtown $dt_config ) \
+                      -i <( cat "$scaled" | ./downtown --output "$dat" $dt_config ) \
                       -i "$raw" \
                       -filter_complex '[0:v][1:v]overlay=x=30:y=40[out]' -map '[out]' \
                       -aspect 16:9 -c:v libx264 -b:v 8000k -y "$tmp" && mv "$tmp" "$dst" || exit
