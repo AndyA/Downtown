@@ -350,7 +350,7 @@ static void callback(y4m2_reason reason,
 
   case Y4M2_START:
     ar = aspect_ratio(cfg_width, cfg_height);
-    c->out_parms = y4m2_adjust_parms(parms, "W%d H%d A%s", cfg_width, cfg_height, ar);
+    c->out_parms = y4m2_adjust_parms(parms, "W%d H%d A%s C444", cfg_width, cfg_height, ar);
     free(ar);
     y4m2_emit_start(c->next, c->out_parms);
     break;
