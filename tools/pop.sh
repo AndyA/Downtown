@@ -16,12 +16,12 @@ for src in "$@"; do
       scaled="$src.scaled.$size.$merge.y4m2"
       rm -rf "$scaled"
 
-      for gain in 10; do
+      for gain in 10 20 50; do
         for chans in 'y'; do
           for sampler in 'spiral'; do
             for delta in 'n'; do
               for centre in 'n'; do
-                for graph in 'y' 'n'; do
+                for graph in 'n'; do
 
                   tag="chans=${chans}"
                   tag="${tag}.graph=${graph}"
