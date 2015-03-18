@@ -10,6 +10,7 @@
 #include "delta.h"
 #include "downtown.h"
 #include "frameinfo.h"
+#include "histogram.h"
 #include "log.h"
 #include "merge.h"
 #include "progress.h"
