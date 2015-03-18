@@ -47,6 +47,7 @@
 /libtool
 /ltmain.sh
 /missing
+/node_modules/
 /stamp-h*
 /tags
 /test.*
