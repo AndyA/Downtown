@@ -16,8 +16,8 @@ for src in "$@"; do
       scaled="$src.scaled.$size.$merge.y4m2"
       rm -rf "$scaled"
 
-      for gain in 10 20 50; do
-        for chans in 'yuv'; do
+      for gain in 50; do
+        for chans in 'y'; do
           for sampler in 'spiral'; do
             for delta in 'n'; do
               for centre in 'n'; do
@@ -84,7 +84,7 @@ for src in "$@"; do
                       -i <( cat "$scaled" | ./downtown --output "$dat" $dt_config ) \
                       -i "$raw" \
                       -filter_complex '[0:v][1:v]overlay=x=30:y=40[out]' -map '[out]' \
-                      -aspect 16:9 -c:v libx264 -b:v 8000k -y "$tmp" && mv "$tmp" "$dst" || exit
+                      -pix_fmt yuv420p -aspect 16:9 -c:v libx264 -b:v 8000k -y "$tmp" && mv "$tmp" "$dst" || exit
 
                   fi
 
