@@ -1,40 +1,173 @@
 var Canvas = require('canvas');
 var fs = require('fs');
 
-function makeMovie(name, width, height, renderFrame) {
-
-  var canvas = new Canvas(width, height);
-  var ctx = canvas.getContext('2d');
-  var out = fs.createWriteStream(name);
-
-  function drawFrame(framenum) {
-    console.log("Rendering frame " + framenum);
-    ctx.clearRect(0, 0, width, height);
-    ctx.save();
-    var more = renderFrame(canvas, ctx, framenum);
-    ctx.restore();
-
-    var stream = canvas.createJPEGStream();
-
-    stream.on('data', function(chunk) {
-      out.write(chunk);
-    });
-
-    stream.on('end', function() {
-      if (more) drawFrame(framenum + 1);
-    });
-  }
-
-  drawFrame(0);
+function Clip(render, frames) {
+  this.render = render;
+  this.frames = frames;
 }
 
-function makeSequencer(scenes) {
-  var scene = 0;
-  var scene_frame = 0;
-  return function(canvas, ctx, framenum) {
-    var more = scenes[scene](canvas, ctx, scene_frame++);
-    if (!more) scene++;
-    return scene < scenes.length;
+Clip.prototype = {
+  getFrames: function() {
+    return this.frames;
+  }
+}
+
+function ReverseClip(clip) {
+  this.clip = clip;
+  this.frames = clip.getFrames();
+}
+
+ReverseClip.prototype = {
+  render: function(canvas, ctx, framenum) {
+    this.clip.render(canvas, ctx, this.frames - 1 - framenum);
+  },
+
+  getFrames: function() {
+    return this.frames;
+  }
+}
+
+function SequenceClip() {
+  this.clips = [];
+  for (var i = 0; i < arguments.length; i++) {
+    this.clips.push(arguments[i]);
+  }
+}
+
+SequenceClip.prototype = {
+  append: function() {
+    for (var i = 0; i < arguments.length; i++) {
+      this.clips.push(arguments[i]);
+    }
+  },
+
+  render: function(canvas, ctx, framenum) {
+    var clips = this.clips;
+    for (var i = 0; i < clips.length; i++) {
+      var clip_frames = clips[i].getFrames();
+      if (framenum < clip_frames) {
+        clips[i].render(canvas, ctx, framenum);
+        return;
+      }
+      framenum -= clip_frames;
+    }
+  },
+
+  getFrames: function() {
+    var frames = 0;
+    var clips = this.clips;
+    for (var i = 0; i < clips.length; i++) {
+      frames += clips[i].getFrames();
+
+    }
+    return frames;
+  }
+}
+
+function OverlayClip() {
+  this.clips = [];
+  for (var i = 0; i < arguments.length; i++) {
+    this.clips.push(arguments[i]);
+  }
+}
+
+OverlayClip.prototype = {
+
+  render: function(canvas, ctx, framenum) {
+    var clips = this.clips;
+    for (var i = 0; i < clips.length; i++) {
+      ctx.save();
+      clips[i].render(canvas, ctx, framenum);
+      ctx.restore();
+    }
+  },
+
+  getFrames: function() {
+    var frames = null;
+    var clips = this.clips;
+
+    for (var i = 0; i < clips.length; i++) {
+      var clip_frames = clips[i].getFrames();
+      if (clip_frames !== null && (frames === null || clip_frames < frames)) {
+        frames = clip_frames;
+      }
+
+    }
+    return frames;
+  }
+}
+
+function EditClip(clip, in_frame, frames) {
+  var clip_frames = clip.getFrames();
+  if (in_frame >= clip_frames) in_frame = clip_frames;
+  if (in_frame + frames > clip_frames) frames = clip_frames - in_frame;
+
+  this.clip = clip;
+  this.in_frame = in_frame;
+  this.frames = frames;
+}
+
+EditClip.prototype = {
+
+  render: function(canvas, ctx, framenum) {
+    this.clip.render(canvas, ctx, framenum + this.in_frame);
+  },
+
+  getFrames: function() {
+    return this.frames;
+  }
+}
+
+function TimecodeClip() {}
+
+TimecodeClip.prototype = {
+  render: function(canvas, ctx, framenum) {
+    ctx.font = "18px monospace";
+    ctx.fillStyle = 'green';
+    ctx.fillText(framenum, 100, 100);
+    //    ctx.fillRect(framenum, 0, 10, canvas.height);
+  },
+
+  getFrames: function() {
+    return null; // unlimited
+  }
+}
+
+function MovieMaker(filename, width, height, clip) {
+  this.filename = filename;
+  this.width = width;
+  this.height = height;
+  this.clip = clip;
+}
+
+MovieMaker.prototype = {
+  render: function() {
+
+    var framenum = 0;
+    var frames = this.clip.getFrames();
+    var self = this;
+
+    var out = fs.createWriteStream(this.filename);
+
+    function drawFrame() {
+      var canvas = new Canvas(self.width, self.height);
+      var ctx = canvas.getContext('2d');
+      console.log("Rendering frame " + framenum);
+      ctx.save();
+      self.clip.render(canvas, ctx, framenum);
+      ctx.restore();
+      var stream = canvas.createJPEGStream();
+
+      stream.on('data', function(chunk) {
+        out.write(chunk);
+      });
+
+      stream.on('end', function() {
+        if (++framenum < frames) drawFrame();
+      });
+    }
+
+    drawFrame();
   }
 }
 
@@ -69,15 +202,20 @@ function spiral(canvas, ctx, framenum) {
   var shift = 0;
 
   for (var i = 0; i < phase.length; i++) {
-    console.log("phase " + i + ", shift " + shift);
+    //    console.log("phase " + i + ", shift " + shift);
     ctx.strokeStyle = phase[i];
     drawSpiral(ctx, framenum + shift, 5, shift, 20, 3);
     shift += Math.PI * 2 / phase.length;
   }
 
   ctx.restore();
-
-  return framenum < 200;
 }
 
-makeMovie(__dirname + '/../state.mjpeg', 1920, 1080, spiral);
+var clip = new Clip(spiral, 100);
+var movie = new SequenceClip(clip, new ReverseClip(clip));
+
+movie = new OverlayClip(movie, new TimecodeClip());
+
+var mm = new MovieMaker(__dirname + '/../state.mjpeg', 1920, 1080, movie);
+
+mm.render();
