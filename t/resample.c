@@ -37,7 +37,7 @@ static void fmt_double(char *buf, size_t bsz, const double *a, size_t len) {
       strcpy(bp ,  ", ");
       bp += strlen(bp);
     }
-    size_t nl = snprintf(bp, bl - bp, "%.3f", a[i]);
+    size_t nl = snprintf(bp, bl - bp, "%.3g", a[i]);
     if ((int) nl >= bl - bp) break;
     bp += strlen(bp);
   }
@@ -58,6 +58,10 @@ static void is_resample(const double *in, size_t isize, const double *want, size
     diag_double("want", want, wsize);
     diag_double("out", out, wsize);
   }
+}
+static void is_roundtrip(const double *in, size_t isize, const double *want, size_t wsize) {
+  is_resample(in, isize, want, wsize);
+  is_resample(want, wsize, in, isize);
 }
 
 static void test_resample(void) {
@@ -83,6 +87,15 @@ static void test_resample(void) {
     const double in[] = { 1.0, 2.0, 3.0, 4.0 };
     const double want[] = { 1.5, 3.5 };
     is_resample(in, countof(in), want, countof(want));
+  }
+
+  {
+    const double in[] = { 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0 };
+    const double want[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                            10.0, 10.0, 10.0, 0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                          };
+    is_roundtrip(in, countof(in), want, countof(want));
   }
 
 }
