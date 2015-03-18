@@ -3,6 +3,22 @@ var MM = require("../lib/MovieMaker.js");
 
 describe("MovieMaker", function() {
 
+  describe("DynamicPropertyBase", function() {
+
+    it("should handle evaluate", function() {
+
+      var ramp = new MM.RampProperty(100, 200);
+
+      expect(ramp).to.respondTo('evaluate');
+
+      expect(ramp.evaluate(0, 0)).to.equal(100);
+      expect(ramp.evaluate(50, 0.5)).to.equal(150);
+      expect(ramp.evaluate(100, 1)).to.equal(200);
+
+    });
+
+  });
+
   describe("ClipBase", function() {
 
     it("should handle bound properties", function() {
@@ -108,7 +124,7 @@ describe("MovieMaker", function() {
 
     });
 
-    it("should be OK to have a long chain of references", function() {
+    it("should handle a long chain of references", function() {
 
       var stuff = [];
 
@@ -139,6 +155,65 @@ describe("MovieMaker", function() {
       c.makeFrame(null, null, 1);
 
       expect(stuff).to.deep.equal([47]);
+    });
+
+    it("should allow multiple parameters to be bound", function() {
+
+      var stuff = [];
+      function render(canvas, ctx, framenum) {
+        stuff.push({
+          x: this.x,
+          y: this.y,
+          phase: this.phase,
+          mix: this.mix,
+          angle: this.angle
+        });
+      }
+
+      var frames = 256;
+
+      var c = new MM.Clip(render, frames);
+
+      var defaults = {
+        x: 0.5,
+        y: 0.5,
+        phase: 1,
+        mix: new MM.RampProperty(100, 200),
+        angle: function(framenum, portion, clip) {
+          return 1 - clip.phase;
+        }
+      };
+
+      var params = {
+        x: 1,
+        y: function(framenum, portion, clip) {
+          return portion
+        },
+        mix: 10,
+        phase: new MM.RampProperty(1, 0)
+      }
+
+      c.bindParameters(params, defaults);
+
+      function predict(framenum) {
+        return {
+          x: 1,
+          y: framenum / frames,
+          phase: 1 - framenum / frames,
+          mix: 10,
+          angle: framenum / frames
+        };
+      }
+
+      var want = [];
+
+      for (var i = 0; i < 5; i++) {
+        c.makeFrame(null, null, i);
+        want.push(predict(i));
+      }
+
+      expect(stuff).to.deep.equal(want);
+
     });
 
   });
