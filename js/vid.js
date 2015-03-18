@@ -133,11 +133,105 @@ TimecodeClip.prototype = {
   }
 }
 
+function TitleClip(text, frames, x, y, setStyle) {
+  this.text = text;
+  this.frames = frames;
+  this.x = x || 0.5;
+  this.y = y || 0.5;
+
+  this.setStyle = setStyle;
+}
+
+TitleClip.prototype = {
+  render: function(canvas, ctx, framenum) {
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = "80px sans-serif";
+    ctx.fillStyle = 'white';
+    if (this.setStyle) this.setStyle(ctx);
+    var metrics = ctx.measureText(this.text);
+    var height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+    var dw = canvas.width - metrics.width;
+    var dh = canvas.height - height;
+
+    ctx.fillText(this.text, dw * this.x - metrics.actualBoundingBoxLeft, dh * this.y - metrics.actualBoundingBoxDescent);
+  },
+
+  getFrames: function() {
+    return this.frames;
+  }
+}
+
+function DisolveClip(clip_a, clip_b, frames, easing) {
+  this.clip_a = clip_a;
+  this.clip_b = clip_b;
+  this.frames = frames;
+  this.easing = easing ||
+  function(x) {
+    return x
+  }
+
+  this.frames_a = clip_a.getFrames();
+  this.frames_b = clip_b.getFrames();
+  if (this.frames > this.frames_a) this.frames = this.frames_a;
+  if (this.frames > this.frames_b) this.frames = this.frames_b;
+}
+
+DisolveClip.prototype = {
+  render: function(canvas, ctx, framenum) {
+    var start = this.frames_a - this.frames;
+    if (framenum < start) {
+      this.clip_a.render(canvas, ctx, framenum);
+    } else if (framenum < this.frames_a) {
+      var mix = this.easing((framenum - start) / this.frames);
+
+      ctx.save();
+
+      // Draw clip_a
+      var alpha = ctx.globalAlpha;
+
+      ctx.globalAlpha = alpha * (1 - mix);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      this.clip_a.render(canvas, ctx, framenum);
+
+      ctx.restore();
+
+      // Overlay clip_b
+      ctx.globalAlpha = alpha * mix;
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      this.clip_b.render(canvas, ctx, framenum - start);
+
+    } else {
+      this.clip_b.render(canvas, ctx, framenum - start);
+    }
+
+  },
+
+  getFrames: function() {
+    return this.frames_a - this.frames + this.frames_b;
+  }
+}
+
 function MovieMaker(filename, width, height, clip) {
   this.filename = filename;
   this.width = width;
   this.height = height;
   this.clip = clip;
+}
+
+function BlankClip(frames) {
+  this.frames = frames;
+}
+
+BlankClip.prototype = {
+  render: function(canvas, ctx, framenum) {},
+
+  getFrames: function() {
+    return this.frames;
+  }
 }
 
 MovieMaker.prototype = {
@@ -190,7 +284,7 @@ function drawSpiral(ctx, limit, r, a, r_rate, a_rate) {
   ctx.stroke();
 }
 
-function spiral(canvas, ctx, framenum) {
+function drawSpirals(canvas, ctx, limit, shift) {
   ctx.save();
   // ctx.scale() seems to cause drawing to stop
   ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -199,23 +293,51 @@ function spiral(canvas, ctx, framenum) {
   ctx.lineJoin = 'round';
 
   var phase = ['rgb(180, 0, 0)', 'rgb(0, 180, 0)', 'rgb(80, 80, 200)'];
-  var shift = 0;
 
   for (var i = 0; i < phase.length; i++) {
     //    console.log("phase " + i + ", shift " + shift);
     ctx.strokeStyle = phase[i];
-    drawSpiral(ctx, framenum + shift, 5, shift, 20, 3);
+    drawSpiral(ctx, limit + shift, 5, shift, 20, 3);
     shift += Math.PI * 2 / phase.length;
   }
 
   ctx.restore();
 }
 
-var clip = new Clip(spiral, 100);
-var movie = new SequenceClip(clip, new ReverseClip(clip));
+var spiral_limit = 100;
 
-movie = new OverlayClip(movie, new TimecodeClip());
+function spiral(canvas, ctx, framenum) {
+  drawSpirals(canvas, ctx, framenum, 0);
+}
 
+function spinner(canvas, ctx, framenum) {
+  var angle = (framenum * framenum) / 100;
+  drawSpirals(canvas, ctx, spiral_limit, angle);
+}
+
+function fadeInOut(clip, in_frames, out_frames, in_pad, out_pad) {
+  var in_blank = new BlankClip(in_frames + in_pad);
+  var out_blank = new BlankClip(out_frames + out_pad);
+  //  return new DisolveClip(in_blank, new DisolveClip(clip, out_blank, out_frames), in_frames);
+  return new DisolveClip(new DisolveClip(in_blank, clip, in_frames), out_blank, out_frames);
+}
+
+function mediumText(ctx) {
+  ctx.font = "36px sans-serif";
+}
+
+var title = new TitleClip("JavaScript Video Generator", 200, 0.5, 0.5);
+var credit = new TitleClip("Andy Armstong, andy@hexten.net", 300, 0.8, 0.9, mediumText);
+
+var spiral_clip = new Clip(spiral, spiral_limit);
+var spinner_clip = new Clip(spinner, 200);
+
+var wibble = new SequenceClip(spiral_clip, spinner_clip, new ReverseClip(spiral_clip));
+
+var movie = new SequenceClip(fadeInOut(title, 50, 50, 25, 25), wibble, fadeInOut(credit, 50, 100, 25, 25));
+
+//console.log(JSON.stringify(movie));
+//movie = new OverlayClip(movie, new TimecodeClip());
 var mm = new MovieMaker(__dirname + '/../state.mjpeg', 1920, 1080, movie);
 
 mm.render();
