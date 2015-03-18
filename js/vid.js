@@ -1,3 +1,5 @@
+"use strict";
+
 var MM = require('../lib/MovieMaker.js');
 
 function drawSpiral(ctx, limit, r, a, r_rate, a_rate) {
