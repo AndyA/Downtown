@@ -29,7 +29,7 @@ movie.append(animateClip("scale_y", {
 }));
 
 movie.append(animateClip("rotate", {
-  scale_y: new MM.RampProperty(0, 2 * Math.PI)
+  rotate: new MM.RampProperty(0, 2 * Math.PI)
 }));
 
 new MM.MovieMaker(__dirname + '/../transform.mjpeg', 1920, 1080, movie).render();
