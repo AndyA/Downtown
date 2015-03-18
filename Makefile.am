@@ -21,6 +21,7 @@ libdowntown_la_SOURCES = \
 	merge.h merge.c \
 	progress.h progress.c \
 	quadtree.h quadtree.c \
+	resample.h resample.c \
 	sampler.h sampler.c \
 	util.h util.c \
 	voronoi.h voronoi.c \

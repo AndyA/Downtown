@@ -1,4 +1,4 @@
-TESTBIN = basic yuv4mpeg2 colour zigzag sampler quadtree util
+TESTBIN = basic colour quadtree resample sampler util yuv4mpeg2 zigzag
 
 TESTPERL =
 
