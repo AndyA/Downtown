@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <png.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "colour.h"
 #include "util.h"
