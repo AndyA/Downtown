@@ -24,20 +24,22 @@ describe("CircleProperty", function() {
       portion: 0
     });
     try {
-      expect(cp.x).to.be.closeTo(0, 0.000001)
-      expect(cp.y).to.be.closeTo(1, 0.000001)
+      expect(cp.evaluateInContext('x', cp.x)).to.be.closeTo(0, 0.000001)
+      expect(cp.evaluateInContext('y', cp.y)).to.be.closeTo(1, 0.000001)
     } finally {
-      cp.popContext();
+      var ctx = cp.popContext();
+      console.log(JSON.stringify(ctx, null, 2));
     }
 
     cp.pushContext({
       portion: 0.25
     });
     try {
-      expect(cp.x).to.be.closeTo(1, 0.000001)
-      expect(cp.y).to.be.closeTo(0, 0.000001)
+      expect(cp.evaluateInContext('x', cp.x)).to.be.closeTo(1, 0.000001)
+      expect(cp.evaluateInContext('y', cp.y)).to.be.closeTo(0, 0.000001)
     } finally {
-      cp.popContext();
+      var ctx = cp.popContext();
+      console.log(JSON.stringify(ctx, null, 2));
     }
   });
 
