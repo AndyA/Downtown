@@ -8,10 +8,14 @@ var expect = chai.expect;
 var MM = require("../lib/MovieMaker.js");
 
 describe("CircleProperty", function() {
+  var cp = new MM.CircleProperty()
+
+  it("should be an instance of DynamicPropertyBase", function() {
+    expect(cp).to.be.instanceOf(MM.DynamicPropertyBase);
+  })
 
   it("should have default values", function() {
 
-    var cp = new MM.CircleProperty()
     expect(cp).to.have.property('frequency', 1)
     expect(cp).to.have.property('amplitute', 1)
 
@@ -19,16 +23,15 @@ describe("CircleProperty", function() {
 
   it("should have computed values", function() {
 
-    var cp = new MM.CircleProperty()
     cp.pushContext({
       portion: 0
     });
     try {
       expect(cp.evaluateInContext('x', cp.x)).to.be.closeTo(0, 0.000001)
       expect(cp.evaluateInContext('y', cp.y)).to.be.closeTo(1, 0.000001)
+      expect(cp.evaluateInContext('_', cp)).to.be.closeTo(0, 0.000001)
     } finally {
-      var ctx = cp.popContext();
-      console.log(JSON.stringify(ctx, null, 2));
+      cp.popContext();
     }
 
     cp.pushContext({
@@ -37,9 +40,9 @@ describe("CircleProperty", function() {
     try {
       expect(cp.evaluateInContext('x', cp.x)).to.be.closeTo(1, 0.000001)
       expect(cp.evaluateInContext('y', cp.y)).to.be.closeTo(0, 0.000001)
+      expect(cp.evaluateInContext('_', cp)).to.be.closeTo(1, 0.000001)
     } finally {
-      var ctx = cp.popContext();
-      console.log(JSON.stringify(ctx, null, 2));
+      cp.popContext();
     }
   });
 
