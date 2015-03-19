@@ -27,9 +27,8 @@ describe("CircleProperty", function() {
       portion: 0
     });
     try {
-      expect(cp.evaluateInContext('x', cp.x)).to.be.closeTo(0, 0.000001)
-      expect(cp.evaluateInContext('y', cp.y)).to.be.closeTo(1, 0.000001)
-      expect(cp.evaluateInContext('_', cp)).to.be.closeTo(0, 0.000001)
+      expect(cp.x).to.be.closeTo(0, 0.000001)
+      expect(cp.y).to.be.closeTo(1, 0.000001)
     } finally {
       cp.popContext();
     }
@@ -38,9 +37,8 @@ describe("CircleProperty", function() {
       portion: 0.25
     });
     try {
-      expect(cp.evaluateInContext('x', cp.x)).to.be.closeTo(1, 0.000001)
-      expect(cp.evaluateInContext('y', cp.y)).to.be.closeTo(0, 0.000001)
-      expect(cp.evaluateInContext('_', cp)).to.be.closeTo(1, 0.000001)
+      expect(cp.x).to.be.closeTo(1, 0.000001)
+      expect(cp.y).to.be.closeTo(0, 0.000001)
     } finally {
       cp.popContext();
     }
