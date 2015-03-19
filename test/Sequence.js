@@ -9,21 +9,29 @@ var MM = require("../lib/MovieMaker.js");
 
 describe("SequenceClip", function() {
 
-  var doNothingMixin = {
+  var getTagMixin = {
     render: function(canvas, ctx, framenum) {},
     getFrames: function() {
       return null
+    },
+    getTag: function() {
+      return this.tag
     }
   }
 
   var TestClip = MM.util.defineClass(function(tag) {
     this.tag = tag
   },
-  new MM.ClipBase(), doNothingMixin, {
+  new MM.ClipBase(), getTagMixin, {
     getTag: function() {
       return this.tag
     }
   });
+
+  var TestClipPair = MM.util.defineClass(function(clip1, clip2) {
+    this.tag = clip1.getTag() + ' and ' + clip2.getTag()
+  },
+  new MM.ClipBase(), getTagMixin);
 
   function sequenceTags(seq) {
     var clips = seq.getClips();
@@ -54,6 +62,18 @@ describe("SequenceClip", function() {
       expect(tags).to.deep.equal(["clip 1", "clip 2", "clip 3", "clip 4", "clip 5", "clip 6"]);
     });
 
+  });
+
+  describe("getClips", function() {
+    var seq = new MM.SequenceClip([new TestClip("clip 1")], [new TestClip("clip 2"), new TestClip("clip 3")]);
+    it("should return the right number of clips", function() {
+      expect(seq.getClips()).to.have.property('length', 3);
+    });
+    it("shouldn't modify the internal array", function() {
+      var clip1 = seq.getClips();
+      while (clip1.length) clip1.shift();
+      expect(seq.getClips()).to.have.property('length', 3);
+    });
   });
 
   describe("append", function() {
@@ -123,6 +143,16 @@ describe("SequenceClip", function() {
   });
 
   describe("reduce", function() {
+
+    var seq = new MM.SequenceClip(new TestClip("clip 1"), new TestClip("clip 2"), new TestClip("clip 3"));
+    seq.append(new TestClip("clip 4"), new TestClip("clip 5"), new TestClip("clip 6"));
+
+    it("should merge all clips", function() {
+      var nclip = seq.reduce(function(clip1, clip2) {
+        return new TestClipPair(clip1, clip2);
+      });
+      expect(nclip.getTag()).to.equal("clip 1 and clip 2 and clip 3 and clip 4 and clip 5 and clip 6");
+    });
 
   });
 
