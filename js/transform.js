@@ -3,7 +3,7 @@
 var MM = require('../lib/MovieMaker.js');
 
 function animateClip(name, params) {
-  var target = new MM.TitleClip(name, 100, 0.5, 0.5);
+  var target = new MM.TitleClip(name, 200, 0.5, 0.5);
   return new MM.TransformClip(target, params);
 }
 
