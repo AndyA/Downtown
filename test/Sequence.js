@@ -10,7 +10,7 @@ var MM = require("../lib/MovieMaker.js");
 describe("SequenceClip", function() {
 
   var getTagMixin = {
-    render: function(canvas, ctx, framenum) {},
+    render: function(ctx, framenum) {},
     getFrames: function() {
       return null
     },

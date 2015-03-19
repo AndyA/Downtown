@@ -32,7 +32,7 @@ describe("ClipBase", function() {
     var calls_render = 0;
     var stuff_seen;
 
-    function render(canvas, ctx, framenum) {
+    function render(ctx, framenum) {
       calls_render++;
       stuff_seen = [];
 
@@ -79,7 +79,7 @@ describe("ClipBase", function() {
       [110, 110, 110, 110, 110],
       [112, 112, 112, 112, 112, 112]];
 
-    c.makeFrame(null, null, 0);
+    c.makeFrame(null, 0);
 
     expect(calls_render).to.equal(1);
     expect(calls_x).to.equal(0);
@@ -87,7 +87,7 @@ describe("ClipBase", function() {
     expect(stuff_seen).to.deep.equal(expect_seen[0]);
 
     for (var fn = 1; fn < 4; fn++) {
-      c.makeFrame(null, null, fn);
+      c.makeFrame(null, fn);
       expect(calls_render).to.equal(fn + 1);
       expect(calls_x).to.equal(fn);
       expect(calls_y).to.equal(0);
@@ -95,7 +95,7 @@ describe("ClipBase", function() {
     }
 
     for (fn = 4; fn < 7; fn++) {
-      c.makeFrame(null, null, fn);
+      c.makeFrame(null, fn);
       expect(calls_render).to.equal(fn + 1);
       expect(calls_x).to.equal(fn);
       expect(calls_y).to.equal(fn - 3);
@@ -108,7 +108,7 @@ describe("ClipBase", function() {
 
     var stuff = [];
 
-    function render(canvas, ctx, framenum) {
+    function render(ctx, framenum) {
       stuff.push(this.eric);
     }
 
@@ -123,7 +123,7 @@ describe("ClipBase", function() {
     });
 
     expect(function() {
-      c.makeFrame(null, null, 0)
+      c.makeFrame(null, 0)
     }).to.Throw(MM.CircularReferenceError);
 
   });
@@ -132,7 +132,7 @@ describe("ClipBase", function() {
 
     var stuff = [];
 
-    function render(canvas, ctx, framenum) {
+    function render(ctx, framenum) {
       stuff.push(this.prop9)
     }
 
@@ -156,7 +156,7 @@ describe("ClipBase", function() {
 
     for (var prop = 1; prop < 10; prop++) bindChain(prop);
 
-    c.makeFrame(null, null, 1);
+    c.makeFrame(null, 1);
 
     expect(stuff).to.deep.equal([47]);
   });
@@ -164,7 +164,7 @@ describe("ClipBase", function() {
   it("should allow multiple parameters to be bound", function() {
 
     var stuff = [];
-    function render(canvas, ctx, framenum) {
+    function render(ctx, framenum) {
       stuff.push({
         x: this.x,
         y: this.y,
@@ -212,7 +212,7 @@ describe("ClipBase", function() {
     var want = [];
 
     for (var i = 0; i < 5; i++) {
-      c.makeFrame(null, null, i);
+      c.makeFrame(null, i);
       want.push(predict(i));
     }
 
@@ -221,7 +221,7 @@ describe("ClipBase", function() {
   });
 
   it("shouldn't mind if params is null", function() {
-    function render(canvas, ctx, framenum) {}
+    function render(ctx, framenum) {}
     var c = new MM.Clip(render, 100);
     c.bindParameters(null, {});
   });

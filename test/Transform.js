@@ -16,14 +16,14 @@ describe("TransformClip", function() {
     var ctx = canvas.getContext('2d');
 
     var ctx_trans = null;
-    function render(canvas, ctx, framenum) {
+    function render(ctx, framenum) {
       ctx_trans = ctx.currentTransform;
     }
     var clip = new MM.Clip(render, 100);
 
     var transform = new MM.TransformClip(clip);
 
-    transform.makeFrame(canvas, ctx, 0);
+    transform.makeFrame(ctx, 0);
 
     // Would be nice to think of something to assert
   });
