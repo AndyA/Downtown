@@ -5,6 +5,7 @@
 *.exe
 *.la
 *.lo
+*.mjpeg
 *.o
 *.obj
 *.so
