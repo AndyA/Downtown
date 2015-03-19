@@ -32,7 +32,6 @@ var MM = require("../lib/MovieMaker.js");
         var clip = new klass();
         expect(clip).to.respondTo('render').and.respondTo('getFrames');
       });
-
     });
 
   }
