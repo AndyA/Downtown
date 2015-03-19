@@ -63,8 +63,8 @@ function mediumText(ctx) {
 }
 
 function makeWibbler(origin, freq, amp) {
-  return function(framenum, portion) {
-    return origin + Math.sin(framenum * freq) * amp;
+  return function(ctx) {
+    return origin + Math.sin(ctx.framenum * freq) * amp;
   }
 }
 

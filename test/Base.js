@@ -15,9 +15,9 @@ describe("DynamicPropertyBase", function() {
 
     expect(ramp).to.respondTo('evaluate');
 
-    expect(ramp.evaluate(0, 0)).to.equal(100);
-    expect(ramp.evaluate(50, 0.5)).to.equal(150);
-    expect(ramp.evaluate(100, 1)).to.equal(200);
+    expect(ramp.evaluate({framenum:0, portion:0})).to.equal(100);
+    expect(ramp.evaluate({framenum:50,portion: 0.5})).to.equal(150);
+    expect(ramp.evaluate({framenum:100, portion:1})).to.equal(200);
 
   });
 
@@ -58,14 +58,14 @@ describe("ClipBase", function() {
     var c = new MM.Clip(render, 100);
 
     // Abuse Clip: bind our own properties
-    c.bindProperty('x', function(framenum, portion, clip) {
+    c.bindProperty('x', function(ctx) {
       calls_x++;
-      return framenum * 2;
+      return ctx.framenum * 2;
     });
 
-    c.bindProperty('y', function(framenum, portion, clip) {
+    c.bindProperty('y', function(ctx) {
       calls_y++;
-      return clip.x + clip.z
+      return ctx.clip.x + ctx.clip.z
     });
 
     c.bindProperty('z', 100);
@@ -114,12 +114,12 @@ describe("ClipBase", function() {
 
     var c = new MM.Clip(render, 100);
 
-    c.bindProperty('eric', function(framenum, portion, clip) {
-      return clip.ernie + 1;
+    c.bindProperty('eric', function(ctx) {
+      return ctx.clip.ernie + 1;
     });
 
-    c.bindProperty('ernie', function(framenum, portion, clip) {
-      return clip.eric + 1;
+    c.bindProperty('ernie', function(ctx) {
+      return ctx.clip.eric + 1;
     });
 
     expect(function() {
@@ -139,18 +139,18 @@ describe("ClipBase", function() {
     var c = new MM.Clip(render, 100);
     var calls_to = {};
 
-    c.bindProperty('prop0', function(framenum, portion, clip) {
+    c.bindProperty('prop0', function(ctx) {
       calls_to['prop0']++;
-      return framenum * 2;
+      return ctx.framenum * 2;
     });
 
     function bindChain(prop) {
       var last_prop = "prop" + (prop - 1);
       var this_prop = "prop" + prop;
 
-      c.bindProperty(this_prop, function(framenum, portion, clip) {
+      c.bindProperty(this_prop, function(ctx) {
         calls_to[this_prop]++;
-        return clip[last_prop] + 5;
+        return ctx.clip[last_prop] + 5;
       });
     }
 
@@ -183,15 +183,15 @@ describe("ClipBase", function() {
       y: 0.5,
       phase: 1,
       mix: new MM.RampProperty(100, 200),
-      angle: function(framenum, portion, clip) {
-        return 1 - clip.phase;
+      angle: function(ctx) {
+        return 1 - ctx.clip.phase;
       }
     };
 
     var params = {
       x: 1,
-      y: function(framenum, portion, clip) {
-        return portion
+      y: function(ctx) {
+        return ctx.portion
       },
       mix: 10,
       phase: new MM.RampProperty(1, 0)
