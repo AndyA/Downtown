@@ -8,25 +8,25 @@ var HEIGHT = 1080;
 var RADIUS = Math.min(WIDTH, HEIGHT)
 
 var wibbler = new MM.CircleProperty({
-  frequency: 7,
-  amplitute: RADIUS / 10
+  frequency: 13,
+  amplitute: 0.1
 });
 
 var circle = new MM.CircleProperty({
+  frequency: 2,
   amplitute: function() {
-    return RADIUS / 4 + wibbler.x
+    return 0.25 + wibbler.x
   },
   offset_x: 0.5,
   offset_y: 0.5
 });
 
-var title = new MM.TitleClip("Circle", 500, 0.5, 0.5);
+var title = new MM.TextClip(500, {
+  text: "Circle",
+  x: circle.x,
+  y: circle.y
+})
 
-var transform = new MM.TransformClip(title, {
-  translate_x: circle.x,
-  translate_y: circle.y
-});
-
-var movie = new MM.SequenceClip(transform);
+var movie = new MM.SequenceClip(title);
 
 new MM.MovieMaker(__dirname + '/../circle.mjpeg', 1920, 1080, movie).render();
