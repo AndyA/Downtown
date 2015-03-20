@@ -22,7 +22,9 @@ var circle = new MM.CircleProperty({
 });
 
 var title = new MM.TextClip(500, {
-  text: "Circle",
+  text: function(ctx) {
+    return this.framenum
+  },
   x: circle.x,
   y: circle.y
 })
