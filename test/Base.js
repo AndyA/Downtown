@@ -15,9 +15,18 @@ describe("DynamicPropertyBase", function() {
 
     expect(ramp).to.respondTo('evaluate');
 
-    expect(ramp.evaluate({framenum:0, portion:0})).to.equal(100);
-    expect(ramp.evaluate({framenum:50,portion: 0.5})).to.equal(150);
-    expect(ramp.evaluate({framenum:100, portion:1})).to.equal(200);
+    expect(ramp.evaluate({
+      framenum: 0,
+      portion: 0
+    })).to.equal(100);
+    expect(ramp.evaluate({
+      framenum: 50,
+      portion: 0.5
+    })).to.equal(150);
+    expect(ramp.evaluate({
+      framenum: 100,
+      portion: 1
+    })).to.equal(200);
 
   });
 
@@ -25,7 +34,7 @@ describe("DynamicPropertyBase", function() {
 
 describe("ClipBase", function() {
 
-  it("should handle bound properties", function() {
+  describe("Bound properties", function() {
 
     var calls_x = 0;
     var calls_y = 0;
@@ -81,26 +90,32 @@ describe("ClipBase", function() {
 
     c.makeFrame(null, 0);
 
-    expect(calls_render).to.equal(1);
-    expect(calls_x).to.equal(0);
-    expect(calls_y).to.equal(0);
-    expect(stuff_seen).to.deep.equal(expect_seen[0]);
-
-    for (var fn = 1; fn < 4; fn++) {
-      c.makeFrame(null, fn);
-      expect(calls_render).to.equal(fn + 1);
-      expect(calls_x).to.equal(fn);
+    it("should not reference unused properties", function() {
+      expect(calls_render).to.equal(1);
+      expect(calls_x).to.equal(0);
       expect(calls_y).to.equal(0);
-      expect(stuff_seen).to.deep.equal(expect_seen[fn]);
-    }
+      expect(stuff_seen).to.deep.equal(expect_seen[0]);
+    })
 
-    for (fn = 4; fn < 7; fn++) {
-      c.makeFrame(null, fn);
-      expect(calls_render).to.equal(fn + 1);
-      expect(calls_x).to.equal(fn);
-      expect(calls_y).to.equal(fn - 3);
-      expect(stuff_seen).to.deep.equal(expect_seen[fn]);
-    }
+    it("should evaluate bound properties", function() {
+      for (var fn = 1; fn < 4; fn++) {
+        c.makeFrame(null, fn);
+        expect(calls_render).to.equal(fn + 1);
+        expect(calls_x).to.equal(fn);
+        expect(calls_y).to.equal(0);
+        expect(stuff_seen).to.deep.equal(expect_seen[fn]);
+      }
+    })
+
+    it("should evaluate properties that depend on others", function() {
+      for (var fn = 4; fn < 7; fn++) {
+        c.makeFrame(null, fn);
+        expect(calls_render).to.equal(fn + 1);
+        expect(calls_x).to.equal(fn);
+        expect(calls_y).to.equal(fn - 3);
+        expect(stuff_seen).to.deep.equal(expect_seen[fn]);
+      }
+    })
 
   });
 
