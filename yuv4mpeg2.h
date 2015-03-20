@@ -20,9 +20,9 @@ enum {Y4M2_Y_PLANE, Y4M2_Cb_PLANE, Y4M2_Cr_PLANE, Y4M2_N_PLANE};
 
 typedef struct {
   unsigned xs, ys;
+  unsigned stride;
   size_t size;
   unsigned fill;
-  unsigned stride;
 } y4m2_plane_info;
 
 typedef struct {

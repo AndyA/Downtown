@@ -106,8 +106,10 @@ static unsigned parse_num(const char *s) {
 static void set_plane(y4m2_plane_info *pl, unsigned w, unsigned h, unsigned xs, unsigned ys) {
   pl->xs = xs;
   pl->ys = ys;
-  pl->size = (w * h) / (xs * ys);
+
   pl->stride = w / xs;
+
+  pl->size = (w * h) / (xs * ys);
 }
 
 static void set_planes(y4m2_frame_info *info,
