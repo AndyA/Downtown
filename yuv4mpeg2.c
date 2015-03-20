@@ -620,7 +620,7 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
     if (!incfirst) {
       l--;
       acc -= dy;
-      if (acc < 0) {
+      if (acc <= 0) {
         acc += dx;
         yy0 += s;
       }
@@ -633,7 +633,7 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
         base[ xx0 + yy0 * stride ] = vv;
       xx0++;
       acc -= dy;
-      if (acc < 0) {
+      if (acc <= 0) {
         acc += dx;
         yy0 += s;
       }
@@ -660,7 +660,7 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
     if (!incfirst) {
       l--;
       acc -= dx;
-      if (acc < 0) {
+      if (acc <= 0) {
         acc += dy;
         xx0 += s;
       }
@@ -673,7 +673,7 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
         base[ xx0 + yy0 * stride ] = vv;
       yy0++;
       acc -= dx;
-      if (acc < 0) {
+      if (acc <= 0) {
         acc += dy;
         xx0 += s;
       }
