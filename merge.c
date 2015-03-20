@@ -34,12 +34,18 @@ static void ctx_free(context *ctx) {
 
 static void add_frame(context *c, const y4m2_frame *frame) {
   size_t sz = frame->i.size;
+
+  y4m2_tell_me_about_stride(frame);
+
   for (unsigned i = 0; i < sz; i++)
     c->buf[i] += frame->buf[i];
 }
 
 static void fill_frame(context *c, y4m2_frame *frame) {
   size_t sz = frame->i.size;
+
+  y4m2_tell_me_about_stride(frame);
+
   for (unsigned i = 0; i < sz; i++)
     frame->buf[i] = c->buf[i] / c->frames;
   memset(c->buf, 0, sizeof(double) * sz);

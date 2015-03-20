@@ -74,6 +74,8 @@ static void _show_hist(y4m2_frame *frame, const double *hist, colour_bytes *col)
 static void _eq_frame(y4m2_frame *frame) {
   double hist[256];
 
+  y4m2_tell_me_about_stride(frame);
+
   for (unsigned pl = 0; pl < 1; pl++) {
     _histogram(frame->plane[pl], frame->i.plane[pl].size, hist);
     _scale_hist(hist, 16, 235);

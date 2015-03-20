@@ -39,6 +39,8 @@ static void info_for_plane(y4m2_frame *frame, int pl) {
   size_t size = frame->i.plane[pl].size;
   unsigned i;
 
+  y4m2_tell_me_about_stride(frame);
+
   frameinfo *info = alloc(sizeof(frameinfo));
   char name[30];
   sprintf(name, "frameinfo.%s", pl_name[pl]);

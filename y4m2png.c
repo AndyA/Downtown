@@ -62,6 +62,8 @@ void y4m2_png_write(const y4m2_frame *frame, FILE *out) {
   unsigned height = frame->i.height;
   int err;
 
+  y4m2_tell_me_about_stride(frame);
+
   png_ptr = png_create_write_struct_2(PNG_LIBPNG_VER_STRING,
                                       NULL, NULL, NULL, NULL,
                                       _png_alloc, _png_free);

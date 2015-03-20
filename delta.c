@@ -45,6 +45,7 @@ static void callback(y4m2_reason reason,
     break;
 
   case Y4M2_FRAME:
+    y4m2_tell_me_about_stride(frame);
     if (!c->prev) set_prev(c, frame);
     if (!c->out) c->out = y4m2_like_frame(frame);
 

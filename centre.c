@@ -38,6 +38,8 @@ static void centre_frame(const y4m2_frame *frame, int plane, int *cx, int *cy) {
   uint8_t *buf = frame->plane[plane];
   int x, y;
 
+  y4m2_tell_me_about_stride(frame);
+
   int width = frame->i.width / frame->i.plane[plane].xs;
   int height = frame->i.height / frame->i.plane[plane].ys;
   size_t size = frame->i.plane[plane].size;
@@ -64,6 +66,9 @@ static void centre_frame(const y4m2_frame *frame, int plane, int *cx, int *cy) {
 /* assume matching colourspace */
 
 static void blit_plane(y4m2_frame *dst, const y4m2_frame *src, int x, int y, int pl) {
+  y4m2_tell_me_about_stride(src);
+  y4m2_tell_me_about_stride(dst);
+
   int sx0 = 0;
   int sy0 = 0;
   int sx1 = sx0 + src->i.width / src->i.plane[pl].xs;
