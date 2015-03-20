@@ -47,7 +47,8 @@ struct y4m2_note {
   y4m2_note_value *v;
 };
 
-typedef struct {
+typedef struct y4m2_frame y4m2_frame;
+struct y4m2_frame {
   unsigned refcnt;
   y4m2_frame_info i;
   uint8_t *buf;
@@ -56,7 +57,8 @@ typedef struct {
   double elapsed;
   y4m2_note *notes;
   unsigned is_window;
-} y4m2_frame;
+  y4m2_frame *parent; /* if window */
+};
 
 typedef enum { Y4M2_START, Y4M2_FRAME, Y4M2_END } y4m2_reason;
 
@@ -136,8 +138,7 @@ void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out);
 void y4m2_draw_point(y4m2_frame *frame, int x, int y, int vy, int vu, int vv);
 void y4m2_draw_line(y4m2_frame *frame, int x0, int y0, int x1, int y1, int vy, int vu, int vv);
 
-y4m2_frame *y4m2_window(y4m2_frame *window, const y4m2_frame *frame,
-                        int x, int y, int w, int h);
+y4m2_frame *y4m2_window(y4m2_frame *frame, int x, int y, int w, int h);
 
 /* Misc */
 

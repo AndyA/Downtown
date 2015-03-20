@@ -216,7 +216,7 @@ static void check_corners(const char *desc, const y4m2_frame *frame, const int *
 }
 
 typedef void (*drawfunc)(y4m2_frame *frame, const int *col);
-typedef y4m2_frame *(*windfunc)(y4m2_frame *window, y4m2_frame *frame);
+typedef y4m2_frame *(*windfunc)(y4m2_frame *frame);
 
 static void draw_corners(y4m2_frame *frame, const int *col) {
   y4m2_draw_point(frame, 0, 0, col[0], col[1], col[2]);

@@ -191,28 +191,23 @@ y4m2_frame *y4m2_clone_frame(const y4m2_frame *frame) {
   return nf;
 }
 
-static void _not_window(const y4m2_frame *frame) {
-  if (frame && frame->is_window)
-    die("Windows are statically allocated");
-}
-
 void y4m2_free_frame(y4m2_frame *frame) {
   if (frame) {
-    _not_window(frame);
+    if (frame->parent)
+      y4m2_release_frame(frame->parent);
+    else
+      free(frame->buf);
     y4m2_remove_notes(frame);
-    free(frame->buf);
     free(frame);
   }
 }
 
 y4m2_frame *y4m2_retain_frame(y4m2_frame *frame) {
-  _not_window(frame);
   if (frame) frame->refcnt++;
   return frame;
 }
 
 void y4m2_release_frame(y4m2_frame *frame) {
-  _not_window(frame);
   if (frame && --frame->refcnt == 0)
     y4m2_free_frame(frame);
 }
@@ -727,15 +722,15 @@ void y4m2_tell_me_about_stride(const y4m2_frame *frame) {
         "'stride' member in y4m2_plane_info");
 }
 
-y4m2_frame *y4m2_window(y4m2_frame *window, const y4m2_frame *frame,
-                        int x, int y, int w, int h) {
-
+y4m2_frame *y4m2_window(y4m2_frame *frame, int x, int y, int w, int h) {
   if (x < 0 || y < 0 || x + w > (int) frame->i.width || y + h > (int) frame->i.height)
     die("Window outside frame");
 
+  y4m2_frame *window = alloc(sizeof(y4m2_frame));
   *window = *frame;
-  window->refcnt = 0;
-  window->is_window = 1;
+
+  window->refcnt = 1;
+  window->parent = frame;
 
   y4m2_frame_info *wfi = &window->i;
 
