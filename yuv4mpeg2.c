@@ -68,12 +68,8 @@ void y4m2_set_parm(y4m2_parameters *parms, const char *name, const char *value) 
   y4m2__set(&(parms->parm[idx]), value);
 }
 
-y4m2_parameters *y4m2_adjust_parms(const y4m2_parameters *parms, const char *fmt, ...) {
-  va_list ap;
-
-  va_start(ap, fmt);
+static y4m2_parameters *_adjust(const y4m2_parameters *parms, const char *fmt, va_list ap) {
   char *spec = vssprintf(fmt, ap);
-  va_end(ap);
 
   y4m2_parameters *np = parms ? y4m2_clone_parms(parms) : y4m2_new_parms();
   y4m2_parameters *delta = y4m2_new_parms();
@@ -83,6 +79,16 @@ y4m2_parameters *y4m2_adjust_parms(const y4m2_parameters *parms, const char *fmt
   y4m2_merge_parms(np, delta);
   y4m2_free_parms(delta);
   free(spec);
+
+  return np;
+}
+
+y4m2_parameters *y4m2_adjust_parms(const y4m2_parameters *parms, const char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  y4m2_parameters *np = _adjust(parms, fmt, ap);
+  va_end(ap);
 
   return np;
 }
