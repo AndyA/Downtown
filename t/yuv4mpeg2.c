@@ -238,6 +238,7 @@ static void draw_reversed_cross(y4m2_frame *frame, const int *col) {
 
 static y4m2_frame *_window(y4m2_frame *frame, int x, int y, int w, int h) {
   if (w < 4 || h < 4) return NULL;
+  if ((w & 3) || (h & 3)) return NULL;
   return y4m2_window(frame, x, y, w, h);
 }
 
@@ -249,10 +250,23 @@ static y4m2_frame *wind_inset_4(y4m2_frame *frame) {
   return _window(frame, 4, 4, frame->i.width - 8, frame->i.height - 8);
 }
 
+static y4m2_frame *wind_nest(y4m2_frame *frame, int depth, int limit) {
+  if (depth == limit) return frame;
+  y4m2_frame *next = wind_nest(frame, depth + 1, limit);
+  if (!next) return frame;
+  return wind_inset_4(next);
+}
+
+static y4m2_frame *wind_nested(y4m2_frame *frame) {
+  return wind_nest(frame, 0, 3);
+}
+
 static void test_drawing(void) {
   static const char *spec[] = {
     "W100 H80 A1:1 C%s",
     "W16 H16 A1:1 C%s",
+    "W256 H64 A1:1 C%s",
+    "W64 H256 A1:1 C%s",
     "W1000 H4 A1:1 C%s",
     "W4 H1000 A1:1 C%s",
     "W4 H4 A1:1 C%s"
@@ -274,7 +288,8 @@ static void test_drawing(void) {
     windfunc wf;
   } drill[] = {
     {"no window", wind_none},
-    {"inset 4", wind_inset_4}
+    {"inset 4", wind_inset_4},
+    {"nested", wind_nested},
   };
 
   for (int i = 0; i < countof(spec); i++) {
@@ -300,8 +315,8 @@ static void test_drawing(void) {
             check_corners(desc, target, col);
           }
 
-          y4m2_release_frame(target);
           y4m2_release_frame(frame);
+          y4m2_release_frame(target);
 
           free(desc);
         }
