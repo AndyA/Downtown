@@ -8,7 +8,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libdowntown.la
 
-bin_PROGRAMS = downtown downtown_filter
+bin_PROGRAMS = downtown downtown_filter testcard-yuv
 
 libdowntown_la_SOURCES = \
 	centre.h centre.c \
@@ -37,6 +37,9 @@ downtown_LDADD = libdowntown.la
 
 downtown_filter_SOURCES = downtown_filter.c
 downtown_filter_LDADD = libdowntown.la
+
+testcard_yuv_SOURCES = testcard-yuv.c
+testcard_yuv_LDADD = libdowntown.la
 
 test: all
 	cd t && $(MAKE) test

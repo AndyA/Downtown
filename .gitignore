@@ -52,6 +52,7 @@
 /stamp-h*
 /tags
 /test.*
+/testcard-yuv
 /version.h
 /work/
 Makefile
