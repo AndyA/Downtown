@@ -9,6 +9,8 @@
 #include "util.h"
 #include "yuv4mpeg2.h"
 
+#define countof(x) ((int)(sizeof(x)/sizeof((x)[0])))
+
 static void test_parms(void) {
   y4m2_parameters *p = y4m2_new_parms();
 
@@ -193,12 +195,80 @@ static void test_notes(void) {
   ok(free_called == 1, "freed when clone is destroyed");
 }
 
+static void check_corners(const char *desc, const y4m2_frame *frame, const int *col) {
+  for (int x = 0; x < (int) frame->i.width; x += frame->i.width - 1) {
+    for (int y = 0; y < (int) frame->i.height; y += frame->i.height - 1) {
+      for (unsigned pl = 0; pl < Y4M2_N_PLANE; pl++) {
+
+        int xx = x / frame->i.plane[pl].xs;
+        int yy = y / frame->i.plane[pl].ys;
+
+        uint8_t got = frame->plane[pl][xx + yy * frame->i.plane[pl].stride];
+        int want = col[pl];
+
+        if (!ok(want == got, "%s: point[%d, %d, %u] == %d?", desc, xx, yy, pl, want)) {
+          diag("wanted %3d", want);
+          diag("   got %3d", got);
+        }
+      }
+    }
+  }
+}
+
+typedef void (*drawfunc)(y4m2_frame *frame, const int *col);
+
+static void draw_corners(y4m2_frame *frame, const int *col) {
+  y4m2_draw_point(frame, 0, 0, col[0], col[1], col[2]);
+  y4m2_draw_point(frame, frame->i.width - 1, 0, col[0], col[1], col[2]);
+  y4m2_draw_point(frame, 0, frame->i.height - 1, col[0], col[1], col[2]);
+  y4m2_draw_point(frame, frame->i.width - 1, frame->i.height - 1, col[0], col[1], col[2]);
+}
+
+static void draw_cross(y4m2_frame *frame, const int *col) {
+  y4m2_draw_line(frame, 0, 0, frame->i.width - 1, frame->i.height - 1, col[0], col[1], col[2]);
+  y4m2_draw_line(frame, 0, frame->i.height - 1, frame->i.width - 1, 0, col[0], col[1], col[2]);
+}
+
+static void test_drawing(void) {
+  static const char *spec[] = {"W100 H80 A1:1 C%s"};
+  static const char *chans[] = { "420", "422", "444" };
+  static struct {
+    const char *name;
+    drawfunc df;
+  } draw[] = {
+    { "corners", draw_corners},
+    { "cross", draw_cross},
+  };
+
+  for (int i = 0; i < countof(spec); i++) {
+    for (int j = 0; j < countof(chans); j++) {
+      char *cfg = ssprintf(spec[i], chans[j]);
+      y4m2_parameters *parms = y4m2_adjust_parms(NULL, "%s", cfg);
+      for (int k = 0; k < countof(draw); k++) {
+        const int col[] = { 111, 87, 13 };
+        char *desc = ssprintf("%s in {%d, %d, %d} on a {%s} frame",
+                              draw[k].name, col[0], col[1], col[2], cfg);
+
+        y4m2_frame *frame = y4m2_new_frame(parms);
+        draw[k].df(frame, col);
+        check_corners(desc, frame, col);
+        y4m2_release_frame(frame);
+
+        free(desc);
+      }
+      y4m2_free_parms(parms);
+      free(cfg);
+    }
+  }
+}
+
 void test_main(void) {
   test_parms();
   test_adjust_parms();
   test_parse();
   test_float();
   test_notes();
+  test_drawing();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
