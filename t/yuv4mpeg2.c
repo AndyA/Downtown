@@ -250,15 +250,22 @@ static y4m2_frame *wind_inset_4(y4m2_frame *frame) {
   return _window(frame, 4, 4, frame->i.width - 8, frame->i.height - 8);
 }
 
-static y4m2_frame *wind_nest(y4m2_frame *frame, int depth, int limit) {
-  if (depth == limit) return frame;
-  y4m2_frame *next = wind_nest(frame, depth + 1, limit);
+static y4m2_frame *wind_nest(y4m2_frame *frame, int depth) {
+  if (depth == 0) return frame;
+  y4m2_frame *next = wind_nest(frame, depth - 1);
   if (!next) return frame;
   return wind_inset_4(next);
 }
 
 static y4m2_frame *wind_nested(y4m2_frame *frame) {
-  return wind_nest(frame, 0, 3);
+  return wind_nest(frame, 5);
+}
+
+static int frame_depth(const y4m2_frame *frame) {
+  int depth = 0;
+  for (; frame; frame = frame->parent)
+    depth++;
+  return depth;
 }
 
 static void test_drawing(void) {
@@ -299,12 +306,14 @@ static void test_drawing(void) {
       for (int k = 0; k < countof(draw); k++) {
         const int col[] = { 111, 87, 13 };
         for (int type = 0; type < countof(drill); type++) {
-          char *desc = ssprintf("%s in {%d, %d, %d} on {%s} frame (%s)",
-                                draw[k].name, col[0], col[1], col[2], cfg,
-                                drill[type].name);
-
           y4m2_frame *frame = y4m2_new_frame(parms);
           y4m2_frame *target = drill[type].wf(frame);
+
+          int depth = frame_depth(target);
+
+          char *desc = ssprintf("%s in {%d, %d, %d} on {%s} frame (%s, depth=%d)",
+                                draw[k].name, col[0], col[1], col[2], cfg,
+                                drill[type].name, depth);
 
           if (target) {
             if (target->parent)
@@ -315,10 +324,10 @@ static void test_drawing(void) {
             check_corners(desc, target, col);
           }
 
+          free(desc);
+
           y4m2_release_frame(frame);
           y4m2_release_frame(target);
-
-          free(desc);
         }
       }
       y4m2_free_parms(parms);
