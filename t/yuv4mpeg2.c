@@ -235,18 +235,17 @@ static void draw_reversed_cross(y4m2_frame *frame, const int *col) {
   y4m2_draw_line(frame, frame->i.width - 1, 0, 0, frame->i.height - 1, col[0], col[1], col[2]);
 }
 
-static y4m2_frame *_window(y4m2_frame *window, const y4m2_frame *frame, int x, int y, int w, int h) {
+static y4m2_frame *_window(y4m2_frame *frame, int x, int y, int w, int h) {
   if (w < 4 || h < 4) return NULL;
-  return y4m2_window(window, frame, x, y, w, h);
+  return y4m2_window(frame, x, y, w, h);
 }
 
-static y4m2_frame *wind_none(y4m2_frame *window, y4m2_frame *frame) {
-  (void) window;
-  return frame;
+static y4m2_frame *wind_none(y4m2_frame *frame) {
+  return y4m2_retain_frame(frame);
 }
 
-static y4m2_frame *wind_inset_4(y4m2_frame *window, y4m2_frame *frame) {
-  return _window(window, frame, 4, 4, frame->i.width - 8, frame->i.height - 8);
+static y4m2_frame *wind_inset_4(y4m2_frame *frame) {
+  return _window(frame, 4, 4, frame->i.width - 8, frame->i.height - 8);
 }
 
 static void test_drawing(void) {
@@ -289,17 +288,18 @@ static void test_drawing(void) {
                                 drill[type].name);
 
           y4m2_frame *frame = y4m2_new_frame(parms);
-          y4m2_frame window;
-          y4m2_frame *target = drill[type].wf(&window, frame);
+          y4m2_frame *target = drill[type].wf(frame);
 
           if (target) {
-            int is_window = target == &window;
-            ok(!!is_window == !!target->is_window,
-               "%s: is_window %sset", desc, is_window ? "" : "not ");
+            if (target->parent)
+              ok(target->parent->buf == frame->buf,
+                 "%s: parent is correct", desc);
+
             draw[k].df(target, col);
             check_corners(desc, target, col);
           }
 
+          y4m2_release_frame(target);
           y4m2_release_frame(frame);
 
           free(desc);
