@@ -136,6 +136,9 @@ void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out);
 void y4m2_draw_point(y4m2_frame *frame, int x, int y, int vy, int vu, int vv);
 void y4m2_draw_line(y4m2_frame *frame, int x0, int y0, int x1, int y1, int vy, int vu, int vv);
 
+y4m2_frame *y4m2_window(y4m2_frame *window, const y4m2_frame *frame,
+                        int x, int y, int w, int h);
+
 /* Misc */
 
 void y4m2_tell_me_about_stride(const y4m2_frame *frame);
