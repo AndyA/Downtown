@@ -216,6 +216,7 @@ static void check_corners(const char *desc, const y4m2_frame *frame, const int *
 }
 
 typedef void (*drawfunc)(y4m2_frame *frame, const int *col);
+typedef y4m2_frame *(*windfunc)(y4m2_frame *window, y4m2_frame *frame);
 
 static void draw_corners(y4m2_frame *frame, const int *col) {
   y4m2_draw_point(frame, 0, 0, col[0], col[1], col[2]);
@@ -234,6 +235,20 @@ static void draw_reversed_cross(y4m2_frame *frame, const int *col) {
   y4m2_draw_line(frame, frame->i.width - 1, 0, 0, frame->i.height - 1, col[0], col[1], col[2]);
 }
 
+static y4m2_frame *_window(y4m2_frame *window, const y4m2_frame *frame, int x, int y, int w, int h) {
+  if (w < 4 || h < 4) return NULL;
+  return y4m2_window(window, frame, x, y, w, h);
+}
+
+static y4m2_frame *wind_none(y4m2_frame *window, y4m2_frame *frame) {
+  (void) window;
+  return frame;
+}
+
+static y4m2_frame *wind_inset_4(y4m2_frame *window, y4m2_frame *frame) {
+  return _window(window, frame, 4, 4, frame->i.width - 8, frame->i.height - 8);
+}
+
 static void test_drawing(void) {
   static const char *spec[] = {
     "W100 H80 A1:1 C%s",
@@ -242,7 +257,9 @@ static void test_drawing(void) {
     "W4 H1000 A1:1 C%s",
     "W4 H4 A1:1 C%s"
   };
+
   static const char *chans[] = { "420", "422", "444" };
+
   static struct {
     const char *name;
     drawfunc df;
@@ -252,21 +269,41 @@ static void test_drawing(void) {
     { "reversed cross", draw_reversed_cross},
   };
 
+  static struct {
+    const char *name;
+    windfunc wf;
+  } drill[] = {
+    {"no window", wind_none},
+    {"inset 4", wind_inset_4}
+  };
+
   for (int i = 0; i < countof(spec); i++) {
     for (int j = 0; j < countof(chans); j++) {
       char *cfg = ssprintf(spec[i], chans[j]);
       y4m2_parameters *parms = y4m2_adjust_parms(NULL, "%s", cfg);
       for (int k = 0; k < countof(draw); k++) {
         const int col[] = { 111, 87, 13 };
-        char *desc = ssprintf("%s in {%d, %d, %d} on {%s} frame",
-                              draw[k].name, col[0], col[1], col[2], cfg);
+        for (int type = 0; type < countof(drill); type++) {
+          char *desc = ssprintf("%s in {%d, %d, %d} on {%s} frame (%s)",
+                                draw[k].name, col[0], col[1], col[2], cfg,
+                                drill[type].name);
 
-        y4m2_frame *frame = y4m2_new_frame(parms);
-        draw[k].df(frame, col);
-        check_corners(desc, frame, col);
-        y4m2_release_frame(frame);
+          y4m2_frame *frame = y4m2_new_frame(parms);
+          y4m2_frame window;
+          y4m2_frame *target = drill[type].wf(&window, frame);
 
-        free(desc);
+          if (target) {
+            int is_window = target == &window;
+            ok(!!is_window == !!target->is_window,
+               "%s: is_window %sset", desc, is_window ? "" : "not ");
+            draw[k].df(target, col);
+            check_corners(desc, target, col);
+          }
+
+          y4m2_release_frame(frame);
+
+          free(desc);
+        }
       }
       y4m2_free_parms(parms);
       free(cfg);
