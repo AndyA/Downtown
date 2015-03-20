@@ -16,6 +16,7 @@ var MM = require("../lib/MovieMaker.js");
     "ReverseClip": MM.ReverseClip,
     "SequenceClip": MM.SequenceClip,
     "TimecodeClip": MM.TimecodeClip,
+    "TextClip": MM.TextClip,
     "TitleClip": MM.TitleClip,
     "TransformClip": MM.TransformClip,
   };
