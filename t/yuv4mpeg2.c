@@ -193,6 +193,7 @@ static void test_notes(void) {
   y4m2_release_frame(frame2);
 
   ok(free_called == 1, "freed when clone is destroyed");
+  y4m2_free_parms(p);
 }
 
 static void check_corners(const char *desc, const y4m2_frame *frame, const int *col) {
