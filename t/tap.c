@@ -1,15 +1,25 @@
 /* tap.c */
 
+#include <string.h>
 #include <stdlib.h>
 
 #include "tap.h"
 
 #define MAX_PREFIX 10
 
-static int test_no = 0;
+typedef struct test_alert {
+  struct test_alert *next;
+  int test_no;
+  test_cb cb;
+  void *ctx;
+} test_alert;
+
+int test_no = 0;
 
 static const char *pfx[MAX_PREFIX];
 static size_t npfx = 0;
+
+static test_alert *alerts = NULL;
 
 static int (*vfpf)(FILE *f, const char *msg, va_list ap) = vfprintf;
 
@@ -44,6 +54,40 @@ static void die(const char *fmt, ...) {
   exit(1);
 }
 
+static void *alloc(size_t size) {
+  void *m = malloc(size);
+  if (!m) die("Out of memory for %lu bytes", (unsigned long) size);
+  memset(m, 0, size);
+  return m;
+}
+
+static test_alert *add_alert(test_alert *list, test_alert *ta) {
+  if (!list) return ta;
+  if (ta->test_no < list->test_no) {
+    ta->next = list;
+    return ta;
+  }
+  list->next = add_alert(list->next, ta);
+  return list;
+}
+
+void at_test(int tn, test_cb cb, void *ctx) {
+  test_alert *ta = alloc(sizeof(test_alert));
+  ta->test_no = tn;
+  ta->cb = cb;
+  ta->ctx = ctx;
+  alerts = add_alert(alerts, ta);
+}
+
+static void run_alerts(int upto) {
+  while (alerts && alerts->test_no <= upto) {
+    test_alert *ta = alerts;
+    alerts = alerts->next;
+    ta->cb(ta->test_no, ta->ctx);
+    free(ta);
+  }
+}
+
 void done_testing(void) {
   if (0 == test_no) die("No tests run!");
   fpf(stdout, "1..%d\n", test_no);
@@ -73,6 +117,7 @@ int test(int flag, const char *msg, va_list ap) {
   prefix();
   vfpf(stdout, msg, ap);
   fpf(stdout, "\n");
+  run_alerts(test_no);
   return flag;
 }
 
