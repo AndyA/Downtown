@@ -55,6 +55,7 @@ typedef struct {
   uint64_t sequence;
   double elapsed;
   y4m2_note *notes;
+  unsigned is_window;
 } y4m2_frame;
 
 typedef enum { Y4M2_START, Y4M2_FRAME, Y4M2_END } y4m2_reason;

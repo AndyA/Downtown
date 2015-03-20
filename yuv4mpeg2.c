@@ -719,5 +719,30 @@ void y4m2_tell_me_about_stride(const y4m2_frame *frame) {
         "'stride' member in y4m2_plane_info");
 }
 
+y4m2_frame *y4m2_window(y4m2_frame *window, const y4m2_frame *frame,
+                        int x, int y, int w, int h) {
+
+  if (x < 0 || y < 0 || x + w > (int) frame->i.width || y + h > (int) frame->i.height)
+    die("Window outside frame");
+
+  *window = *frame;
+
+  unsigned ofs[Y4M2_N_PLANE];
+
+  const y4m2_frame_info *ffi = &frame->i;
+  y4m2_frame_info *wfi = &window->i;
+
+  wfi->width = w;
+  wfi->height = h;
+
+  for (unsigned pl = 0; pl < Y4M2_N_PLANE; pl++) {
+    const y4m2_plane_info *fpi = &ffi->plane[pl];
+    y4m2_plane_info *wpi = &wfi->plane[pl];
+
+    ofs[pl] = x + fpi->stride * y;
+  }
+  return window;
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */
