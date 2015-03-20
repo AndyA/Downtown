@@ -56,10 +56,9 @@ static void _debug_dump_png(sampler_context *ctx, const char *name) {
   for (unsigned i = 0; i < vc->n_points; i++)
     _random_colour(&col_map[i]);
 
-  uint8_t *plane[Y4M2_N_PLANE];
   unsigned xs[Y4M2_N_PLANE], ys[Y4M2_N_PLANE];
 
-  y4m2__plane_map(frame, plane, xs, ys);
+  y4m2__plane_map(frame, xs, ys);
 
   for (unsigned y = 0; y < ctx->width; y++) {
     for (unsigned x = 0; x < ctx->width; x++) {
@@ -67,7 +66,7 @@ static void _debug_dump_png(sampler_context *ctx, const char *name) {
       if (xl != vc->n_points) {
         colour_bytes *cp = &col_map[xl];
         for (unsigned p = 0; p < Y4M2_N_PLANE; p++)
-          plane[p][x + y * ctx->width] = cp->c[p];
+          frame->plane[p][x + y * ctx->width] = cp->c[p];
       }
     }
   }

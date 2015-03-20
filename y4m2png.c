@@ -30,15 +30,14 @@ static void _png_flush(png_structp png_ptr) {
 }
 
 static void _png_yuv_to_colour(const y4m2_frame *in, unsigned row, colour_bytes *out) {
-  uint8_t *plane[Y4M2_N_PLANE];
   unsigned xs[Y4M2_N_PLANE], ys[Y4M2_N_PLANE];
   unsigned width = in->i.width;
 
-  y4m2__plane_map(in, plane, xs, ys);
+  y4m2__plane_map(in, xs, ys);
 
   for (unsigned p = 0; p < Y4M2_N_PLANE; p++) {
     for (unsigned x = 0; x < width; x++) {
-      out[x].c[p] = plane[p][(row >> ys[p]) * (width >> xs[p]) + (x >> xs[p])];
+      out[x].c[p] = in->plane[p][(row >> ys[p]) * (width >> xs[p]) + (x >> xs[p])];
     }
   }
 }
