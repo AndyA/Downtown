@@ -344,14 +344,11 @@ static void callback(y4m2_reason reason,
                      y4m2_frame *frame,
                      void *ctx) {
   context *c = ctx;
-  char *ar;
 
   switch (reason) {
 
   case Y4M2_START:
-    ar = aspect_ratio(cfg_width, cfg_height);
-    c->out_parms = y4m2_adjust_parms(parms, "W%d H%d A%s C444", cfg_width, cfg_height, ar);
-    free(ar);
+    c->out_parms = y4m2_adjust_parms(parms, "W%d H%d A1:1 C444", cfg_width, cfg_height);
     y4m2_emit_start(c->next, c->out_parms);
     break;
 
