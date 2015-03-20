@@ -229,8 +229,16 @@ static void draw_cross(y4m2_frame *frame, const int *col) {
   y4m2_draw_line(frame, 0, frame->i.height - 1, frame->i.width - 1, 0, col[0], col[1], col[2]);
 }
 
+static void draw_reversed_cross(y4m2_frame *frame, const int *col) {
+  y4m2_draw_line(frame, frame->i.width - 1, frame->i.height - 1, 0, 0, col[0], col[1], col[2]);
+  y4m2_draw_line(frame, frame->i.width - 1, 0, 0, frame->i.height - 1, col[0], col[1], col[2]);
+}
+
 static void test_drawing(void) {
-  static const char *spec[] = {"W100 H80 A1:1 C%s"};
+  static const char *spec[] = {
+    "W100 H80 A1:1 C%s",
+    "W16 H16 A1:1 C%s"
+  };
   static const char *chans[] = { "420", "422", "444" };
   static struct {
     const char *name;
@@ -238,6 +246,7 @@ static void test_drawing(void) {
   } draw[] = {
     { "corners", draw_corners},
     { "cross", draw_cross},
+    { "reversed cross", draw_reversed_cross},
   };
 
   for (int i = 0; i < countof(spec); i++) {
@@ -246,7 +255,7 @@ static void test_drawing(void) {
       y4m2_parameters *parms = y4m2_adjust_parms(NULL, "%s", cfg);
       for (int k = 0; k < countof(draw); k++) {
         const int col[] = { 111, 87, 13 };
-        char *desc = ssprintf("%s in {%d, %d, %d} on a {%s} frame",
+        char *desc = ssprintf("%s in {%d, %d, %d} on {%s} frame",
                               draw[k].name, col[0], col[1], col[2], cfg);
 
         y4m2_frame *frame = y4m2_new_frame(parms);
