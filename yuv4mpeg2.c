@@ -103,21 +103,21 @@ static unsigned parse_num(const char *s) {
   return 0;
 }
 
+static void set_plane(y4m2_plane_info *pl, unsigned w, unsigned h, unsigned xs, unsigned ys) {
+  pl->xs = xs;
+  pl->ys = ys;
+  pl->size = (w * h) / (xs * ys);
+  pl->stride = w / xs;
+}
+
 static void set_planes(y4m2_frame_info *info,
                        unsigned xsY, unsigned ysY,
                        unsigned xsCb, unsigned ysCb,
                        unsigned xsCr, unsigned ysCr) {
-  size_t pix_size = info->width * info->height;
 
-  info->plane[Y4M2_Y_PLANE].xs = xsY;
-  info->plane[Y4M2_Y_PLANE].ys = ysY;
-  info->plane[Y4M2_Y_PLANE].size = pix_size / (xsY * ysY);
-  info->plane[Y4M2_Cb_PLANE].xs = xsCb;
-  info->plane[Y4M2_Cb_PLANE].ys = ysCb;
-  info->plane[Y4M2_Cb_PLANE].size = pix_size / (xsCb * ysCb);
-  info->plane[Y4M2_Cr_PLANE].xs = xsCr;
-  info->plane[Y4M2_Cr_PLANE].ys = ysCr;
-  info->plane[Y4M2_Cr_PLANE].size = pix_size / (xsCr * ysCr);
+  set_plane(&info->plane[Y4M2_Y_PLANE], info->width, info->height, xsY, ysY);
+  set_plane(&info->plane[Y4M2_Cb_PLANE], info->width, info->height, xsCb, ysCb);
+  set_plane(&info->plane[Y4M2_Cr_PLANE], info->width, info->height, xsCr, ysCr);
 
   info->size = info->plane[Y4M2_Y_PLANE].size +
                info->plane[Y4M2_Cb_PLANE].size +
@@ -522,10 +522,10 @@ size_t y4m2_frame_to_float(const y4m2_frame *in, colour_floats *out) {
   y4m2__plane_map(in, plane, xs, ys);
 
   for (unsigned p = 0; p < Y4M2_N_PLANE; p++) {
+    unsigned stride = in->i.plane[p].stride;
     for (unsigned y = 0; y < height; y++) {
       for (unsigned x = 0; x < width; x++) {
-        out[y * width + x].c[p] =
-          plane[p][(y >> ys[p]) * (width >> xs[p]) + (x >> xs[p])];
+        out[y * width + x].c[p] = plane[p][(y >> ys[p]) * stride + (x >> xs[p])];
       }
     }
   }
@@ -542,6 +542,7 @@ void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out) {
   y4m2__plane_map(out, plane, xs, ys);
 
   for (unsigned p = 0; p < Y4M2_N_PLANE; p++) {
+    unsigned stride = out->i.plane[p].stride;
     unsigned plw = width >> xs[p];
     unsigned plh = height >> ys[p];
     unsigned pxw = out->i.plane[p].xs;
@@ -559,7 +560,7 @@ void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out) {
         double sample = sum / area;
         if (sample < 0) sample = 0;
         if (sample > 255) sample = 255;
-        plane[p][y * plw + x] = (uint8_t)sample;
+        plane[p][y * stride + x] = (uint8_t)sample;
       }
     }
   }
@@ -570,9 +571,10 @@ static void _draw_point(y4m2_frame *frame, int pl, int x, int y, int v) {
   int yy = y / frame->i.plane[pl].ys;
   int w = frame->i.width / frame->i.plane[pl].xs;
   int h = frame->i.height / frame->i.plane[pl].ys;
+  int stride = frame->i.plane[pl].stride;
 
   if (xx >= 0 && xx < w && yy >= 0 && yy < h)
-    *(frame->plane[pl] + xx + yy * w) = v;
+    *(frame->plane[pl] + xx + yy * stride) = v;
 }
 
 void y4m2_draw_point(y4m2_frame *frame, int x, int y, int vy, int vu, int vv) {
@@ -592,6 +594,7 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
 
   int w = frame->i.width / frame->i.plane[pl].xs;
   int h = frame->i.height / frame->i.plane[pl].ys;
+  int stride = frame->i.plane[pl].stride;
 
   uint8_t *base = frame->plane[pl];
 
@@ -631,7 +634,7 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
     }
     while (l-- >= 0) {
       if (xx0 >= 0 && xx0 < w && yy0 >= 0 && yy0 < h)
-        base[ xx0 + yy0 * w ] = vv;
+        base[ xx0 + yy0 * stride ] = vv;
       xx0++;
       acc -= dy;
       if (acc < 0) {
@@ -671,7 +674,7 @@ static void _draw_line(y4m2_frame *frame, int pl, int x0, int y0, int x1, int y1
     }
     while (l-- >= 0) {
       if (xx0 >= 0 && xx0 < w && yy0 >= 0 && yy0 < h)
-        base[ xx0 + yy0 * w ] = vv;
+        base[ xx0 + yy0 * stride ] = vv;
       yy0++;
       acc -= dx;
       if (acc < 0) {
@@ -705,6 +708,19 @@ void y4m2_draw_line(y4m2_frame *frame, int x0, int y0, int x1, int y1, int vy, i
     _draw_line(frame, Y4M2_Cb_PLANE, x0, y0, x1, y1, vu, 1);
     _draw_line(frame, Y4M2_Cr_PLANE, x0, y0, x1, y1, vv, 1);
   }
+}
+
+static int _is_window(const y4m2_frame *frame) {
+  for (unsigned pl = 0; pl < Y4M2_N_PLANE; pl++)
+    if (frame->i.plane[pl].stride != frame->i.width / frame->i.plane[pl].xs)
+      return 1;
+  return 0;
+}
+
+void y4m2_tell_me_about_stride(const y4m2_frame *frame) {
+  if (_is_window(frame))
+    die("To process this frame you need to know about the"
+        "'stride' member in y4m2_plane_info");
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

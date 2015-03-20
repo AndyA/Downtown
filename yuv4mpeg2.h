@@ -19,14 +19,17 @@ typedef struct {
 enum {Y4M2_Y_PLANE, Y4M2_Cb_PLANE, Y4M2_Cr_PLANE, Y4M2_N_PLANE};
 
 typedef struct {
+  unsigned xs, ys;
+  size_t size;
+  unsigned fill;
+  unsigned stride;
+} y4m2_plane_info;
+
+typedef struct {
   unsigned width;
   unsigned height;
   size_t size;
-  struct {
-    unsigned xs, ys;
-    size_t size;
-    unsigned fill;
-  } plane[Y4M2_N_PLANE];
+  y4m2_plane_info plane[Y4M2_N_PLANE];
 } y4m2_frame_info;
 
 typedef void (*y4m2_free_func)(void *);
@@ -132,6 +135,10 @@ void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out);
 
 void y4m2_draw_point(y4m2_frame *frame, int x, int y, int vy, int vu, int vv);
 void y4m2_draw_line(y4m2_frame *frame, int x0, int y0, int x1, int y1, int vy, int vu, int vv);
+
+/* Misc */
+
+void y4m2_tell_me_about_stride(const y4m2_frame *frame);
 
 #endif
 
