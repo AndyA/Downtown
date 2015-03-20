@@ -121,9 +121,9 @@ static void set_planes(y4m2_frame_info *info,
   set_plane(&info->plane[Y4M2_Cb_PLANE], info->width, info->height, xsCb, ysCb);
   set_plane(&info->plane[Y4M2_Cr_PLANE], info->width, info->height, xsCr, ysCr);
 
-  info->size = info->plane[Y4M2_Y_PLANE].size +
-               info->plane[Y4M2_Cb_PLANE].size +
-               info->plane[Y4M2_Cr_PLANE].size;
+  info->size = 0;
+  for (unsigned pl = 0; pl < Y4M2_N_PLANE; pl++)
+    info->size += info->plane[pl].size;
 }
 
 void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms) {
@@ -500,34 +500,29 @@ static unsigned y4m2__log2(unsigned x) {
 }
 
 void y4m2__plane_map(const y4m2_frame *in,
-                     uint8_t *plane[Y4M2_N_PLANE],
                      unsigned xs[Y4M2_N_PLANE],
                      unsigned ys[Y4M2_N_PLANE]) {
-  uint8_t *bp = in->buf;
 
   for (unsigned p = 0; p < Y4M2_N_PLANE; p++) {
-    plane[p] = bp;
     xs[p] = y4m2__log2(in->i.plane[p].xs);
     ys[p] = y4m2__log2(in->i.plane[p].ys);
-    bp += in->i.plane[p].size;
   }
 }
 
 /* colourspace */
 
 size_t y4m2_frame_to_float(const y4m2_frame *in, colour_floats *out) {
-  uint8_t *plane[Y4M2_N_PLANE];
   unsigned xs[Y4M2_N_PLANE], ys[Y4M2_N_PLANE];
   unsigned width = in->i.width;
   unsigned height = in->i.height;
 
-  y4m2__plane_map(in, plane, xs, ys);
+  y4m2__plane_map(in, xs, ys);
 
   for (unsigned p = 0; p < Y4M2_N_PLANE; p++) {
     unsigned stride = in->i.plane[p].stride;
     for (unsigned y = 0; y < height; y++) {
       for (unsigned x = 0; x < width; x++) {
-        out[y * width + x].c[p] = plane[p][(y >> ys[p]) * stride + (x >> xs[p])];
+        out[y * width + x].c[p] = in->plane[p][(y >> ys[p]) * stride + (x >> xs[p])];
       }
     }
   }
@@ -536,12 +531,11 @@ size_t y4m2_frame_to_float(const y4m2_frame *in, colour_floats *out) {
 }
 
 void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out) {
-  uint8_t *plane[Y4M2_N_PLANE];
   unsigned xs[Y4M2_N_PLANE], ys[Y4M2_N_PLANE];
   unsigned width = out->i.width;
   unsigned height = out->i.height;
 
-  y4m2__plane_map(out, plane, xs, ys);
+  y4m2__plane_map(out, xs, ys);
 
   for (unsigned p = 0; p < Y4M2_N_PLANE; p++) {
     unsigned stride = out->i.plane[p].stride;
@@ -562,7 +556,7 @@ void y4m2_float_to_frame(const colour_floats *in, y4m2_frame *out) {
         double sample = sum / area;
         if (sample < 0) sample = 0;
         if (sample > 255) sample = 255;
-        plane[p][y * stride + x] = (uint8_t)sample;
+        out->plane[p][y * stride + x] = (uint8_t)sample;
       }
     }
   }
