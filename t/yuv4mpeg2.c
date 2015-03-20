@@ -237,7 +237,8 @@ static void draw_reversed_cross(y4m2_frame *frame, const int *col) {
 static void test_drawing(void) {
   static const char *spec[] = {
     "W100 H80 A1:1 C%s",
-    "W16 H16 A1:1 C%s"
+    "W16 H16 A1:1 C%s",
+    "W4 H4 A1:1 C%s"
   };
   static const char *chans[] = { "420", "422", "444" };
   static struct {
