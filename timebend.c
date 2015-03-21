@@ -38,7 +38,7 @@ static void check_note(context *c, y4m2_frame *frame) {
   timebend_rate_note *note = y4m2_find_note(frame, timebend_RATE_NOTE);
   if (note) {
     c->rate = note->rate;
-    log_debug("timebend rate set to %d", c->rate);
+    log_debug("timebend rate set to %f", c->rate);
   }
 }
 
@@ -49,13 +49,15 @@ static void flush_frame(context *c) {
     unsigned w = frame->i.width / frame->i.plane[pl].xs;
     unsigned h = frame->i.height / frame->i.plane[pl].ys;
     unsigned stride = frame->i.plane[pl].stride;
+    double fill = (1 - c->buf_time) * (double) frame->i.plane[pl].fill;
 
     double *in = c->buf[pl];
 
     for (unsigned y = 0; y < h; y++) {
       uint8_t *out = frame->plane[pl] + y * stride;
       for (unsigned x = 0; x < w; x++) {
-        *out++ = (uint8_t) MAX(16, MIN(*in++, 240));
+        double sample = *in++ + fill;
+        *out++ = (uint8_t) MAX(16, MIN(sample, 240));
       }
     }
 
@@ -72,48 +74,48 @@ static void bend_frame(context *c, y4m2_frame *frame) {
     if (!c->out) c->out = y4m2_like_frame(frame);
   }
 
-  double frame_duration = 1 / c->rate;
   y4m2_frame *prev = c->prev;
-  y4m2_frame *cur = frame ? frame : prev;
 
-  while (frame_duration > 0) {
-    double p_weight, c_weight;
+  if (prev) {
+    y4m2_frame *cur = frame ? frame : prev;
+    double frame_duration = 1 / c->rate;
 
-    if (frame_duration < 1) {
-      p_weight = 1;
-      c_weight = 0;
-    }
-    else {
-      p_weight = 1 - c->buf_time;
-      c_weight = c->buf_time;
-    }
+    for (double frame_left = frame_duration; frame_left > 0;) {
 
-    if (!frame) c_weight = 0;
+      double need = 1 - c->buf_time;
+      if (need > frame_left) need = frame_left;
 
-    double need = 1 - c->buf_time;
-    if (need > frame_duration) need = frame_duration;
+      double p_weight = frame_duration < 1 ? 1 : frame_left / frame_duration;
+      double c_weight = 1 - p_weight;
 
-    for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
-      unsigned w = cur->i.width / cur->i.plane[pl].xs;
-      unsigned h = cur->i.height / cur->i.plane[pl].ys;
-      unsigned stride = cur->i.plane[pl].stride;
+      for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
+        double cc_weight = c_weight;
+        double fill = 0;
+        if (!frame) {
+          fill = c_weight * (double) cur->i.plane[pl].fill;
+          cc_weight = 0;
+        }
+        unsigned w = cur->i.width / cur->i.plane[pl].xs;
+        unsigned h = cur->i.height / cur->i.plane[pl].ys;
+        unsigned stride = cur->i.plane[pl].stride;
 
-      if (!c->buf[pl]) c->buf[pl] = alloc(sizeof(double) * w * h);
-      double *out = c->buf[pl];
+        if (!c->buf[pl]) c->buf[pl] = alloc(sizeof(double) * w * h);
+        double *out = c->buf[pl];
 
-      for (unsigned y = 0; y < h; y++) {
-        uint8_t *pin = prev->plane[pl] + y * stride;
-        uint8_t *cin = cur->plane[pl] + y * stride;
+        for (unsigned y = 0; y < h; y++) {
+          uint8_t *pin = prev->plane[pl] + y * stride;
+          uint8_t *cin = cur->plane[pl] + y * stride;
 
-        for (unsigned x = 0; x < w; x++) {
-          *out++ += ((double)(*pin++) * p_weight + (double)(*cin) * c_weight) * need;
+          for (unsigned x = 0; x < w; x++) {
+            *out++ += ((double)(*pin++) * p_weight + (double)(*cin++) * cc_weight + fill) * need;
+          }
         }
       }
-    }
 
-    frame_duration -= need;
-    c->buf_time += need;
-    if (c->buf_time >= 1) flush_frame(c);
+      frame_left -= need;
+      c->buf_time += need;
+      if (c->buf_time >= 1) flush_frame(c);
+    }
   }
 
   y4m2_retain_frame(frame);
