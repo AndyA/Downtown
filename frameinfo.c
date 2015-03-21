@@ -114,7 +114,8 @@ typedef struct {
   y4m2_output *next;
   char *note;
   size_t offset;
-  double prev;
+  double *series;
+  unsigned used;
   int warned;
   colour_bytes col;
 } grapher_context;
@@ -143,7 +144,6 @@ static grapher_context *grapher_ctx_new(y4m2_output *next,
   ctx->next = next;
   ctx->note = sstrdup(note);
   ctx->offset = f->offset;
-  ctx->prev = NAN;
 
   colour_bytes rgb;
   colour_parse_rgb(&rgb, colour);
@@ -154,6 +154,7 @@ static grapher_context *grapher_ctx_new(y4m2_output *next,
 
 static void grapher_ctx_free(grapher_context *ctx) {
   free(ctx->note);
+  free(ctx->series);
   free(ctx);
 }
 
@@ -166,20 +167,25 @@ static void _plot_info(grapher_context *c, y4m2_frame *frame) {
   }
 
   double v = *((double *)((char *) info + c->offset));
-  int x = frame->i.width - 1;
-  int y1 = (1 - v) * frame->i.height;
 
-  /*  log_debug("plotting %5d (%3d,%3d,%3d)", y1, c->col.c[cY], c->col.c[cCb], c->col.c[cCr]);*/
+  int w = frame->i.width;
+  int h = frame->i.height;
 
-  if (!isnan(c->prev)) {
-    int y0 = (1 - c->prev) * frame->i.height;
-    y4m2_draw_line(frame, x - 1, y0, x, y1, c->col.c[cY], c->col.c[cCb], c->col.c[cCr]);
+  if (!c->series) c->series = alloc(sizeof(double) * frame->i.width);
+  if (c->used == (unsigned) w)
+    memmove(&c->series[0], &c->series[1], --c->used * sizeof(double));
+
+  c->series[c->used++] = v;
+
+  int lxx, lyy;
+  for (int x = 0; x < (int) c->used; x++) {
+    int xx = x + w - c->used;
+    int yy = (int)((1 - c->series[x]) * h);
+    if (x) y4m2_draw_line(frame, lxx, lyy, xx, yy, c->col.c[cY], c->col.c[cCb], c->col.c[cCr]);
+    else y4m2_draw_point(frame, xx, yy, c->col.c[cY], c->col.c[cCb], c->col.c[cCr]);
+    lxx = xx;
+    lyy = yy;
   }
-  else {
-    y4m2_draw_point(frame, x, y1, c->col.c[cY], c->col.c[cCb], c->col.c[cCr]);
-  }
-
-  c->prev = v;
 }
 
 static void grapher_callback(y4m2_reason reason,
