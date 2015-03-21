@@ -51,6 +51,7 @@
 /node_modules/
 /stamp-h*
 /tags
+/test-filters
 /test-timebend
 /test.*
 /testcard-yuv

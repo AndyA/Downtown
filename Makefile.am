@@ -8,7 +8,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libdowntown.la
 
-bin_PROGRAMS = downtown downtown_filter testcard-yuv test-timebend
+bin_PROGRAMS = downtown downtown_filter testcard-yuv test-timebend test-filters
 
 libdowntown_la_SOURCES = \
 	centre.h centre.c \
@@ -47,6 +47,9 @@ testcard_yuv_LDADD = libdowntown.la
 
 test_timebend_SOURCES = test-timebend.c
 test_timebend_LDADD = libdowntown.la
+
+test_filters_SOURCES = test-filters.c
+test_filters_LDADD = libdowntown.la
 
 test: all
 	cd t && $(MAKE) test
