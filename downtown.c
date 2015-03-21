@@ -355,7 +355,8 @@ static void callback(y4m2_reason reason,
   case Y4M2_FRAME:
     process_frame(c, frame);
     y4m2_copy_notes(c->out_buf, frame);
-    y4m2_emit_frame(c->next, c->out_parms, c->out_buf);
+    y4m2_emit_frame(c->next, c->out_parms, y4m2_retain_frame(c->out_buf));
+    y4m2_release_frame(frame);
     break;
 
   case Y4M2_END:
