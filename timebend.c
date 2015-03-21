@@ -77,7 +77,7 @@ static void flush_frame(context *c) {
   }
 
   c->buf_time = 0;
-  y4m2_emit_frame(c->next, c->parms, frame);
+  y4m2_emit_frame(c->next, c->parms, y4m2_retain_frame(frame));
   update_rate(c);
 }
 
@@ -162,6 +162,7 @@ static void callback(y4m2_reason reason,
 
   case Y4M2_FRAME:
     bend_frame(c, frame);
+    y4m2_release_frame(frame);
     break;
 
   case Y4M2_END:

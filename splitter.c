@@ -43,7 +43,8 @@ static void callback(y4m2_reason reason,
 
   case Y4M2_FRAME:
     for (i = 0; i < c->n_next; i++)
-      y4m2_emit_frame(c->nexts[i], parms, frame);
+      y4m2_emit_frame(c->nexts[i], parms, y4m2_retain_frame(frame));
+    y4m2_release_frame(frame);
     break;
 
   case Y4M2_END:

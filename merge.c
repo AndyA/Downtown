@@ -13,7 +13,7 @@ typedef struct {
   int phase;
   double *buf;
   y4m2_frame *out_frame;
-  const y4m2_parameters *last_parms;
+  y4m2_parameters *last_parms;
   int warned;
 } context;
 
@@ -27,6 +27,7 @@ static context *ctx_new(y4m2_output *next, int frames) {
 static void ctx_free(context *ctx) {
   if (ctx) {
     free(ctx->buf);
+    y4m2_free_parms(ctx->last_parms);
     y4m2_release_frame(ctx->out_frame);
     free(ctx);
   }
@@ -53,7 +54,7 @@ static void fill_frame(context *c, y4m2_frame *frame) {
 
 static void flush_frame(context *c, const y4m2_parameters *parms) {
   fill_frame(c, c->out_frame);
-  y4m2_emit_frame(c->next, parms, c->out_frame);
+  y4m2_emit_frame(c->next, parms, y4m2_retain_frame(c->out_frame));
   c->phase = 0;
 }
 
@@ -77,8 +78,9 @@ static void callback(y4m2_reason reason,
       c->buf = alloc(sizeof(double) * frame->i.size);
       c->out_frame = y4m2_like_frame(frame);
     }
-    c->last_parms = parms;
+    if (!c->last_parms) c->last_parms = y4m2_clone_parms(parms);
     add_frame(c, frame);
+    y4m2_release_frame(frame);
     if (++c->phase == c->frames) flush_frame(c, parms);
     break;
 

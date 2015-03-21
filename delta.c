@@ -19,7 +19,6 @@ static context *ctx_new(y4m2_output *next) {
 }
 
 static void set_prev(context *c, y4m2_frame *frame) {
-  y4m2_retain_frame(frame);
   y4m2_release_frame(c->prev);
   c->prev = frame;
 }
@@ -59,7 +58,7 @@ static void callback(y4m2_reason reason,
     }
 
     y4m2_copy_notes(c->out, frame);
-    y4m2_emit_frame(c->next, parms, c->out);
+    y4m2_emit_frame(c->next, parms, y4m2_retain_frame(c->out));
     set_prev(c, frame);
     break;
 
