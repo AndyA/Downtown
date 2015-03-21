@@ -78,6 +78,8 @@ typedef struct {
   } o;
 } y4m2_output;
 
+extern int y4m2__frames_allocated;
+
 /* Internal, exported for tests */
 
 void y4m2__parse_parms(y4m2_parameters *parms, char *buf);

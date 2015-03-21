@@ -4,9 +4,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log.h"
 #include "colour.h"
 #include "util.h"
 #include "yuv4mpeg2.h"
+
+int y4m2__frames_allocated = 0;
+
+// TODO
+//
+//  Should probably have the null and file outputs release frames rather than the parser
+//  and require filters to release any frames that they drop and retain any they hang on to
 
 static const char *tag[] = {
   "YUV4MPEG2", "FRAME"
@@ -171,6 +179,7 @@ y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
   }
 
   frame->i = *info;
+  y4m2__frames_allocated++;
   return y4m2_clear_frame(y4m2_retain_frame(frame));
 }
 
@@ -199,6 +208,7 @@ void y4m2_free_frame(y4m2_frame *frame) {
       free(frame->buf);
     y4m2_remove_notes(frame);
     free(frame);
+    y4m2__frames_allocated--;
   }
 }
 
@@ -357,12 +367,25 @@ static double _frame_duration(y4m2_parameters *parms) {
   return den / num; /* wrong way round */
 }
 
+static void check_frames(int *allocated) {
+  int delta = y4m2__frames_allocated - *allocated;
+  if (delta) {
+    int change = abs(delta);
+    log_info("%d frame%s %s (total %d)",
+             change, (change == 1 ? " was" : "s were"),
+             (delta < 0 ? "freed" : "allocated"),
+             y4m2__frames_allocated);
+    *allocated = y4m2__frames_allocated;
+  }
+}
+
 int y4m2_parse(FILE *in, y4m2_output *out) {
   size_t buf_size = 0;
   char *buf = NULL;
   y4m2_parameters *global = NULL;
   uint64_t sequence = 0;
   double elapsed = 0;
+  int frames_allocated = y4m2__frames_allocated;
 
   for (;;) {
     int c = getc(in);
@@ -391,6 +414,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       global = y4m2_new_parms();
       y4m2__parse_parms(global, tail);
       y4m2_emit_start(out, global);
+      check_frames(&frames_allocated);
     }
     else if (tail = is_word(buf, tag[Y4M2_FRAME]), tail) {
       y4m2_parameters *parms = y4m2_new_parms();
@@ -408,6 +432,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       y4m2_release_frame(frame);
       y4m2_free_parms(parms);
       y4m2_free_parms(merged);
+      check_frames(&frames_allocated);
     }
     else {
       die("Bad stream");
@@ -417,6 +442,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
 done:
 
   y4m2_emit_end(out);
+  check_frames(&frames_allocated);
 
   return 0;
 }
