@@ -21,8 +21,9 @@
 #define PROG      "test-timebend"
 #define FRAMEINFO "frameinfo.Y"
 
-#define MIN_RATE  0.1
-#define MAX_RATE  100
+#define MIN_RATE   0.1
+#define MAX_RATE   100
+#define SCALE_RATE 0.5
 
 typedef struct {
   double rate;
@@ -57,38 +58,63 @@ static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
   rate_work *w = (rate_work *) ctx;
 
   frameinfo *fi = (frameinfo *) y4m2_find_note(frame, FRAMEINFO);
-  if (fi) {
-    double rms = MAX(fi->rms, 0.00000001);
-    w->raw_rate = MAX(MIN_RATE, MIN(0.1 / rms, MAX_RATE));
-  }
+  double rms = MAX(fi->rms, 0.00000001);
+  w->raw_rate = MAX(MIN_RATE, MIN(SCALE_RATE / rms, MAX_RATE));
+  return frame;
+}
+
+typedef struct {
+  y4m2_frame *src;
+} dup_notes;
+
+static y4m2_frame *get_notes(y4m2_frame *frame, void *ctx) {
+  dup_notes *dn = (dup_notes *) ctx;
+
+  y4m2_retain_frame(frame);
+  y4m2_release_frame(dn->src);
+  dn->src = frame;
+
+  return frame;
+}
+
+static y4m2_frame *put_notes(y4m2_frame *frame, void *ctx) {
+  dup_notes *dn = (dup_notes *) ctx;
+  if (dn->src) y4m2_copy_notes(frame, dn->src);
   return frame;
 }
 
 int main(void) {
   rate_work work;
+  dup_notes dup;
+
+  dup.src = NULL;
 
   init_work(&work);
   work.decay = 0.9;
 
   log_info("Starting " PROG);
 
-  y4m2_output *out = y4m2_output_file(stdout);
-  y4m2_output *analyse = y4m2_output_null();
-
   /* process chain */
-  out = timebend_filter_cb(out, calc_rate, &work);
-  /*  out = delay_filter(out, 25);*/
+  y4m2_output *process = y4m2_output_file(stdout);
+  process = timebend_filter_cb(process, calc_rate, &work);
+  process = frameinfo_grapher(process, FRAMEINFO, "rms", "#f00");
+
+  process = delay_filter(process, 25);
+  process = injector_filter(process, put_notes, &dup);
 
   /* analyse chain */
+  y4m2_output *analyse = y4m2_output_null();
+  analyse = injector_filter(analyse, get_notes, &dup);
   analyse = injector_filter(analyse, catch_analysis, &work);
   analyse = frameinfo_filter(analyse);
   analyse = delta_filter(analyse);
 
-  y4m2_output *head = splitter_filter(analyse, out, NULL);
-
+  /* split */
+  y4m2_output *head = splitter_filter(analyse, process, NULL);
   head = progress_filter(head, PROGRESS_RATE);
   y4m2_parse(stdin, head);
 
+  y4m2_release_frame(dup.src);
 
   return 0;
 }
