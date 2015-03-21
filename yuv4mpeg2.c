@@ -11,6 +11,8 @@
 
 int y4m2__frames_allocated = 0;
 
+#define RELEASE_AT_END
+
 // TODO
 //
 //  Should probably have the null and file outputs release frames rather than the parser
@@ -429,7 +431,9 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       size_t got = fread(frame->buf, 1, frame->i.size, in);
       if (got != frame->i.size) die("Short read");
       y4m2_emit_frame(out, parms, frame);
+#ifndef RELEASE_AT_END
       y4m2_release_frame(frame);
+#endif
       y4m2_free_parms(parms);
       y4m2_free_parms(merged);
       check_frames(&frames_allocated);
@@ -502,6 +506,9 @@ static void _file_callback(y4m2_reason reason, const y4m2_parameters *parms, y4m
     y4m2__format_parms(fl, parms);
     fputc(0x0A, fl);
     fwrite(frame->buf, 1, frame->i.size, fl);
+#ifdef RELEASE_AT_END
+    y4m2_release_frame(frame);
+#endif
     break;
 
   case Y4M2_END:
@@ -524,6 +531,9 @@ static void _null_callback(y4m2_reason reason, const y4m2_parameters *parms, y4m
     break;
 
   case Y4M2_FRAME:
+#ifdef RELEASE_AT_END
+    y4m2_release_frame(frame);
+#endif
     break;
 
   case Y4M2_END:
