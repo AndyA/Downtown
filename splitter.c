@@ -1,5 +1,6 @@
 /* splitter.c */
 
+#include <stdarg.h>
 #include <string.h>
 
 #include "log.h"
@@ -54,8 +55,43 @@ static void callback(y4m2_reason reason,
   }
 }
 
-y4m2_output *splitter_filter(y4m2_output **nexts, size_t n_next) {
+y4m2_output *splitter_filter_ar(y4m2_output **nexts, size_t n_next) {
   return y4m2_output_next(callback, ctx_new(nexts, n_next));
+}
+
+static unsigned count_args(y4m2_output *next, va_list ap) {
+  va_list ap2;
+
+  va_copy(ap2, ap);
+  unsigned count = 0;
+  while (next) {
+    count++;
+    next = va_arg(ap2, y4m2_output *);
+  }
+  va_end(ap2);
+
+  return count;
+}
+
+y4m2_output *splitter_filter(y4m2_output *next, ...) {
+  va_list ap;
+
+  va_start(ap, next);
+  unsigned count = count_args(next, ap);
+  y4m2_output **nexts = alloc(sizeof(y4m2_output) * count);
+  y4m2_output **np = nexts;
+
+  while (next) {
+    *np++ = next;
+    next = va_arg(ap, y4m2_output *);
+  }
+
+  va_end(ap);
+
+  y4m2_output *rv = splitter_filter_ar(nexts, count);
+  free(nexts);
+
+  return rv;
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

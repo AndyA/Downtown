@@ -9,7 +9,8 @@ extern "C" {
 
 #include "yuv4mpeg2.h"
 
-y4m2_output *splitter_filter(y4m2_output **nexts, size_t n_next);
+y4m2_output *splitter_filter_ar(y4m2_output **nexts, size_t n_next);
+y4m2_output *splitter_filter(y4m2_output *next, ...);
 
 #ifdef __cplusplus
 }
