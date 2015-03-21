@@ -497,6 +497,7 @@ static void _file_callback(y4m2_reason reason, const y4m2_parameters *parms, y4m
     break;
 
   case Y4M2_FRAME:
+    y4m2_tell_me_about_stride(frame);
     fputs(tag[Y4M2_FRAME], fl);
     y4m2__format_parms(fl, parms);
     fputc(0x0A, fl);
