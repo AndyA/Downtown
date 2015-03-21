@@ -769,10 +769,10 @@ static int _is_window(const y4m2_frame *frame) {
   return 0;
 }
 
-void y4m2_tell_me_about_stride(const y4m2_frame *frame) {
+void y4m2__tell_me_about_stride(const char *file, int line, const y4m2_frame *frame) {
   if (_is_window(frame))
-    die("To process this frame you need to know about the"
-        "'stride' member in y4m2_plane_info");
+    die("%s, %d: To process this frame you need to know about the"
+        "'stride' member in y4m2_plane_info", file, line);
 }
 
 y4m2_frame *y4m2_window(y4m2_frame *frame, int x, int y, int w, int h) {

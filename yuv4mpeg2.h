@@ -139,7 +139,10 @@ y4m2_frame *y4m2_window(y4m2_frame *frame, int x, int y, int w, int h);
 
 /* Misc */
 
-void y4m2_tell_me_about_stride(const y4m2_frame *frame);
+#define y4m2_tell_me_about_stride(frame) \
+  y4m2__tell_me_about_stride(__FILE__, __LINE__, frame)
+
+void y4m2__tell_me_about_stride(const char *file, int line, const y4m2_frame *frame);
 
 #endif
 
