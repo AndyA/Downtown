@@ -13,6 +13,7 @@ bin_PROGRAMS = downtown downtown_filter testcard-yuv test-timebend
 libdowntown_la_SOURCES = \
 	centre.h centre.c \
 	colour.h colour.c \
+	delay.h delay.c \
 	delta.h delta.c \
 	dumpframe.h dumpframe.c \
 	frameinfo.h frameinfo.c \
