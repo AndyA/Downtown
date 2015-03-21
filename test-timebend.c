@@ -19,14 +19,13 @@
 
 static double angle = 0;
 
-static y4m2_frame *inject_rate(y4m2_frame *frame, void *ctx) {
+static double calc_rate(void *ctx) {
   (void) ctx;
 
-  double rate = pow(10, sin(angle));
-  angle += 0.05 / rate;
-  timebend_set_rate(frame, rate);
+  double rate = pow(25, sin(angle));
+  angle += 0.02;
 
-  return frame;
+  return rate;
 }
 
 int main(void) {
@@ -35,8 +34,7 @@ int main(void) {
 
   y4m2_output *out = y4m2_output_file(stdout);
 
-  out = timebend_filter(out, 1);
-  out = injector_filter(out, inject_rate, NULL);
+  out = timebend_filter_cb(out, calc_rate, NULL);
 
   out = frameinfo_filter(out);
   out = progress_filter(out, PROGRESS_RATE);

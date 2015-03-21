@@ -9,15 +9,10 @@ extern "C" {
 
 #include "yuv4mpeg2.h"
 
-#define timebend_RATE_NOTE "timebend_rate"
-
-typedef struct {
-  double rate;
-} timebend_rate_note;
+typedef double (*timebend_rate_cb)(void *ctx);
 
 y4m2_output *timebend_filter(y4m2_output *next, double rate);
-
-void timebend_set_rate(y4m2_frame *frame, double rate);
+y4m2_output *timebend_filter_cb(y4m2_output *next, timebend_rate_cb cb, void *ctx);
 
 #ifdef __cplusplus
 }

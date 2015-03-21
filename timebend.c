@@ -7,9 +7,15 @@
 #include "util.h"
 #include "yuv4mpeg2.h"
 
+#define NOWT 0.00001
+
 typedef struct {
   y4m2_output *next;
+
   double rate;
+  timebend_rate_cb cb;
+  void *ctx;
+
   double *buf[Y4M2_N_PLANE];
   double buf_time;
   y4m2_frame *prev;
@@ -17,10 +23,20 @@ typedef struct {
   y4m2_parameters *parms;
 } context;
 
-static context *ctx_new(y4m2_output *next, double rate) {
+static double _fixed_rate(void *ctx) {
+  context *c = (context *) ctx;
+  return c->rate;
+}
+
+static context *ctx_new(y4m2_output *next, double rate, timebend_rate_cb cb, void *ctx) {
   context *c = alloc(sizeof(context));
+
   c->next = next;
   c->rate = rate;
+
+  c->cb = cb ? cb : _fixed_rate;;
+  c->ctx = cb ? ctx : c;;
+
   return c;
 }
 
@@ -34,12 +50,8 @@ static void ctx_free(context *c) {
   }
 }
 
-static void check_note(context *c, y4m2_frame *frame) {
-  timebend_rate_note *note = y4m2_find_note(frame, timebend_RATE_NOTE);
-  if (note) {
-    c->rate = note->rate;
-    log_debug("timebend rate set to %f", c->rate);
-  }
+static void update_rate(context *c) {
+  c->rate = c->cb(c->ctx);
 }
 
 static void flush_frame(context *c) {
@@ -66,53 +78,63 @@ static void flush_frame(context *c) {
 
   c->buf_time = 0;
   y4m2_emit_frame(c->next, c->parms, frame);
+  update_rate(c);
 }
 
 static void bend_frame(context *c, y4m2_frame *frame) {
-  if (frame) {
-    check_note(c, frame);
-    if (!c->out) c->out = y4m2_like_frame(frame);
-  }
+  if (frame && !c->out) c->out = y4m2_like_frame(frame);
 
-  y4m2_frame *prev = c->prev;
+  if (c->prev) {
+    double frame_duration = 1;
+    while (frame_duration > NOWT) {
 
-  if (prev) {
-    y4m2_frame *cur = frame ? frame : prev;
-    double frame_duration = 1 / c->rate;
+      double got      = frame_duration / c->rate;
+      double need     = 1 - c->buf_time;
 
-    for (double frame_left = frame_duration; frame_left > 0;) {
+      if (need > got) need = got;
 
-      double need = 1 - c->buf_time;
-      if (need > frame_left) need = frame_left;
-
-      double p_weight = frame_duration < 1 ? 1 : frame_left / frame_duration;
-      double c_weight = 1 - p_weight;
+      double p_weight = frame_duration * need;
+      double c_weight = (1 - frame_duration) * need;
 
       for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
-        double cc_weight = c_weight;
-        double fill = 0;
-        if (!frame) {
-          fill = c_weight * (double) cur->i.plane[pl].fill;
-          cc_weight = 0;
-        }
-        unsigned w = cur->i.width / cur->i.plane[pl].xs;
-        unsigned h = cur->i.height / cur->i.plane[pl].ys;
-        unsigned stride = cur->i.plane[pl].stride;
+        unsigned w = c->prev->i.width / c->prev->i.plane[pl].xs;
+        unsigned h = c->prev->i.height / c->prev->i.plane[pl].ys;
+        unsigned stride = c->prev->i.plane[pl].stride;
 
         if (!c->buf[pl]) c->buf[pl] = alloc(sizeof(double) * w * h);
         double *out = c->buf[pl];
 
-        for (unsigned y = 0; y < h; y++) {
-          uint8_t *pin = prev->plane[pl] + y * stride;
-          uint8_t *cin = cur->plane[pl] + y * stride;
-
-          for (unsigned x = 0; x < w; x++) {
-            *out++ += ((double)(*pin++) * p_weight + (double)(*cin++) * cc_weight + fill) * need;
+        if (c_weight > NOWT) {
+          if (frame) {
+            for (unsigned y = 0; y < h; y++) {
+              uint8_t *pin = c->prev->plane[pl] + y * stride;
+              uint8_t *cin = frame->plane[pl] + y * stride;
+              for (unsigned x = 0; x < w; x++) {
+                *out++ += ((double)(*pin++) * p_weight) + ((double)(*cin++) * c_weight);
+              }
+            }
+          }
+          else {
+            double fill = (double) c->prev->i.plane[pl].fill * c_weight;
+            for (unsigned y = 0; y < h; y++) {
+              uint8_t *pin = c->prev->plane[pl] + y * stride;
+              for (unsigned x = 0; x < w; x++) {
+                *out++ += ((double)(*pin++) * p_weight) + fill;
+              }
+            }
+          }
+        }
+        else {
+          for (unsigned y = 0; y < h; y++) {
+            uint8_t *pin = c->prev->plane[pl] + y * stride;
+            for (unsigned x = 0; x < w; x++) {
+              *out++ += (double)(*pin++) * p_weight;
+            }
           }
         }
       }
 
-      frame_left -= need;
+      frame_duration -= need * c->rate;
       c->buf_time += need;
       if (c->buf_time >= 1) flush_frame(c);
     }
@@ -134,6 +156,8 @@ static void callback(y4m2_reason reason,
   case Y4M2_START:
     c->parms = y4m2_clone_parms(parms);
     y4m2_emit_start(c->next, parms);
+    /* get the initial rate */
+    update_rate(c);
     break;
 
   case Y4M2_FRAME:
@@ -151,13 +175,11 @@ static void callback(y4m2_reason reason,
 }
 
 y4m2_output *timebend_filter(y4m2_output *next, double rate) {
-  return y4m2_output_next(callback, ctx_new(next, rate));
+  return y4m2_output_next(callback, ctx_new(next, rate, NULL, NULL));
 }
 
-void timebend_set_rate(y4m2_frame *frame, double rate) {
-  timebend_rate_note *note = alloc(sizeof(timebend_rate_note));
-  note->rate = rate;
-  y4m2_set_note(frame, timebend_RATE_NOTE, note, free);
+y4m2_output *timebend_filter_cb(y4m2_output *next, timebend_rate_cb cb, void *ctx) {
+  return y4m2_output_next(callback, ctx_new(next, 1, cb, ctx));
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
