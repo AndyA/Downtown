@@ -68,7 +68,7 @@ typedef void (*y4m2_callback)(y4m2_reason reason,
                               void *ctx);
 
 typedef struct {
-  enum { Y4M2_OUTPUT_FILE, Y4M2_OUTPUT_NEXT } type;
+  enum { Y4M2_OUTPUT_FILE, Y4M2_OUTPUT_NEXT, Y4M2_OUTPUT_NULL } type;
   union {
     FILE *f;
     struct {
@@ -126,6 +126,7 @@ int y4m2_emit(y4m2_output *out, y4m2_reason reason,
               y4m2_frame *frame);
 y4m2_output *y4m2_output_file(FILE *out);
 y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx);
+y4m2_output *y4m2_output_null(void);
 void y4m2_free_output(y4m2_output *out);
 
 /* To, from float */

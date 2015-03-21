@@ -431,6 +431,8 @@ int y4m2_emit_start(y4m2_output *out, const y4m2_parameters *parms) {
   case Y4M2_OUTPUT_NEXT:
     out->o.n.cb(Y4M2_START, parms, NULL, out->o.n.ctx);
     break;
+  case Y4M2_OUTPUT_NULL:
+    break;
   }
   return 0;
 }
@@ -446,6 +448,8 @@ int y4m2_emit_frame(y4m2_output *out, const y4m2_parameters *parms, y4m2_frame *
   case Y4M2_OUTPUT_NEXT:
     out->o.n.cb(Y4M2_FRAME, parms, frame, out->o.n.ctx);
     break;
+  case Y4M2_OUTPUT_NULL:
+    break;
   }
   return 0;
 }
@@ -457,6 +461,8 @@ int y4m2_emit_end(y4m2_output *out) {
   case Y4M2_OUTPUT_NEXT:
     out->o.n.cb(Y4M2_END, NULL, NULL, out->o.n.ctx);
     y4m2_free_output(out);
+    break;
+  case Y4M2_OUTPUT_NULL:
     break;
   }
   return 0;
@@ -489,6 +495,12 @@ y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx) {
   o->type = Y4M2_OUTPUT_NEXT;
   o->o.n.cb = cb;
   o->o.n.ctx = ctx;
+  return o;
+}
+
+y4m2_output *y4m2_output_null(void) {
+  y4m2_output *o = alloc(sizeof(y4m2_output));
+  o->type = Y4M2_OUTPUT_NULL;
   return o;
 }
 
