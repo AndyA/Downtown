@@ -448,49 +448,18 @@ done:
 }
 
 int y4m2_emit_start(y4m2_output *out, const y4m2_parameters *parms) {
-  switch (out->type) {
-  case Y4M2_OUTPUT_FILE:
-    fputs(tag[Y4M2_START], out->o.f);
-    y4m2__format_parms(out->o.f, parms);
-    fputc(0x0A, out->o.f);
-    break;
-  case Y4M2_OUTPUT_NEXT:
-    out->o.n.cb(Y4M2_START, parms, NULL, out->o.n.ctx);
-    break;
-  case Y4M2_OUTPUT_NULL:
-    break;
-  }
+  out->cb(Y4M2_START, parms, NULL, out->ctx);
   return 0;
 }
 
 int y4m2_emit_frame(y4m2_output *out, const y4m2_parameters *parms, y4m2_frame *frame) {
-  switch (out->type) {
-  case Y4M2_OUTPUT_FILE:
-    fputs(tag[Y4M2_FRAME], out->o.f);
-    y4m2__format_parms(out->o.f, parms);
-    fputc(0x0A, out->o.f);
-    fwrite(frame->buf, 1, frame->i.size, out->o.f);
-    break;
-  case Y4M2_OUTPUT_NEXT:
-    out->o.n.cb(Y4M2_FRAME, parms, frame, out->o.n.ctx);
-    break;
-  case Y4M2_OUTPUT_NULL:
-    break;
-  }
+  out->cb(Y4M2_FRAME, parms, frame, out->ctx);
   return 0;
 }
 
 int y4m2_emit_end(y4m2_output *out) {
-  switch (out->type) {
-  case Y4M2_OUTPUT_FILE:
-    break;
-  case Y4M2_OUTPUT_NEXT:
-    out->o.n.cb(Y4M2_END, NULL, NULL, out->o.n.ctx);
-    y4m2_free_output(out);
-    break;
-  case Y4M2_OUTPUT_NULL:
-    break;
-  }
+  out->cb(Y4M2_END, NULL, NULL, out->ctx);
+  y4m2_free_output(out);
   return 0;
 }
 
@@ -509,25 +478,60 @@ int y4m2_emit(y4m2_output *out, y4m2_reason reason,
   }
 }
 
-y4m2_output *y4m2_output_file(FILE *out) {
+y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx) {
   y4m2_output *o = alloc(sizeof(y4m2_output));
-  o->type = Y4M2_OUTPUT_FILE;
-  o->o.f = out;
+  o->cb = cb;
+  o->ctx = ctx;
   return o;
 }
 
-y4m2_output *y4m2_output_next(y4m2_callback cb, void *ctx) {
-  y4m2_output *o = alloc(sizeof(y4m2_output));
-  o->type = Y4M2_OUTPUT_NEXT;
-  o->o.n.cb = cb;
-  o->o.n.ctx = ctx;
-  return o;
+static void _file_callback(y4m2_reason reason, const y4m2_parameters *parms, y4m2_frame *frame, void *ctx) {
+  FILE *fl = (FILE *) ctx;
+
+  switch (reason) {
+
+  case Y4M2_START:
+    fputs(tag[Y4M2_START], fl);
+    y4m2__format_parms(fl, parms);
+    fputc(0x0A, fl);
+    break;
+
+  case Y4M2_FRAME:
+    fputs(tag[Y4M2_FRAME], fl);
+    y4m2__format_parms(fl, parms);
+    fputc(0x0A, fl);
+    fwrite(frame->buf, 1, frame->i.size, fl);
+    break;
+
+  case Y4M2_END:
+    break;
+  }
+}
+
+y4m2_output *y4m2_output_file(FILE *out) {
+  return y4m2_output_next(_file_callback, out);
+}
+
+static void _null_callback(y4m2_reason reason, const y4m2_parameters *parms, y4m2_frame *frame, void *ctx) {
+  (void) parms;
+  (void) frame;
+  (void) ctx;
+
+  switch (reason) {
+
+  case Y4M2_START:
+    break;
+
+  case Y4M2_FRAME:
+    break;
+
+  case Y4M2_END:
+    break;
+  }
 }
 
 y4m2_output *y4m2_output_null(void) {
-  y4m2_output *o = alloc(sizeof(y4m2_output));
-  o->type = Y4M2_OUTPUT_NULL;
-  return o;
+  return y4m2_output_next(_null_callback, NULL);
 }
 
 void y4m2_free_output(y4m2_output *out) {

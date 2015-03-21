@@ -68,14 +68,8 @@ typedef void (*y4m2_callback)(y4m2_reason reason,
                               void *ctx);
 
 typedef struct {
-  enum { Y4M2_OUTPUT_FILE, Y4M2_OUTPUT_NEXT, Y4M2_OUTPUT_NULL } type;
-  union {
-    FILE *f;
-    struct {
-      y4m2_callback cb;
-      void *ctx;
-    } n;
-  } o;
+  y4m2_callback cb;
+  void *ctx;
 } y4m2_output;
 
 extern int y4m2__frames_allocated;
