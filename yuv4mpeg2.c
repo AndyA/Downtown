@@ -371,10 +371,10 @@ static void check_frames(int *allocated) {
   int delta = y4m2__frames_allocated - *allocated;
   if (delta) {
     int change = abs(delta);
-    log_info("%d frame%s %s (total %d)",
-             change, (change == 1 ? " was" : "s were"),
-             (delta < 0 ? "freed" : "allocated"),
-             y4m2__frames_allocated);
+    log_debug("%d frame%s %s (total %d)",
+              change, (change == 1 ? " was" : "s were"),
+              (delta < 0 ? "freed" : "allocated"),
+              y4m2__frames_allocated);
     *allocated = y4m2__frames_allocated;
   }
 }
