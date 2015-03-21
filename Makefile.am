@@ -24,6 +24,7 @@ libdowntown_la_SOURCES = \
 	quadtree.h quadtree.c \
 	resample.h resample.c \
 	sampler.h sampler.c \
+	splitter.h splitter.c \
 	timebend.h timebend.c \
 	util.h util.c \
 	voronoi.h voronoi.c \
