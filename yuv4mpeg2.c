@@ -202,7 +202,7 @@ y4m2_frame *y4m2_clone_frame(const y4m2_frame *frame) {
   return nf;
 }
 
-void y4m2_free_frame(y4m2_frame *frame) {
+static void free_frame(y4m2_frame *frame) {
   if (frame) {
     if (frame->parent)
       y4m2_release_frame(frame->parent);
@@ -221,7 +221,7 @@ y4m2_frame *y4m2_retain_frame(y4m2_frame *frame) {
 
 void y4m2_release_frame(y4m2_frame *frame) {
   if (frame && --frame->refcnt == 0)
-    y4m2_free_frame(frame);
+    free_frame(frame);
 }
 
 static y4m2_note_value *_retain_value(y4m2_note_value *v) {
