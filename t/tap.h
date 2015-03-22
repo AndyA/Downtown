@@ -13,7 +13,7 @@ int test(int flag, const char *msg, va_list ap);
 void diag(const char *fmt, ...);
 /*void die(const char *fmt, ...);*/
 void done_testing(void);
-int nest_in(const char *p);
+int nest_in(const char *p, ...);
 int nest_out(void);
 int ok(int flag, const char *msg, ...);
 int pass(const char *msg, ...);

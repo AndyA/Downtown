@@ -16,7 +16,7 @@ typedef struct test_alert {
 
 int test_no = 0;
 
-static const char *pfx[MAX_PREFIX];
+static char *pfx[MAX_PREFIX];
 static size_t npfx = 0;
 
 static test_alert *alerts = NULL;
@@ -35,6 +35,7 @@ static int fpf(FILE *f, const char *msg, ...) {
   va_end(ap);
   return rc;
 }
+
 
 void diag(const char *fmt, ...) {
   va_list ap;
@@ -59,6 +60,18 @@ static void *alloc(size_t size) {
   if (!m) die("Out of memory for %lu bytes", (unsigned long) size);
   memset(m, 0, size);
   return m;
+}
+
+static char *vssprintf(const char *fmt, va_list ap) {
+  char tmp[1];
+  char *buf = NULL;
+  va_list ap2;
+
+  va_copy(ap2, ap);
+  int len = vsnprintf(tmp, 0, fmt, ap);
+  buf = alloc(len + 1);
+  vsnprintf(buf, len + 1, fmt, ap2);
+  return buf;
 }
 
 static test_alert *add_alert(test_alert *list, test_alert *ta) {
@@ -93,15 +106,17 @@ void done_testing(void) {
   fpf(stdout, "1..%d\n", test_no);
 }
 
-int nest_in(const char *p) {
+int nest_in(const char *p, ...) {
+  va_list ap;
   if (npfx == MAX_PREFIX) die("Too many prefixes");
-  pfx[npfx++] = p;
+  va_start(ap, p);
+  pfx[npfx++] = vssprintf(p, ap);
   return 0;
 }
 
 int nest_out(void) {
   if (npfx == 0) die("Can't go out a level - we're at the top");
-  npfx--;
+  free(pfx[--npfx]);
   return 0;
 }
 
