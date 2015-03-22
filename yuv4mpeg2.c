@@ -11,11 +11,6 @@
 
 int y4m2__frames_allocated = 0;
 
-// TODO
-//
-//  Should probably have the null and file outputs release frames rather than the parser
-//  and require filters to release any frames that they drop and retain any they hang on to
-
 static const char *tag[] = {
   "YUV4MPEG2", "FRAME"
 };
