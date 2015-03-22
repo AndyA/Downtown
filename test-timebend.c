@@ -21,9 +21,11 @@
 #define PROG      "test-timebend"
 #define FRAMEINFO "frameinfo.Y"
 
-#define MIN_RATE   0.1
+#define MIN_RATE   1
 #define MAX_RATE   100
-#define SCALE_RATE 0.5
+#define SCALE_RATE 0.02
+#define DELAY      50
+#define DECAY      0.75
 
 typedef struct {
   double rate;
@@ -59,7 +61,8 @@ static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
 
   frameinfo *fi = (frameinfo *) y4m2_find_note(frame, FRAMEINFO);
   double rms = MAX(fi->rms, 0.00000001);
-  w->raw_rate = MAX(MIN_RATE, MIN(SCALE_RATE / rms, MAX_RATE));
+  double rms2 = rms * rms;
+  w->raw_rate = MAX(MIN_RATE, MIN(SCALE_RATE / rms2, MAX_RATE));
   return frame;
 }
 
@@ -90,7 +93,7 @@ int main(void) {
   dup.src = NULL;
 
   init_work(&work);
-  work.decay = 0.9;
+  work.decay = DECAY;
 
   log_info("Starting " PROG);
 
@@ -99,7 +102,7 @@ int main(void) {
   process = timebend_filter_cb(process, calc_rate, &work);
   process = frameinfo_grapher(process, FRAMEINFO, "rms", "#f00");
 
-  process = delay_filter(process, 25);
+  process = delay_filter(process, DELAY);
   process = injector_filter(process, put_notes, &dup);
 
   /* analyse chain */
