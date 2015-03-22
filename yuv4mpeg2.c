@@ -381,6 +381,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
   uint64_t sequence = 0;
   double elapsed = 0;
   int frames_allocated = y4m2__frames_allocated;
+  int started = 0;
 
   for (;;) {
     int c = getc(in);
@@ -405,6 +406,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
 
     char *tail;
     if (tail = is_word(buf, tag[Y4M2_START]), tail) {
+      if (started++) die("Unexpected %s", tag[Y4M2_START]);
       if (global) y4m2_free_parms(global);
       global = y4m2_new_parms();
       y4m2__parse_parms(global, tail);
@@ -412,6 +414,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       check_frames(&frames_allocated);
     }
     else if (tail = is_word(buf, tag[Y4M2_FRAME]), tail) {
+      if (!started) die("Unexpected %s", tag[Y4M2_FRAME]);
       y4m2_parameters *parms = y4m2_new_parms();
       y4m2__parse_parms(parms, tail);
 
