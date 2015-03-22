@@ -11,6 +11,7 @@ noinst_LTLIBRARIES = libdowntown.la
 bin_PROGRAMS = downtown downtown_filter testcard-yuv test-timebend test-filters
 
 libdowntown_la_SOURCES = \
+	average.h average.c \
 	centre.h centre.c \
 	colour.h colour.c \
 	delay.h delay.c \
