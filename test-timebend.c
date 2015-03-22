@@ -13,6 +13,7 @@
 #include "frameinfo.h"
 #include "injector.h"
 #include "log.h"
+#include "numpipe.h"
 #include "progress.h"
 #include "splitter.h"
 #include "timebend.h"
@@ -37,38 +38,28 @@ typedef struct {
   double rate_total;
   unsigned rate_count;
 
+  numpipe *np;
+
   average *sm_rms;
   average *sm_rate;
 
 } rate_work;
 
 static void work_init(rate_work *w) {
+  w->np = numpipe_new_average(1);
   w->sm_rms = average_new(SMOOTH_RMS);
   w->sm_rate = average_new(SMOOTH_RATE);
 }
 
 static void work_free(rate_work *w) {
+  numpipe_free(w->np);
   average_free(w->sm_rms);
   average_free(w->sm_rate);
 }
 
-static void put_rate(rate_work *w, double rate) {
-  w->rate_total += rate;
-  w->rate_count++;
-}
-
-static double get_rate(rate_work *w) {
-  if (w->rate_count) {
-    w->rate = w->rate_total / (double) w->rate_count;
-    w->rate_total = 0;
-    w->rate_count = 0;
-  }
-  return w->rate;
-}
-
 static double calc_rate(void *ctx) {
   rate_work *w = (rate_work *) ctx;
-  double rate = get_rate(w);
+  double rate = numpipe_get(w->np);
   log_debug("current rate: %8.3f", rate);
   return rate;
 }
@@ -83,7 +74,7 @@ static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
   double rate = average_push(w->sm_rate, MAX(MIN_RATE, MIN(raw_rate, MAX_RATE)));
 
   log_debug("rms %8.3f, raw_rate: %8.3f, rate: %8.3f", rms, raw_rate, rate);
-  put_rate(w, rate);
+  numpipe_put(w->np, rate);
 
   return frame;
 }
