@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "average.h"
 #include "delay.h"
 #include "delta.h"
 #include "downtown.h"
@@ -21,38 +22,54 @@
 #define PROG      "test-timebend"
 #define FRAMEINFO "frameinfo.Y"
 
-#define MIN_RATE   1
-#define MAX_RATE   100
-#define SCALE_RATE 0.02
-#define DELAY      50
-#define DECAY      0.75
+#define MIN_RATE     1
+#define MAX_RATE     100
+
+#define RATE_BASE     1
+#define RATE_EXP      1.1
+#define RMS_SCALE     1
+
+#define SMOOTH_RMS     50
+#define SMOOTH_RATE    25
 
 typedef struct {
   double rate;
-  double scale;
-  double decay;
-  double raw_rate;
+  double rate_total;
+  unsigned rate_count;
+
+  average *sm_rms;
+  average *sm_rate;
+
 } rate_work;
 
-static void init_work(rate_work *work) {
-  work->rate = 1;
-  work->scale = 1;
-  work->decay = 0;
+static void work_init(rate_work *w) {
+  w->sm_rms = average_new(SMOOTH_RMS);
+  w->sm_rate = average_new(SMOOTH_RATE);
 }
 
-static double next_rate(rate_work *w, double next) {
-  w->scale = w->scale * w->decay + 1;
-  w->rate = w->rate * w->decay + next;
-  return w->rate / w->scale;
+static void work_free(rate_work *w) {
+  average_free(w->sm_rms);
+  average_free(w->sm_rate);
+}
+
+static void put_rate(rate_work *w, double rate) {
+  w->rate_total += rate;
+  w->rate_count++;
+}
+
+static double get_rate(rate_work *w) {
+  if (w->rate_count) {
+    w->rate = w->rate_total / (double) w->rate_count;
+    w->rate_total = 0;
+    w->rate_count = 0;
+  }
+  return w->rate;
 }
 
 static double calc_rate(void *ctx) {
   rate_work *w = (rate_work *) ctx;
-
-  double rate = next_rate(w, w->raw_rate);
-
-  log_debug("raw_rate: %8.3f, rate: %8.3f", w->raw_rate, rate);
-
+  double rate = get_rate(w);
+  log_debug("current rate: %8.3f", rate);
   return rate;
 }
 
@@ -60,9 +77,14 @@ static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
   rate_work *w = (rate_work *) ctx;
 
   frameinfo *fi = (frameinfo *) y4m2_find_note(frame, FRAMEINFO);
-  double rms = MAX(fi->rms, 0.00000001);
-  double rms2 = rms * rms;
-  w->raw_rate = MAX(MIN_RATE, MIN(SCALE_RATE / rms2, MAX_RATE));
+
+  double rms = average_push(w->sm_rms, fi->rms);
+  double raw_rate = RATE_BASE * pow(RATE_EXP, RMS_SCALE / rms);
+  double rate = average_push(w->sm_rate, MAX(MIN_RATE, MIN(raw_rate, MAX_RATE)));
+
+  log_debug("rms %8.3f, raw_rate: %8.3f, rate: %8.3f", rms, raw_rate, rate);
+  put_rate(w, rate);
+
   return frame;
 }
 
@@ -87,28 +109,27 @@ static y4m2_frame *put_notes(y4m2_frame *frame, void *ctx) {
 }
 
 int main(void) {
-  rate_work work;
+  rate_work w;
   dup_notes dup;
 
   dup.src = NULL;
 
-  init_work(&work);
-  work.decay = DECAY;
+  work_init(&w);
 
   log_info("Starting " PROG);
 
   /* process chain */
   y4m2_output *process = y4m2_output_file(stdout);
-  process = timebend_filter_cb(process, calc_rate, &work);
+  process = timebend_filter_cb(process, calc_rate, &w);
   process = frameinfo_grapher(process, FRAMEINFO, "rms", "#f00");
 
-  process = delay_filter(process, DELAY);
+  process = delay_filter(process, (SMOOTH_RATE + SMOOTH_RMS) / 2);
   process = injector_filter(process, put_notes, &dup);
 
   /* analyse chain */
   y4m2_output *analyse = y4m2_output_null();
   analyse = injector_filter(analyse, get_notes, &dup);
-  analyse = injector_filter(analyse, catch_analysis, &work);
+  analyse = injector_filter(analyse, catch_analysis, &w);
   analyse = frameinfo_filter(analyse);
   analyse = delta_filter(analyse);
 
@@ -118,6 +139,8 @@ int main(void) {
   y4m2_parse(stdin, head);
 
   y4m2_release_frame(dup.src);
+
+  work_free(&w);
 
   return 0;
 }
