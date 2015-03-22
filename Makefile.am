@@ -22,6 +22,7 @@ libdowntown_la_SOURCES = \
 	injector.h injector.c \
 	log.h log.c \
 	merge.h merge.c \
+	numpipe.h numpipe.c \
 	progress.h progress.c \
 	quadtree.h quadtree.c \
 	resample.h resample.c \
