@@ -1,5 +1,6 @@
 /* timebend.c */
 
+#include <math.h>
 #include <string.h>
 
 #include "log.h"
@@ -51,7 +52,12 @@ static void ctx_free(context *c) {
 }
 
 static void update_rate(context *c) {
-  c->rate = c->cb(c->ctx);
+  double rate = c->cb(c->ctx);
+  if (isnan(rate)) {
+    log_warning("Attempt to set rate to NAN");
+    return;
+  }
+  c->rate = MAX(rate, NOWT);
 }
 
 static void flush_frame(context *c) {
