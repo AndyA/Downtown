@@ -16,6 +16,7 @@ typedef struct {
   double rate;
   timebend_rate_cb cb;
   void *ctx;
+  double resync;
 
   double *buf[Y4M2_N_PLANE];
   double buf_time;
@@ -93,6 +94,16 @@ static void bend_frame(context *c, y4m2_frame *frame) {
   if (c->prev) {
     double frame_duration = 1;
     while (frame_duration > NOWT) {
+
+      if (c->resync > NOWT && fabs(c->rate - 1) <= NOWT) {
+        double adj = MIN(c->buf_time, c->resync);
+        if (adj > NOWT) {
+          log_debug("rate=%8.3f, buf_time=%8.3f, adjust=%8.3f",
+                    c->rate, c->buf_time, adj);
+        }
+
+        c->buf_time -= adj;
+      }
 
       double got      = frame_duration / c->rate;
       double need     = 1 - c->buf_time;
