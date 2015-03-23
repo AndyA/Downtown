@@ -1,0 +1,86 @@
+/* tb_convolve.c */
+
+#include <math.h>
+#include <stdlib.h>
+
+#include "tb_convolve.h"
+#include "util.h"
+
+#define NOWT 0.000000001
+
+tb_convolve *tb_convolve_new(unsigned len,
+                             const double *coef) {
+  return tb_convolve_new_signed(len, coef, coef);
+}
+
+tb_convolve *tb_convolve_new_signed(unsigned len,
+                                    const double *pos_coef,
+                                    const double *neg_coef) {
+  tb_convolve *c = (tb_convolve *) alloc(sizeof(tb_convolve));
+  c->pos_coef = memdup(pos_coef, sizeof(double) * len);
+  if (pos_coef == neg_coef)
+    c->neg_coef = c->pos_coef;
+  else
+    c->neg_coef = memdup(neg_coef, sizeof(double) * len);
+  return c;
+}
+
+void tb_convolve_free(tb_convolve *c) {
+  if (c) {
+    if (c->pos_coef != c->neg_coef) free(c->pos_coef);
+    free(c->neg_coef);
+    free(c);
+  }
+}
+
+static double _scale_coef(const tb_convolve *c, const double *coef, double pos, double sa) {
+  (void) c;
+  unsigned p = (unsigned)  pos;
+  double sum = coef[p] * MIN(sa, 1 - (pos - (double) p));
+  p++;
+  for (unsigned i = 1; i < (unsigned)(sa - p); i++)
+    sum += coef[p++];
+  double rem = sa - (double) p;
+  if (rem > 0.00001) sum += coef[p] * rem;
+  return sum / sa;
+}
+
+static double _calc(const tb_convolve *c, double n, double pos, double sa) {
+  double *coef_p = n < 0 ? c->neg_coef : c->pos_coef;
+  return n * _scale_coef(c, coef_p, pos, sa);
+}
+
+double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, unsigned pos) {
+  double cpos, done = 0, sum = 0, centre = (double) c->len / 2.0;
+  unsigned p;
+
+  for (cpos = centre, p = pos + centre; cpos >= 0 && p-- > 0;) {
+    double sample = in[p];
+    double sa = fabs(sample) < NOWT ? centre : 1 / sample;
+    double start = MAX(0, cpos - sa);
+    double span = cpos - start;
+    sum += _calc(c, sample, start, span);
+    cpos -= sa;
+    done += span;
+  }
+
+  for (cpos = centre, p = pos + centre; cpos < (double) c->len && p < len; p++) {
+    double sample = in[p];
+    double sa = fabs(sample) < NOWT ? centre : 1 / sample;
+    double start = cpos;
+    double span = MIN(sa, (double)c->len - start);
+    sum += _calc(c, sample, start, span);
+    cpos += sa;
+    done += span;
+  }
+
+  return sum / done;
+}
+
+void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsigned len) {
+  for (unsigned i = 0; i < len; i++)
+    out[i] = tb_convolve_calc(c, in, len, i);
+}
+
+/* vim:ts=2:sw=2:sts=2:et:ft=c
+ */
