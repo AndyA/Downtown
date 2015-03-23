@@ -146,7 +146,6 @@ static void bend_frame(context *c, y4m2_frame *frame) {
     }
   }
 
-  y4m2_retain_frame(frame);
   y4m2_release_frame(c->prev);
   c->prev = frame;
 }
