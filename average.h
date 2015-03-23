@@ -12,6 +12,7 @@ typedef struct {
   unsigned in, out;
   unsigned full;
   double total;
+  double min, max;
   double *data;
 } average;
 
@@ -20,8 +21,12 @@ void average_free(average *avg);
 
 unsigned average_used(const average *avg);
 double average_get(const average *avg);
+double average_min(average *avg);
+double average_max(average *avg);
 double average_pop(average *avg);
 double average_push(average *avg, double datum);
+
+void average_range(average *avg, double *min, double *max);
 
 #ifdef __cplusplus
 }
