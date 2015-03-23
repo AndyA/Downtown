@@ -21,6 +21,7 @@ char *vssprintf(const char *fmt, va_list ap);
 char *ssprintf(const char *fmt, ...);
 int gcd(int a, int b);
 char *aspect_ratio(int w, int h);
+void *memdup(const void *in, size_t size);
 
 #ifdef __cplusplus
 }

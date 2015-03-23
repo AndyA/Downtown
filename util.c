@@ -29,6 +29,12 @@ void *alloc(size_t size) {
   return m;
 }
 
+void *memdup(const void *in, size_t size) {
+  void *m = alloc_no_clear(size);
+  memcpy(m, in, size);
+  return m;
+}
+
 char *sstrdup(const char *s) {
   if (!s) return NULL;
   size_t sz = strlen(s) + 1;
