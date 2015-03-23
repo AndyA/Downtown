@@ -1,5 +1,6 @@
 /* test-timebend.c */
 
+#include <errno.h>
 #include <getopt.h>
 #include <math.h>
 #include <stdio.h>
@@ -46,6 +47,8 @@ typedef struct {
 
 } rate_work;
 
+static double last_rate;
+
 static double rate_func(double rms) {
   return pow(RMS_BASE / rms, RMS_POWER);
 }
@@ -79,6 +82,19 @@ static void work_free(rate_work *w) {
   average_free(w->sm_rms);
   average_free(w->pk_rms);
   average_free(w->sm_rate);
+}
+
+static double read_rate(void *ctx) {
+  FILE *rf = (FILE *) ctx;
+  double r;
+  if (fscanf(rf, "%lf", &r) < 1) {
+    log_warning("Failed to read rate");
+    r = last_rate;
+  }
+
+  log_debug("current rate: %8.3f", r);
+
+  return last_rate = r;
 }
 
 static double calc_rate(void *ctx) {
@@ -115,41 +131,56 @@ static void show_rate(void) {
   }
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
   rate_work w;
   dup_notes dup;
+  FILE *rf = NULL;
 
   dup.src = NULL;
-
   work_init(&w);
 
   log_info("Starting " PROG);
 
+  if (argc) {
+    const char *rate_file = argv[1];
+    rf = fopen(rate_file, "rb");
+    if (!rf) die("Can't read %s: %s", rate_file, strerror(errno));
+  }
+
   show_rate();
 
-  /* process chain */
-  y4m2_output *process = y4m2_output_file(stdout);
-  process = timebend_filter_cb(process, calc_rate, &w);
-  process = frameinfo_grapher(process, FRAMEINFO, "rms", "#f00");
+  /* output chain */
+  y4m2_output *out = y4m2_output_file(stdout);
 
-  process = delay_filter(process, (SMOOTH_RATE + SMOOTH_RMS + PEAK_RMS) / 2);
-  process = injector_filter(process, put_notes, &dup);
+  if (rf) {
+    out = timebend_filter_cb(out, read_rate, rf);
+  }
+  else {
+    out = timebend_filter_cb(out, calc_rate, &w);
+    out = frameinfo_grapher(out, FRAMEINFO, "rms", "#f00");
 
-  /* analyse chain */
-  y4m2_output *analyse = y4m2_output_null();
-  analyse = injector_filter(analyse, get_notes, &dup);
-  analyse = injector_filter(analyse, catch_analysis, &w);
-  analyse = frameinfo_filter(analyse);
-  analyse = delta_filter(analyse);
+    out = delay_filter(out, (SMOOTH_RATE + SMOOTH_RMS + PEAK_RMS) / 2);
+    out = injector_filter(out, put_notes, &dup);
 
-  /* split */
-  y4m2_output *head = splitter_filter(analyse, process, NULL);
-  head = progress_filter(head, PROGRESS_RATE);
-  y4m2_parse(stdin, head);
+    /* analyse chain */
+    y4m2_output *analyse = y4m2_output_null();
+    analyse = injector_filter(analyse, get_notes, &dup);
+    analyse = injector_filter(analyse, catch_analysis, &w);
+    analyse = frameinfo_filter(analyse);
+    analyse = delta_filter(analyse);
+
+    /* split */
+    out = splitter_filter(analyse, out, NULL);
+  }
+
+  out = progress_filter(out, PROGRESS_RATE);
+  y4m2_parse(stdin, out);
 
   y4m2_release_frame(dup.src);
 
   work_free(&w);
+
+  if (rf) fclose(rf);
 
   return 0;
 }

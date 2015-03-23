@@ -48,7 +48,7 @@ my @scaled = drain( timebend( i_seq(@rate), i_seq(@rate) ) );
 
 my @jiffed = drain(
   timebend(
-    i_min( i_avg( i_seq(@scaled), 25 ), 25 ),
+    i_min( i_avg( i_seq(@scaled), 100 ), 25 ),
     i_recip( i_seq(@scaled) )
   )
 );
