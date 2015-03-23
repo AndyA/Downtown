@@ -30,7 +30,7 @@
 #define PEAK_RMS       25
 #define SMOOTH_RATE    25
 
-#define RATE_BASE     1
+#define RATE_BASE     0.1
 
 typedef struct {
   double rate;
