@@ -46,6 +46,7 @@ static double _get(numpipe *np) {
   case NUMPIPE_LAST:
     return np->v_last;
   }
+  return 0;
 }
 
 double numpipe_get(numpipe *np) {
