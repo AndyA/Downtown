@@ -31,6 +31,7 @@
 #define RMS_SCALE     1
 
 #define SMOOTH_RMS     50
+#define PEAK_RMS       25
 #define SMOOTH_RATE    25
 
 typedef struct {
@@ -41,6 +42,7 @@ typedef struct {
   numpipe *np;
 
   average *sm_rms;
+  average *pk_rms;
   average *sm_rate;
 
 } rate_work;
@@ -48,12 +50,14 @@ typedef struct {
 static void work_init(rate_work *w) {
   w->np = numpipe_new_average(1);
   w->sm_rms = average_new(SMOOTH_RMS);
+  w->pk_rms = average_new(PEAK_RMS);
   w->sm_rate = average_new(SMOOTH_RATE);
 }
 
 static void work_free(rate_work *w) {
   numpipe_free(w->np);
   average_free(w->sm_rms);
+  average_free(w->pk_rms);
   average_free(w->sm_rate);
 }
 
@@ -69,7 +73,9 @@ static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
 
   frameinfo *fi = (frameinfo *) y4m2_find_note(frame, FRAMEINFO);
 
-  double rms = average_push(w->sm_rms, fi->rms);
+  average_push(w->pk_rms, average_push(w->sm_rms, fi->rms));
+
+  double rms = average_max(w->pk_rms);
   double raw_rate = RATE_BASE * pow(RATE_EXP, RMS_SCALE / rms);
   double rate = average_push(w->sm_rate, MAX(MIN_RATE, MIN(raw_rate, MAX_RATE)));
 
@@ -114,7 +120,7 @@ int main(void) {
   process = timebend_filter_cb(process, calc_rate, &w);
   process = frameinfo_grapher(process, FRAMEINFO, "rms", "#f00");
 
-  process = delay_filter(process, (SMOOTH_RATE + SMOOTH_RMS) / 2);
+  process = delay_filter(process, (SMOOTH_RATE + SMOOTH_RMS + PEAK_RMS) / 2);
   process = injector_filter(process, put_notes, &dup);
 
   /* analyse chain */
