@@ -168,7 +168,6 @@ static void callback(y4m2_reason reason,
 
   case Y4M2_FRAME:
     bend_frame(c, frame);
-    y4m2_release_frame(frame);
     break;
 
   case Y4M2_END:
