@@ -166,7 +166,7 @@ y4m2_frame *y4m2_clear_frame(y4m2_frame *frame) {
 
 y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
   y4m2_frame *frame = alloc(sizeof(y4m2_frame));
-  uint8_t *buf = frame->buf = alloc(info->size);
+  uint8_t *buf = frame->buf = alloc_no_clear(info->size);
 
   for (int i = 0; i < Y4M2_N_PLANE; i++) {
     frame->plane[i] = buf;

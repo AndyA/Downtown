@@ -17,9 +17,14 @@ void die(const char *msg, ...) {
   exit(1);
 }
 
-void *alloc(size_t size) {
+void *alloc_no_clear(size_t size) {
   void *m = malloc(size);
   if (!m) die("Out of memory for %lu bytes", (unsigned long) size);
+  return m;
+}
+
+void *alloc(size_t size) {
+  void *m = alloc_no_clear(size);
   memset(m, 0, size);
   return m;
 }
