@@ -31,7 +31,7 @@
 #define PEAK_RMS       25
 #define SMOOTH_RATE    25
 
-#define RMS_BASE      0.5
+#define RMS_BASE      0.1
 #define RMS_POWER     1.5
 
 typedef struct {
