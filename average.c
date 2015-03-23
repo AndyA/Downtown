@@ -26,7 +26,7 @@ void average_free(average *avg) {
 unsigned average_used(const average *avg) {
   if (avg->full) return avg->len;
   int used = avg->in - avg->out;
-  return used < 0 ? used + avg->len : used;
+  return used < 0 ? used + (int) avg->len : used;
 }
 
 double average_get(const average *avg) {
