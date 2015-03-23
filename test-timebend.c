@@ -30,7 +30,8 @@
 #define PEAK_RMS       25
 #define SMOOTH_RATE    25
 
-#define RATE_BASE     0.1
+#define RMS_BASE      0.5
+#define RMS_POWER     1.5
 
 typedef struct {
   double rate;
@@ -46,7 +47,7 @@ typedef struct {
 } rate_work;
 
 static double rate_func(double rms) {
-  return RATE_BASE / rms;
+  return pow(RMS_BASE / rms, RMS_POWER);
 }
 
 static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
