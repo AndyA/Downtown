@@ -26,13 +26,11 @@
 #define MIN_RATE     1
 #define MAX_RATE     100
 
-#define RATE_BASE     1
-#define RATE_EXP      1.1
-#define RMS_SCALE     1
-
-#define SMOOTH_RMS     50
+#define SMOOTH_RMS     5
 #define PEAK_RMS       25
 #define SMOOTH_RATE    25
+
+#define RATE_BASE     1
 
 typedef struct {
   double rate;
@@ -46,6 +44,27 @@ typedef struct {
   average *sm_rate;
 
 } rate_work;
+
+static double rate_func(double rms) {
+  return RATE_BASE / rms;
+}
+
+static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
+  rate_work *w = (rate_work *) ctx;
+
+  frameinfo *fi = (frameinfo *) y4m2_find_note(frame, FRAMEINFO);
+
+  average_push(w->pk_rms, average_push(w->sm_rms, fi->rms));
+
+  double rms = average_max(w->pk_rms);
+  double raw_rate = rate_func(rms);
+  double rate = average_push(w->sm_rate, MAX(MIN_RATE, MIN(raw_rate, MAX_RATE)));
+
+  log_debug("rms %8.3f, raw_rate: %8.3f, rate: %8.3f", rms, raw_rate, rate);
+  numpipe_put(w->np, rate);
+
+  return frame;
+}
 
 static void work_init(rate_work *w) {
   w->np = numpipe_new_average(1);
@@ -68,23 +87,6 @@ static double calc_rate(void *ctx) {
   return rate;
 }
 
-static y4m2_frame *catch_analysis(y4m2_frame *frame, void *ctx) {
-  rate_work *w = (rate_work *) ctx;
-
-  frameinfo *fi = (frameinfo *) y4m2_find_note(frame, FRAMEINFO);
-
-  average_push(w->pk_rms, average_push(w->sm_rms, fi->rms));
-
-  double rms = average_max(w->pk_rms);
-  double raw_rate = RATE_BASE * pow(RATE_EXP, RMS_SCALE / rms);
-  double rate = average_push(w->sm_rate, MAX(MIN_RATE, MIN(raw_rate, MAX_RATE)));
-
-  log_debug("rms %8.3f, raw_rate: %8.3f, rate: %8.3f", rms, raw_rate, rate);
-  numpipe_put(w->np, rate);
-
-  return frame;
-}
-
 typedef struct {
   y4m2_frame *src;
 } dup_notes;
@@ -105,6 +107,13 @@ static y4m2_frame *put_notes(y4m2_frame *frame, void *ctx) {
   return frame;
 }
 
+static void show_rate(void) {
+  for (double rms = 0.0; rms <= 1.0; rms += 0.05) {
+    double rate = rate_func(rms);
+    log_debug("rms: %5.2f -> rate: %8.3f", rms, rate);
+  }
+}
+
 int main(void) {
   rate_work w;
   dup_notes dup;
@@ -114,6 +123,8 @@ int main(void) {
   work_init(&w);
 
   log_info("Starting " PROG);
+
+  show_rate();
 
   /* process chain */
   y4m2_output *process = y4m2_output_file(stdout);
