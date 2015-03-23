@@ -49,11 +49,14 @@ my @scaled = drain( timebend( i_seq(@rate), i_seq(@rate) ) );
 my @jiffed = drain(
   timebend(
     i_min( i_avg( i_seq(@scaled), 25 ), 25 ),
-    i_recip( i_seq(@rate) )
+    i_recip( i_seq(@scaled) )
   )
 );
 
-printf "%8.3g\n", $_ for @jiffed;
+my @biffed
+ = drain( timebend( i_seq(@jiffed), i_const( @jiffed / @rate ) ) );
+
+printf "%8.3g\n", $_ for @biffed;
 
 sub read_stats {
   my $file = shift;
