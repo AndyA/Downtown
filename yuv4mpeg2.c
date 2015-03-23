@@ -174,8 +174,9 @@ y4m2_frame *y4m2_new_frame_info(const y4m2_frame_info *info) {
   }
 
   frame->i = *info;
+  frame->refcnt = 1;
   y4m2__frames_allocated++;
-  return y4m2_clear_frame(y4m2_retain_frame(frame));
+  return y4m2_clear_frame(frame);
 }
 
 y4m2_frame *y4m2_like_frame(const y4m2_frame *frame) {
