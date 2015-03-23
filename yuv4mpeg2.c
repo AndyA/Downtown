@@ -772,7 +772,7 @@ y4m2_frame *y4m2_window(y4m2_frame *frame, int x, int y, int w, int h) {
   *window = *frame;
 
   window->refcnt = 1;
-  window->parent = frame;
+  window->parent = y4m2_retain_frame(frame);
 
   y4m2_frame_info *wfi = &window->i;
 
