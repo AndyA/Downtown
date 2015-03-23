@@ -56,7 +56,10 @@ my @jiffed = drain(
 my @biffed
  = drain( timebend( i_seq(@jiffed), i_const( @jiffed / @rate ) ) );
 
-printf "%8.3g\n", $_ for @biffed;
+#print "rate:   ", scalar(@rate), "\n";
+#print "scaled: ", scalar(@scaled), "\n";
+
+print "$_\n" for @biffed;
 
 sub read_stats {
   my $file = shift;
