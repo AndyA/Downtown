@@ -16,6 +16,8 @@ set bmargin 8
 set output "$out"
 set key left
 
+set offsets graph 0, 0, 0.05, 0.05
+
 EOS
 
 my @scp = ();
