@@ -88,5 +88,12 @@ void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsi
     out[i] = tb_convolve_calc(c, in, len, i);
 }
 
+double tb_convolve_elapsed(const double *series, unsigned len) {
+  double total = 0;
+  for (unsigned i = 0; i < len; i++)
+    total += 1 / series[i];
+  return total;
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */

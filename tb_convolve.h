@@ -26,6 +26,8 @@ void tb_convolve_free(tb_convolve *c);
 double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, unsigned pos);
 void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsigned len);
 
+double tb_convolve_elapsed(const double *series, unsigned len);
+
 #ifdef __cplusplus
 }
 #endif

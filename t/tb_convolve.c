@@ -64,8 +64,27 @@ static void test_convolver(void) {
       test_blur(n, l);
 }
 
+static void test_elapsed(unsigned len) {
+  double data[len];
+  double total = 0;
+  for (unsigned i = 0; i < len; i++) {
+    data[i] = i + 1;
+    total += 1.0 / (i + 1);
+  }
+  double got = tb_convolve_elapsed(data, len);
+  if (!close_to(got, total, "total to %d", len)) {
+    diag("wanted %f, got %f", total, got);
+  }
+}
+
+static void test_translation(void) {
+  for (unsigned i = 1; i < 1000; i += 13)
+    test_elapsed(i);
+}
+
 void test_main(void) {
   test_convolver();
+  test_translation();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
