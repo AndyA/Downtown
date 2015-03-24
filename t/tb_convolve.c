@@ -10,7 +10,34 @@
 #include "tb_convolve.h"
 #include "util.h"
 
+static void test_ramp(double lo, double hi) {
+  int size = (int) hi + 2;
+  double ramp[size];
 
+  for (int i = 0; i < size; i++) ramp[i] = (double) i;
+
+  nest_in("ramp[%f -> %f]", lo, hi);
+  double area = (hi * hi - lo * lo) / 2;
+  double sample = tb_convolve__sample(ramp, lo, hi - lo);
+  if (!close_to(area, sample, "area: %f", area))
+    diag("wanted %f, got %f", area, sample);
+  nest_out();
+}
+
+static void test_sampler(void) {
+  for (double s = 0; s < 5; s += 0.125)
+    test_ramp(s, s + 1);
+
+  double lo = 0, hi = 19;
+  while (lo < hi) {
+    test_ramp(lo, hi);
+    lo += 0.1;
+    hi -= 0.33;
+  }
+
+}
+
+#if 0
 static void test_convolve(unsigned len, const double *pos_coef, const double *neg_coef,
                           unsigned dlen, const double *in, const double *want) {
 
@@ -53,8 +80,10 @@ static void test_unity(int len) {
 
   nest_out();
 }
+#endif
 
 static void test_convolver(void) {
+#if 0
   test_blur(1, 2);
   for (int n = 1; n < 10; n += 2)
     test_unity(n);
@@ -62,6 +91,7 @@ static void test_convolver(void) {
   for (int n = 1; n < 10; n += 2)
     for (int l = 1; l < 50; l *= 2)
       test_blur(n, l);
+#endif
 }
 
 static void test_elapsed(unsigned len) {
@@ -98,6 +128,7 @@ static void test_translation(void) {
 void test_main(void) {
   test_convolver();
   test_translation();
+  test_sampler();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

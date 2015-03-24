@@ -29,6 +29,10 @@ void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsi
 double tb_convolve_elapsed(const double *series, unsigned len);
 double tb_convolve_translate(const double *in, unsigned ilen, double *out, unsigned olen);
 
+/* Internal */
+
+double tb_convolve__sample(const double *coef, double pos, double sa);
+
 #ifdef __cplusplus
 }
 #endif

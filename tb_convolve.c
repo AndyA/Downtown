@@ -37,21 +37,24 @@ void tb_convolve_free(tb_convolve *c) {
   }
 }
 
-static double _scale_coef(const double *coef, double pos, double sa) {
-  if (sa < NOWT) return 0;
-  int p = (int) pos;
-  double sum = coef[p] * MIN(sa, 1 - (pos - (double) p));
-  p++;
-  for (int i = 1; i < (int)(sa - p); i++)
-    sum += coef[p++];
-  double rem = sa - (double) p;
-  if (rem > 0.00001) sum += coef[p] * rem;
+double tb_convolve__sample(const double *coef, double pos, double sa) {
+  double sum = 0;
+  for (int p = (int) pos;; p++) {
+    double left = MAX(0, pos - (double) p);
+    double right = MIN(1, pos + sa - (double) p);
+    if (right < 0) break;
+    double s0 = coef[p];
+    double s1 = coef[p + 1];
+    double ls = s0 * (1 - left) + s1 * left;
+    double rs = s0 * (1 - right) + s1 * right;
+    sum += (ls + rs) * (right - left) / 2;
+  }
   return sum;
 }
 
 static double _calc(const tb_convolve *c, double n, double pos, double sa, double home) {
   double *coef_p = n < home ? c->neg_coef : c->pos_coef;
-  double sc = _scale_coef(coef_p, pos, sa);
+  double sc = tb_convolve__sample(coef_p, pos, sa);
   /*  log_debug("    _calc(c=%p, n=%f, pos=%f, sa=%f, home=%f) -> %f (sc=%f)",*/
   /*            c, n, pos, sa, home, n * sc, sc);*/
   return n * sc;
@@ -113,7 +116,7 @@ double tb_convolve_translate(const double *in, unsigned ilen, double *out, unsig
     double igot = ((double) ip + 1 - ipos) / rate;
     double owant = (double) op + 1 - opos;
     double chunk = MIN(igot, owant);
-    out[op] += _scale_coef(in, ipos, chunk);
+    out[op] += tb_convolve__sample(in, ipos, chunk);
     /*    fprintf(stdout, "# ipos=%f, opos=%f, rate=%f, igot=%f, owant=%f, chunk=%f\n",*/
     /*            ipos, opos, rate, igot, owant, chunk);*/
     ipos += chunk * rate;
