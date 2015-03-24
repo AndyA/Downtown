@@ -14,6 +14,9 @@
 
 #define PROG      "test-convolve"
 
+#define NOWT        0.000000001
+#define CLIP      500
+
 typedef struct data_series {
   struct data_series *next;
   char *name;
@@ -24,13 +27,15 @@ typedef struct data_series {
 
 static char *cfg_output = NULL;
 static double cfg_count = 10;
+static double cfg_prescale = 1;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] -o <output.dat> <data.dat> <kernel.dat>...\n\n"
           "Options:\n"
           "  -h, --help                See this message\n"
-          "  -c, --count               Number of iterations (default: 10)\n"
-          "  -o, --output              Set output pattern. Include %%d or similar\n"
+          "  -c, --count    <n>        Number of iterations (default: 10)\n"
+          "  -p, --prescale <n>        Prescale data\n"
+          "  -o, --output   <file>     Set output file pattern. Include %%d or similar\n"
           "\n"
          );
   exit(1);
@@ -50,10 +55,11 @@ static void parse_options(int *argc, char ***argv) {
     {"help", no_argument, NULL, 'h'},
     {"count", required_argument, NULL, 'c'},
     {"output", required_argument, NULL, 'o'},
+    {"prescale", required_argument, NULL, 'p'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "ho:c:", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "ho:c:p:", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'c':
@@ -62,6 +68,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'o':
       cfg_output = optarg;
+      break;
+
+    case 'p':
+      cfg_prescale = parse_double(optarg);
       break;
 
     case 'h':
@@ -132,12 +142,14 @@ static void convolve(data_series *data, data_series *kernel) {
   if (!kernel->c) {
     log_debug("  Creating tb_convolve for %s", kernel->name);
     kernel->c = tb_convolve_new(kernel->len, kernel->data);
+    tb_convolve_set_prescale(kernel->c, cfg_prescale);
   }
 
   double tmp[data->len];
   log_debug("  Applying %s to %s", kernel->name, data->name);
   tb_convolve_apply(kernel->c, tmp, data->data, data->len);
-  memcpy(data->data, tmp, sizeof(double) * data->len);
+  for (unsigned i = 0; i < data->len; i++)
+    data->data[i] = MIN(MAX(NOWT, tmp[i]), CLIP);
 }
 
 int main(int argc, char *argv[]) {

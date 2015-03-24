@@ -117,6 +117,8 @@ static void test_elapsed(unsigned len) {
   if (!close_to(got2, got, "got %f frames", got))
     diag("wanted %f, got %f", got, got2);
 
+  /*  double got3 = tb_convolve_elapsed(buf, size);*/
+
   nest_out();
 }
 
