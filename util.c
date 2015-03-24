@@ -92,5 +92,13 @@ void mkpath(const char *path, mode_t mode) {
     die("Can't create %s: %s", strerror(errno));
 }
 
+void mkparents(const char *path, mode_t mode) {
+  char *pcopy = sstrdup(path);
+  char *parent = sstrdup(dirname(pcopy));
+  mkpath(parent, mode);
+  free(parent);
+  free(pcopy);
+}
+
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */
