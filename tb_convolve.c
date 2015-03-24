@@ -34,9 +34,8 @@ void tb_convolve_free(tb_convolve *c) {
   }
 }
 
-static double _scale_coef(const tb_convolve *c, const double *coef, double pos, double sa) {
+static double _scale_coef(const double *coef, double pos, double sa) {
   if (sa < NOWT) return 0;
-  (void) c;
   int p = (int) pos;
   double sum = coef[p] * MIN(sa, 1 - (pos - (double) p));
   p++;
@@ -49,7 +48,7 @@ static double _scale_coef(const tb_convolve *c, const double *coef, double pos, 
 
 static double _calc(const tb_convolve *c, double n, double pos, double sa, double home) {
   double *coef_p = n < home ? c->neg_coef : c->pos_coef;
-  return n * _scale_coef(c, coef_p, pos, sa);
+  return n * _scale_coef(coef_p, pos, sa);
 }
 
 #define SA(s) (fabs(s) < NOWT ? centre : 1 / (s))
