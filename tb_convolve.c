@@ -31,6 +31,7 @@ tb_convolve *tb_convolve_new_signed(unsigned len,
                                     const double *neg_coef) {
   tb_convolve *c = (tb_convolve *) alloc(sizeof(tb_convolve));
   c->len = len;
+  c->hwm = len - 1;
   c->prescale = 1;
   c->pos_coef = dup_coef(pos_coef, len);
   c->neg_coef = pos_coef == neg_coef ? c->pos_coef : dup_coef(neg_coef, len);
@@ -72,14 +73,14 @@ double tb_convolve__sample(const double *coef, double pos, double span) {
 
 static double _calc(const tb_convolve *c, double n, double pos, double span, double home) {
   double *coef_p = n < home ? c->neg_coef : c->pos_coef;
-  double sc = tb_convolve__sample(coef_p, pos - 0.5, span);
+  double sc = tb_convolve__sample(coef_p, pos, span);
   return LOG(n * c->prescale) * sc;
 }
 
 #define SA(s) (fabs(s) < NOWT ? centre : 1 / (s))
 
 double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, unsigned pos) {
-  double cpos, sum = 0, centre = (double) c->len / 2;
+  double cpos, sum = 0, centre = (double) c->hwm / 2;
   double home = in[pos];
   double home_sa = SA(home);
   double done = 0;
@@ -89,23 +90,23 @@ double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, un
     double sample = in[p];
     double sa = SA(sample);
     double start = MAX(0, cpos - sa);
-    double span = MIN(cpos, (double)c->len) - start;
+    double span = MIN(cpos, (double)c->hwm) - start;
     sum += _calc(c, sample, start, span, home);
     cpos -= sa;
     done += span;
   }
 
-  for (cpos = centre - home_sa / 2, p = pos; cpos < (double) c->len && p < len; p++) {
+  for (cpos = centre - home_sa / 2, p = pos; cpos < (double) c->hwm && p < len; p++) {
     double sample = in[p];
     double sa = SA(sample);
     double start = MAX(0, cpos);
-    double span = MIN(sa, (double)c->len - start);
+    double span = MIN(sa, (double)c->hwm - start);
     sum += _calc(c, sample, start, span, home);
     cpos += sa;
     done += span;
   }
 
-  return EXP(sum * (double) c->len / done) / c->prescale;
+  return EXP(sum * (double) c->hwm / done) / c->prescale;
 }
 
 void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsigned len) {

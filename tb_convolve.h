@@ -9,6 +9,7 @@ extern "C" {
 
 typedef struct {
   unsigned len;
+  unsigned hwm;
   double *pos_coef;
   double *neg_coef;;
   double prescale;
