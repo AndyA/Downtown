@@ -37,7 +37,7 @@ static void test_numlist(void) {
     ok(numlist_size(nl) == expect, "size is %llu", (unsigned long long) expect);
 
     size_t size;
-    double *d = numlist_get(nl, &size);
+    double *d = numlist_fetch(nl, &size);
     ok(size == expect, "returned size is correct");
     int seq = check_sequence(d, size, 1);
     if (! ok(seq == -1, "data is correct")) {

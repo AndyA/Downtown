@@ -41,7 +41,7 @@ size_t numlist_size(const numlist *nl) {
   return nl->used + nl->tail_size;
 }
 
-double *numlist_get(const numlist *nl, size_t *sizep) {
+double *numlist_fetch(const numlist *nl, size_t *sizep) {
   size_t size = numlist_size(nl);
   double *out = alloc(sizeof(double) * size);
   double *op = out + size;
@@ -57,7 +57,7 @@ double *numlist_get(const numlist *nl, size_t *sizep) {
 }
 
 double *numlist_drain(numlist *nl, size_t *sizep) {
-  double *data = numlist_get(nl, sizep);
+  double *data = numlist_fetch(nl, sizep);
   numlist_free(nl);
   return data;
 }
