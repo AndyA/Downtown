@@ -69,7 +69,7 @@ double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, un
     double sample = in[p];
     double sa = SA(sample);
     double start = MAX(0, cpos - sa);
-    double span = cpos - start;
+    double span = MIN(cpos, (double)c->len) - start;
     sum += _calc(c, sample, start, span, home);
     cpos -= sa;
     done += span;
@@ -78,7 +78,7 @@ double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, un
   for (cpos = centre - home_sa / 2, p = pos; cpos < (double) c->len && p < len; p++) {
     double sample = in[p];
     double sa = SA(sample);
-    double start = cpos;
+    double start = MAX(0, cpos);
     double span = MIN(sa, (double)c->len - start);
     sum += _calc(c, sample, start, span, home);
     cpos += sa;
