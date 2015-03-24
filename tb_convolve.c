@@ -17,6 +17,7 @@ tb_convolve *tb_convolve_new_signed(unsigned len,
                                     const double *pos_coef,
                                     const double *neg_coef) {
   tb_convolve *c = (tb_convolve *) alloc(sizeof(tb_convolve));
+  c->len = len;
   c->pos_coef = memdup(pos_coef, sizeof(double) * len);
   if (pos_coef == neg_coef)
     c->neg_coef = c->pos_coef;
