@@ -45,36 +45,40 @@ static double _scale_coef(const tb_convolve *c, const double *coef, double pos, 
   return sum / sa;
 }
 
-static double _calc(const tb_convolve *c, double n, double pos, double sa) {
-  double *coef_p = n < 0 ? c->neg_coef : c->pos_coef;
+static double _calc(const tb_convolve *c, double n, double pos, double sa, double home) {
+  double *coef_p = n < home ? c->neg_coef : c->pos_coef;
   return n * _scale_coef(c, coef_p, pos, sa);
 }
 
+#define SA(s) (fabs(s) < NOWT ? centre : 1 / (s))
+
 double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, unsigned pos) {
-  double cpos, done = 0, sum = 0, centre = (double) c->len / 2.0;
+  double cpos, done = 0, sum = 0, centre = (double)(c->len - 1) / 2.0;
+  double home = in[pos];
+  double home_sa = SA(home);
   unsigned p;
 
-  for (cpos = centre, p = pos + centre; cpos >= 0 && p-- > 0;) {
+  for (cpos = centre - home_sa / 2, p = pos; cpos >= 0 && p-- > 0;) {
     double sample = in[p];
-    double sa = fabs(sample) < NOWT ? centre : 1 / sample;
+    double sa = SA(sample);
     double start = MAX(0, cpos - sa);
     double span = cpos - start;
-    sum += _calc(c, sample, start, span);
+    sum += _calc(c, sample, start, span, home);
     cpos -= sa;
     done += span;
   }
 
-  for (cpos = centre, p = pos + centre; cpos < (double) c->len && p < len; p++) {
+  for (cpos = centre - home_sa / 2, p = pos; cpos < (double) c->len && p < len; p++) {
     double sample = in[p];
-    double sa = fabs(sample) < NOWT ? centre : 1 / sample;
+    double sa = SA(sample);
     double start = cpos;
     double span = MIN(sa, (double)c->len - start);
-    sum += _calc(c, sample, start, span);
+    sum += _calc(c, sample, start, span, home);
     cpos += sa;
     done += span;
   }
 
-  return sum / done;
+  return sum * (double) c->len / done;
 }
 
 void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsigned len) {
