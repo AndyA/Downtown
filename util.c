@@ -1,9 +1,12 @@
 /* util.c */
 
+#include <errno.h>
+#include <libgen.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "log.h"
 #include "util.h"
@@ -76,6 +79,17 @@ int gcd(int a, int b) {
 char *aspect_ratio(int w, int h) {
   int g = gcd(w, h);
   return ssprintf("%d:%d", w / g, h / g);
+}
+
+void mkpath(const char *path, mode_t mode) {
+  if (mkdir(path, mode) == 0 || errno == EEXIST) return;
+  char *pcopy = sstrdup(path);
+  char *parent = sstrdup(dirname(pcopy));
+  mkpath(parent, mode);
+  free(parent);
+  free(pcopy);
+  if (mkdir(path, mode) && errno != EEXIST)
+    die("Can't create %s: %s", strerror(errno));
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

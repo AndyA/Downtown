@@ -22,6 +22,7 @@ char *ssprintf(const char *fmt, ...);
 int gcd(int a, int b);
 char *aspect_ratio(int w, int h);
 void *memdup(const void *in, size_t size);
+void mkpath(const char *path, mode_t mode);
 
 #ifdef __cplusplus
 }
