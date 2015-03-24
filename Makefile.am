@@ -8,7 +8,14 @@ ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libdowntown.la
 
-bin_PROGRAMS = downtown downtown_filter testcard-yuv test-timebend test-filters get-stats
+bin_PROGRAMS = \
+	downtown \
+	downtown_filter \
+	get-stats \
+	test-convolve \
+	test-filters \
+	test-timebend \
+	testcard-yuv
 
 libdowntown_la_SOURCES = \
 	average.h average.c \
@@ -48,6 +55,9 @@ downtown_filter_LDADD = libdowntown.la
 
 testcard_yuv_SOURCES = testcard-yuv.c
 testcard_yuv_LDADD = libdowntown.la
+
+test_convolve_SOURCES = test-convolve.c
+test_convolve_LDADD = libdowntown.la
 
 test_timebend_SOURCES = test-timebend.c
 test_timebend_LDADD = libdowntown.la

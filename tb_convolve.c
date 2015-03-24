@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "log.h"
 #include "tb_convolve.h"
 #include "util.h"
 
@@ -45,12 +46,15 @@ static double _scale_coef(const double *coef, double pos, double sa) {
     sum += coef[p++];
   double rem = sa - (double) p;
   if (rem > 0.00001) sum += coef[p] * rem;
-  return sum / sa;
+  return sum;
 }
 
 static double _calc(const tb_convolve *c, double n, double pos, double sa, double home) {
   double *coef_p = n < home ? c->neg_coef : c->pos_coef;
-  return n * _scale_coef(coef_p, pos, sa);
+  double sc = _scale_coef(coef_p, pos, sa);
+  /*  log_debug("    _calc(c=%p, n=%f, pos=%f, sa=%f, home=%f) -> %f (sc=%f)",*/
+  /*            c, n, pos, sa, home, n * sc, sc);*/
+  return n * sc;
 }
 
 #define SA(s) (fabs(s) < NOWT ? centre : 1 / (s))
@@ -80,6 +84,8 @@ double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, un
     cpos += sa;
     done += span;
   }
+
+  /*  log_debug("    sum=%f, len=%f, done=%f", sum, (double)c->len, done);*/
 
   return sum * (double) c->len / done;
 }

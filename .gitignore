@@ -45,6 +45,7 @@
 /downtown
 /downtown_filter
 /get-stats
+/graph/
 /install-sh
 /libtool
 /ltmain.sh
@@ -52,6 +53,7 @@
 /node_modules/
 /stamp-h*
 /tags
+/test-convolve
 /test-filters
 /test-timebend
 /test.*
