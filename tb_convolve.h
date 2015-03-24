@@ -12,6 +12,7 @@ typedef struct {
   double *pos_coef;
   double *neg_coef;;
   double prescale;
+  int linear;
 } tb_convolve;
 
 tb_convolve *tb_convolve_new(unsigned len,
@@ -22,7 +23,8 @@ tb_convolve *tb_convolve_new_signed(unsigned len,
                                     const double *neg_coef);
 
 void tb_convolve_free(tb_convolve *c);
-void tb_convolve_set_prescale(tb_convolve *c, double prescale);
+tb_convolve *tb_convolve_set_prescale(tb_convolve *c, double prescale);
+tb_convolve *tb_convolve_set_linear(tb_convolve *c, int linear);
 
 double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, unsigned pos);
 void tb_convolve_apply_linear(const tb_convolve *c, double *out, const double *in, unsigned len);
