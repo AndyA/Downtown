@@ -67,14 +67,27 @@ static void test_convolver(void) {
 static void test_elapsed(unsigned len) {
   double data[len];
   double total = 0;
+
+  nest_in("series(%u)", len);
+
   for (unsigned i = 0; i < len; i++) {
     data[i] = i + 1;
     total += 1.0 / (i + 1);
   }
+
   double got = tb_convolve_elapsed(data, len);
-  if (!close_to(got, total, "total to %d", len)) {
+  if (!close_to(got, total, "total to %d is %f", len, total))
     diag("wanted %f, got %f", total, got);
-  }
+
+  size_t size = (size_t) got;
+  if (got > (double) size) size++;
+  double buf[size];
+  double got2 = tb_convolve_translate(data, len, buf, size);
+
+  if (!close_to(got2, got, "got %f frames", got))
+    diag("wanted %f, got %f", got, got2);
+
+  nest_out();
 }
 
 static void test_translation(void) {

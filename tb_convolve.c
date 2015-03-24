@@ -1,7 +1,9 @@
 /* tb_convolve.c */
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tb_convolve.h"
 #include "util.h"
@@ -92,6 +94,27 @@ double tb_convolve_elapsed(const double *series, unsigned len) {
   for (unsigned i = 0; i < len; i++)
     total += 1 / series[i];
   return total;
+}
+
+double tb_convolve_translate(const double *in, unsigned ilen, double *out, unsigned olen) {
+  memset(out, 0, sizeof(double) * olen);
+
+  double ipos, opos;
+  for (ipos = 0, opos = 0; ipos < (double) ilen && opos < (double) olen;) {
+    unsigned ip = (unsigned) ipos;
+    unsigned op = (unsigned) opos;
+    double rate = in[ip];
+    double igot = ((double) ip + 1 - ipos) / rate;
+    double owant = (double) op + 1 - opos;
+    double chunk = MIN(igot, owant);
+    out[op] += _scale_coef(in, ipos, chunk);
+    /*    fprintf(stdout, "# ipos=%f, opos=%f, rate=%f, igot=%f, owant=%f, chunk=%f\n",*/
+    /*            ipos, opos, rate, igot, owant, chunk);*/
+    ipos += chunk * rate;
+    opos += chunk;
+  }
+
+  return opos;
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

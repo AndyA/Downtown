@@ -27,6 +27,7 @@ double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, un
 void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsigned len);
 
 double tb_convolve_elapsed(const double *series, unsigned len);
+double tb_convolve_translate(const double *in, unsigned ilen, double *out, unsigned olen);
 
 #ifdef __cplusplus
 }
