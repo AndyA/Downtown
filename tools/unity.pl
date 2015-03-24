@@ -6,22 +6,34 @@ use autodie;
 use strict;
 use warnings;
 
+use Data::Dumper;
+
 use constant NOWT => 0.000000001;
 
 for my $kernel (@ARGV) {
-  my @coef = load_coef($kernel);
-  my $area = calc_area(@coef);
+  my $coef = load_coef($kernel);
+  my $scaled = fixup( $kernel, $coef );
+  ( my $unity = $kernel ) =~ s/\.dat$/.unity/g;
+  print "  writing $unity\n";
+  save_coef( $unity, $scaled );
+}
+
+print "\n";
+
+sub fixup {
+  my ( $kernel, $coef ) = @_;
+  if ( @$coef && ref $coef->[0] ) {
+    return [map { fixup( $kernel, $_ ) } @$coef];
+  }
+  my $area = calc_area(@$coef);
   printf "\n%-30s: area = %f\n\n", $kernel, $area;
-  print "  coef ", join( ' ', @coef ), "\n";
-  my @fcoef = fix_coef(@coef);
+  print "  coef ", join( ' ', @$coef ), "\n";
+  my @fcoef = fix_coef(@$coef);
   print "  fixed ", join( ' ', @fcoef ), "\n";
   my @scoef = set_scale( 1, @fcoef );
   print "  scaled ", join( ' ', @scoef ), "\n";
-  ( my $unity = $kernel ) =~ s/\.dat$/.unity/g;
-  print "  writing $unity\n";
-  save_coef( $unity, @scoef );
+  return \@scoef;
 }
-print "\n";
 
 sub fix_coef {
   my @coef = @_;
@@ -46,10 +58,45 @@ sub set_scale {
   return @coef;
 }
 
+sub write_coef {
+  my ( $fh, $coef ) = @_;
+  print $fh join( ' ', @$coef );
+}
+
 sub save_coef {
-  my ( $file, @coef ) = @_;
+  my ( $file, $coef ) = @_;
   open my $fh, '>', $file;
-  print $fh join( ' ', @coef ), "\n";
+
+  if ( @$coef && ref $coef->[0] ) {
+    for my $sc (@$coef) {
+      print $fh '[ ';
+      write_coef( $fh, $sc );
+      print $fh " ]\n";
+    }
+  }
+  else {
+    write_coef( $fh, $coef );
+    print $fh "\n";
+  }
+
+}
+
+sub parse_coef {
+  my @coef = @_;
+  my @out = ();
+  while (@coef) {
+    my $next = shift @coef;
+    if ( $next eq '[' ) {
+      ( my $list, @coef ) = parse_coef(@coef);
+      push @out, $list;
+      next;
+    }
+    elsif ( $next eq ']' ) {
+      last;
+    }
+    push @out, $next;
+  }
+  return ( \@out, @coef );
 }
 
 sub load_coef {
@@ -58,9 +105,11 @@ sub load_coef {
   my @coef = ();
   while (<$fh>) {
     chomp;
-    push @coef, split /\s+/;
+    push @coef, grep { !/^\s*$/ } split /((?:\[|\]|\s))/;
   }
-  return @coef;
+  my ( $out, @rem ) = parse_coef(@coef);
+  die "Junk at end of file: ", join( ' ', @rem ) if @rem;
+  return $out;
 }
 
 sub calc_area {

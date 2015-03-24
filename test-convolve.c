@@ -1,5 +1,6 @@
 /* test-convolve.c */
 
+#include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
 #include <math.h>
@@ -85,6 +86,49 @@ static void parse_options(int *argc, char ***argv) {
   *argv += optind;
 }
 
+static numlist *read_numlist(FILE *in, int end) {
+  numlist *nl = NULL;
+  int c = fgetc(in);
+  for (;;) {
+    double r;
+    while (c != EOF && isspace(c)) c = fgetc(in);
+    if (c == end) return nl;
+    if (c == EOF) die("Unexpected EOF");
+    ungetc(c, in);
+    int rc = fscanf(in, "%lf", &r);
+    if (rc == EOF && errno) die("Read error: %s", strerror(errno));
+    if (rc < 1) die("Bad syntax");
+    nl = numlist_putn(nl, r);
+    c = fgetc(in);
+  }
+}
+
+static tb_convolve *read_convolver(FILE *in) {
+  int c = fgetc(in);
+
+  while (c != EOF && isspace(c)) c = fgetc(in);
+  if (c == '[') {
+    numlist *pos = read_numlist(in, ']');
+    c = fgetc(in);
+    while (c != EOF && isspace(c)) c = fgetc(in);
+    if (c != '[') die("Missing negative coefs");
+    numlist *neg = read_numlist(in, ']');
+    unsigned psize = (unsigned) numlist_size(pos);
+    unsigned nsize = (unsigned) numlist_size(neg);
+    if (psize != nsize)
+      die("Coeficents aren't the same size: pos=%u, neg=%u", psize, nsize);
+
+    return tb_convolve_new_signed(psize, numlist_drain(pos, NULL), numlist_drain(neg, NULL));
+  }
+
+  ungetc(c, in);
+  numlist *nl = read_numlist(in, EOF);
+  size_t size;
+  double *coef = numlist_drain(nl, &size);
+
+  return tb_convolve_new((unsigned) size, coef);
+}
+
 static double *read_numbers(FILE *fl, size_t *sizep) {
   numlist *nl = NULL;
   for (;;) {
@@ -108,16 +152,34 @@ static double *read_numfile(const char *name, size_t *sizep) {
   return d;
 }
 
-static data_series *put_series(data_series *ds, const char *name, double *data, size_t len) {
+
+static tb_convolve *read_convfile(const char *name) {
+  FILE *fl = fopen(name, "r");
+  if (!fl) die("Can't read %s: %s", name, strerror(errno));
+  tb_convolve *c = read_convolver(fl);
+  fclose(fl);
+  return c;
+}
+
+static data_series *put_ds(data_series *ds, const char *name, double *data, size_t len, tb_convolve *c) {
   if (!ds) {
     ds = alloc(sizeof(data_series));
     ds->name = sstrdup(name);
     ds->data = data;
     ds->len = len;
+    ds->c = c;
     return ds;
   }
-  ds->next = put_series(ds->next, name, data, len);
+  ds->next = put_ds(ds->next, name, data, len, c);
   return ds;
+}
+
+static data_series *put_series(data_series *ds, const char *name, double *data, size_t len) {
+  return put_ds(ds, name, data, len, NULL);
+}
+
+static data_series *put_convolve(data_series *ds, const char *name, tb_convolve *c) {
+  return put_ds(ds, name, 0, 0, c);
 }
 
 static void dump_data(const char *name, double *data, size_t len) {
@@ -153,18 +215,20 @@ static void convolve(data_series *data, data_series *kernel) {
 }
 
 int main(int argc, char *argv[]) {
-  data_series *ds = NULL;
-
   log_info("Starting " PROG);
 
   parse_options(&argc, &argv);
   if (argc < 2 || !cfg_output) usage();
 
-  for (int i = 0; i < argc; i++) {
-    size_t size;
-    double *data = read_numfile(argv[i], &size);
-    ds = put_series(ds, argv[i], data, size);
-    log_debug("Read %llu data from %s", (unsigned long long) size, argv[i]);
+  size_t size;
+  double *data = read_numfile(argv[0], &size);
+  data_series *ds = put_series(NULL, argv[0], data, size);
+  log_debug("Read %llu data from %s", (unsigned long long) size, argv[0]);
+
+  for (int i = 1; i < argc; i++) {
+    tb_convolve *c = read_convfile(argv[i]);
+    ds = put_convolve(ds, argv[i], c);
+    log_debug("Read convolver %s", argv[i]);
   }
 
   for (int r = 0; r <= (int) cfg_count; r++) {
