@@ -1,7 +1,8 @@
 /* tap.c */
 
-#include <string.h>
+#include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tap.h"
 
@@ -15,6 +16,7 @@ typedef struct test_alert {
 } test_alert;
 
 int test_no = 0;
+double test_nowt = 0.00000000001;
 
 static char *pfx[MAX_PREFIX];
 static size_t npfx = 0;
@@ -158,6 +160,10 @@ int not_null(const void *p, const char *msg, ...) {
 
 int null(const void *p, const char *msg, ...) {
   TF(!p);
+}
+
+int close_to(double got, double want, const char *msg, ...) {
+  TF(fabs(got - want) <= test_nowt);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

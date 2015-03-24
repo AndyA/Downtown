@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 extern int test_no;
+extern double test_nowt;
 
 void set_vfpf(int (*nvfpf)(FILE *f, const char *msg, va_list ap));
 int test(int flag, const char *msg, va_list ap);
@@ -21,6 +22,7 @@ int fail(const char *msg, ...);
 int is(long long got, long long want, const char *msg, ...);
 int not_null(const void *p, const char *msg, ...);
 int null(const void *p, const char *msg, ...);
+int close_to(double got, double want, const char *msg, ...);
 
 typedef void (*test_cb)(int tn, void *ctx);
 

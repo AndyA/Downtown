@@ -29,10 +29,6 @@ static void compute_average(double (*fn)(int n), int from, int to,
   *maxp = max;
 }
 
-static int close_to(double a, double b) {
-  return fabs(a - b) < NOWT;
-}
-
 static void test_average(void) {
   for (unsigned len = 1; len < 5; len++) {
     nest_in("length: %u", len);
@@ -52,17 +48,17 @@ static void test_average(void) {
       double want_min, want_avg, want_max;
       compute_average(xn, x - used + 1, x, &want_min, &want_avg, &want_max);
 
-      if (!ok(close_to(want_avg, got_avg), "average is %f", want_avg)) {
+      if (!close_to(want_avg, got_avg, "average is %f", want_avg)) {
         diag("wanted %8.4f", want_avg);
         diag("   got %8.4f", got_avg);
       }
 
-      if (!ok(close_to(want_min, got_min), "min is %f", want_min)) {
+      if (!close_to(want_min, got_min, "min is %f", want_min)) {
         diag("wanted %8.4f", want_min);
         diag("   got %8.4f", got_min);
       }
 
-      if (!ok(close_to(want_max, got_max), "max is %f", want_max)) {
+      if (!close_to(want_max, got_max, "max is %f", want_max)) {
         diag("wanted %8.4f", want_max);
         diag("   got %8.4f", got_max);
       }

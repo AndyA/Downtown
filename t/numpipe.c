@@ -12,10 +12,6 @@
 
 static unsigned nested = 0;
 
-static int close_to(double a, double b) {
-  return fabs(a - b) < NOWT;
-}
-
 static void unwind(void) {
   while (nested > 0) {
     nest_out();
@@ -33,7 +29,7 @@ static void unwind(void) {
 #define G(x) \
   do {                                                    \
     double v = numpipe_get(np);                           \
-    if (!ok(close_to(v, (x)), "get %f", (double) (x))) {  \
+    if (!close_to(v, (x), "get %f", (double) (x))) {  \
       diag("wanted: %f", (double) (x));                   \
       diag("   got: %f", v);                              \
     }                                                     \
