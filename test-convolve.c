@@ -155,10 +155,11 @@ int main(int argc, char *argv[]) {
     log_debug("Read %llu data from %s", (unsigned long long) size, argv[i]);
   }
 
-  for (int r = 1; r <= (int) cfg_count; r++) {
-    log_debug("Round %d", r);
-    for (data_series *kds = ds->next; kds; kds = kds->next) {
-      convolve(ds, kds);
+  for (int r = 0; r <= (int) cfg_count; r++) {
+    if (r > 0) {
+      log_debug("Round %d", r);
+      for (data_series *kds = ds->next; kds; kds = kds->next)
+        convolve(ds, kds);
     }
     char *outfile = ssprintf(cfg_output, r);
     log_debug("  Writing data to %s", outfile);
