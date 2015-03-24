@@ -9,6 +9,7 @@ ACLOCAL_AMFLAGS = -I m4
 noinst_LTLIBRARIES = libdowntown.la
 
 bin_PROGRAMS = \
+	confound \
 	downtown \
 	downtown_filter \
 	get-stats \
@@ -47,26 +48,29 @@ libdowntown_la_SOURCES = \
 libsoundchip_la_CPPFLAGS = $(FFTW_CFLAGS) $(PNG_CFLAGS)
 libdowntown_la_LDFLAGS = -avoid-version -static $(FFTW_LIBS) $(PNG_LIBS)
 
-downtown_SOURCES = downtown.c
+confound_LDADD = libdowntown.la
+confound_SOURCES = confound.c
+
 downtown_LDADD = libdowntown.la
+downtown_SOURCES = downtown.c
 
-downtown_filter_SOURCES = downtown_filter.c
 downtown_filter_LDADD = libdowntown.la
+downtown_filter_SOURCES = downtown_filter.c
 
-testcard_yuv_SOURCES = testcard-yuv.c
-testcard_yuv_LDADD = libdowntown.la
-
-test_convolve_SOURCES = test-convolve.c
-test_convolve_LDADD = libdowntown.la
-
-test_timebend_SOURCES = test-timebend.c
-test_timebend_LDADD = libdowntown.la
-
-test_filters_SOURCES = test-filters.c
-test_filters_LDADD = libdowntown.la
-
-get_stats_SOURCES = get-stats.c
 get_stats_LDADD = libdowntown.la
+get_stats_SOURCES = get-stats.c
+
+test_convolve_LDADD = libdowntown.la
+test_convolve_SOURCES = test-convolve.c
+
+test_filters_LDADD = libdowntown.la
+test_filters_SOURCES = test-filters.c
+
+test_timebend_LDADD = libdowntown.la
+test_timebend_SOURCES = test-timebend.c
+
+testcard_yuv_LDADD = libdowntown.la
+testcard_yuv_SOURCES = testcard-yuv.c
 
 test: all
 	cd t && $(MAKE) test

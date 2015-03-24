@@ -42,6 +42,7 @@
 /configure
 /core
 /depcomp
+/confound
 /downtown
 /downtown_filter
 /get-stats
