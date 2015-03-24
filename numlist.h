@@ -22,6 +22,7 @@ numlist *numlist_putn(numlist *nl, double d);
 
 void numlist_free(numlist *nl);
 size_t numlist_size(const numlist *nl);
+double *numlist_get(const numlist *nl, double *out);
 double *numlist_fetch(const numlist *nl, size_t *sizep);
 double *numlist_drain(numlist *nl, size_t *sizep);
 
