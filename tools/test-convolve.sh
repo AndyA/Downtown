@@ -1,7 +1,7 @@
 #!/bin/bash
 
 graph='graph'
-count=20
+count=30
 
 make || exit
 rm -rf "$graph"
