@@ -21,7 +21,9 @@ bin_PROGRAMS = \
 libdowntown_la_SOURCES = \
 	average.h average.c \
 	centre.h centre.c \
+	charlist.h charlist.c \
 	colour.h colour.c \
+	csv.h csv.c \
 	delay.h delay.c \
 	delta.h delta.c \
 	dumpframe.h dumpframe.c \

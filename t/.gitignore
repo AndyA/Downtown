@@ -3,8 +3,10 @@
 /*.o
 /average
 /basic
+/charlist
 /colour
 /core
+/csv
 /numlist
 /numpipe
 /quadtree

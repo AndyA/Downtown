@@ -1,4 +1,18 @@
-TESTBIN = average basic colour numlist numpipe quadtree resample sampler tb_convolve util yuv4mpeg2 zigzag
+TESTBIN = \
+	average \
+	basic \
+	charlist \
+	colour \
+	csv \
+	numlist \
+	numpipe \
+	quadtree \
+	resample \
+	sampler \
+	tb_convolve \
+	util \
+	yuv4mpeg2 \
+	zigzag
 
 TESTPERL =
 
