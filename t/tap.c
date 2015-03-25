@@ -162,6 +162,10 @@ int null(const void *p, const char *msg, ...) {
   TF(!p);
 }
 
+int within(double got, double want, double nowt, const char *msg, ...) {
+  TF(fabs(got - want) <= nowt);
+}
+
 int close_to(double got, double want, const char *msg, ...) {
   TF(fabs(got - want) <= test_nowt);
 }

@@ -22,6 +22,7 @@ int fail(const char *msg, ...);
 int is(long long got, long long want, const char *msg, ...);
 int not_null(const void *p, const char *msg, ...);
 int null(const void *p, const char *msg, ...);
+int within(double got, double want, double nowt, const char *msg, ...);
 int close_to(double got, double want, const char *msg, ...);
 
 typedef void (*test_cb)(int tn, void *ctx);
