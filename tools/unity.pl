@@ -22,36 +22,27 @@ print "\n";
 
 sub fixup {
   my ( $kernel, $coef ) = @_;
-  if ( @$coef && ref $coef->[0] ) {
-    return [map { fixup( $kernel, $_ ) } @$coef];
-  }
-  my $area = calc_area(@$coef);
-  printf "\n%-30s: area = %f\n\n", $kernel, $area;
-  print "  coef ", join( ' ', @$coef ), "\n";
-  my @fcoef = fix_coef(@$coef);
-  print "  fixed ", join( ' ', @fcoef ), "\n";
-  my @scoef = set_scale( 1, @fcoef );
-  print "  scaled ", join( ' ', @scoef ), "\n";
-  return \@scoef;
-}
 
-sub fix_coef {
-  my @coef = @_;
-  if ( @coef % 2 ) {
-    my $mid = @coef / 2;
-    splice @coef, $mid, 0, $coef[$mid];
+  if ( @$coef && ref $coef->[0] ) {
+    die unless @$coef == 2;
+    my ( $pos, $neg ) = @$coef;
+    my $parea = calc_area(@$pos);
+    my $narea = calc_area(@$neg);
+    my $ratio = $parea / $narea;
+    my $adj = sqrt($ratio);
+    return [[set_scale( $adj, @$pos )], [set_scale( 1 / $adj, @$neg )]];
   }
-  return @coef;
+
+  my @scoef = set_scale( 1, @$coef );
+  return \@scoef;
 }
 
 sub set_scale {
   my ( $scale, @coef ) = @_;
   while () {
-    print "  trying: ", join( ' ', @coef ), "\n";
     my $area = calc_area(@coef);
     die "Can't scale zero" if $area < NOWT;
     my $adj = $scale / $area;
-    print "    area = $area, adj = $adj\n";
     last if abs( 1 - $adj ) < NOWT;
     @coef = map { $_ * $adj } @coef;
   }
@@ -83,7 +74,7 @@ sub save_coef {
 
 sub parse_coef {
   my @coef = @_;
-  my @out = ();
+  my @out  = ();
   while (@coef) {
     my $next = shift @coef;
     if ( $next eq '[' ) {
