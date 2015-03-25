@@ -10,11 +10,12 @@ extern "C" {
 #include <stdlib.h>
 
 #define charlist_CHUNK 128
+#define charlist_MAX   (256*1024)
 
 typedef struct charlist {
   struct charlist *next;
-  size_t used, tail_size;
-  char data[charlist_CHUNK];
+  size_t size, used, tail_size;
+  char *data;
 } charlist;
 
 charlist *charlist_append(charlist *cl, const char *str, size_t len);

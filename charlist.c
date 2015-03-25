@@ -10,13 +10,15 @@
 
 charlist *charlist_append(charlist *cl, const char *str, size_t len) {
   while (len) {
-    if (!cl || cl->used == charlist_CHUNK) {
-      charlist *nnl = alloc(sizeof(charlist));
-      nnl->tail_size = charlist_size(cl);
-      nnl->next = cl;
-      cl = nnl;
+    if (!cl || cl->used == cl->size) {
+      charlist *ncl = alloc(sizeof(charlist));
+      ncl->size = cl ? MIN(cl->size * 2, charlist_MAX) : charlist_CHUNK;
+      ncl->data = alloc(ncl->size);
+      ncl->tail_size = charlist_size(cl);
+      ncl->next = cl;
+      cl = ncl;
     }
-    size_t avail = MIN(len, charlist_CHUNK - cl->used);
+    size_t avail = MIN(len, cl->size - cl->used);
     memcpy(&cl->data[cl->used], str, avail);
     cl->used += avail;
     str += avail;
@@ -29,6 +31,7 @@ charlist *charlist_append(charlist *cl, const char *str, size_t len) {
 void charlist_free(charlist *cl) {
   while (cl) {
     charlist *next = cl->next;
+    free(cl->data);
     free(cl);
     cl = next;
   }
@@ -43,7 +46,7 @@ static unsigned _get(const charlist *cl, char *out, unsigned end, size_t len) {
   if (!cl || !len) return 0;
   if (cl->used <= end) return _get(cl->next, out, end - cl->used, len);
   unsigned avail = MIN(cl->used - end, len);
-  memcpy(out + len - avail, cl->data + cl->used - end - avail, avail); 
+  memcpy(out + len - avail, cl->data + cl->used - end - avail, avail);
   return avail + _get(cl->next, out, 0, len - avail);
 }
 
