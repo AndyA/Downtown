@@ -15,7 +15,7 @@ static charlist *stuff_list(charlist *cl, size_t len, int base) {
   unsigned char str[len];
   for (unsigned i = 0; i < len; i++)
     str[i] = (unsigned char) base + i;
-  return charlist_append(cl, (const char *) str, len);
+  return charlist_append_bytes(cl, (const char *) str, len);
 }
 
 static int check_sequence(const char *str, size_t len, int base) {
@@ -32,10 +32,8 @@ static charlist *check_list(charlist *cl, size_t expect, int n) {
   ok(!!cl, "cl != NULL");
   ok(charlist_size(cl) == expect, "size is %llu", (unsigned long long) expect);
 
-  size_t size;
-  char *d = charlist_fetch(cl, &size);
-  ok(size == expect, "returned size is correct");
-  int seq = check_sequence(d, size, 1);
+  char *d = charlist_fetch(cl);
+  int seq = check_sequence(d, expect, 1);
   if (!ok(seq == -1, "data is correct")) {
     diag("Data starts to differ at offset %d", seq);
     unsigned char want = (unsigned char)(seq + 1);
@@ -95,7 +93,7 @@ static void test_aligned(void) {
 }
 
 static charlist *put1(charlist *cl, char c) {
-  return charlist_append(cl, &c, 1);
+  return charlist_append_bytes(cl, &c, 1);
 }
 
 static void test_get(void) {
@@ -135,10 +133,69 @@ static void test_get(void) {
 
 }
 
+static void test_long_string(void) {
+  char buf[313];
+  charlist *cl = NULL;
+  for (int i = 0; i < (int) sizeof(buf); i++)
+    buf[i] = (rand() & 0x3f) + 0x30;
+
+  size_t len = 0;
+  unsigned span = sizeof(buf);
+  while (--span) {
+    cl = charlist_append_bytes(cl, buf, span);
+    len += span;
+  }
+
+  nest_in("long string");
+
+  ok(charlist_size(cl) == len, "charlist_size=%u", (unsigned) len);
+
+  ok(cl->size > charlist_CHUNK, "buffer chunk (%u)", (unsigned) cl->size);
+
+  char *str = charlist_drain(cl);
+  ok(strlen(str) == len, "strlen=%u", (unsigned) len);
+
+  span = sizeof(buf);
+  char *sp = str;
+  while (--span) {
+    ok(!memcmp(buf, sp, span), "chunk at %u for %u matches", sp - str, span);
+    sp += span;
+    len += span;
+  }
+
+  free(str);
+
+  nest_out();
+}
+
+static void test_string(void) {
+  charlist *cl = NULL;
+  cl = charlist_append(cl, "Hello, World");
+  cl = charlist_printf(cl, ", how are you %s?", "today");
+  cl = charlist_append(cl, " I'm full of string.");
+  cl = charlist_printf(cl, " It couldn't happen to a %s.", "nicer person");
+  cl = charlist_printf(cl, " Bye!");
+
+  char *s1 = charlist_fetch(cl);
+  char *s2 = charlist_drain(cl);
+
+  const char *want = "Hello, World, how are you today? I'm full of string. "
+                     "It couldn't happen to a nicer person. Bye!";
+
+  ok(!strcmp(s1, want), "got expected string");
+  ok(!strcmp(s1, s2), "got it again");
+  ok(s1 != s2, "and it's different");
+
+  free(s1);
+  free(s2);
+}
+
 void test_main(void) {
   test_aligned();
   test_charlist();
   test_get();
+  test_long_string();
+  test_string();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
