@@ -94,14 +94,14 @@ static void test_aligned(void) {
 static void test_get(void) {
   numlist *nl = NULL;
 
-  const unsigned count = 10000;
+  const int count = 10000;
 
   for (int i = 0; i < count; i++)
     nl = numlist_putn(nl, (double) i + 1);
 
   size_t len = 1;
   for (int pos = 0; pos < count;) {
-    size_t want = MIN(len, count - pos);
+    size_t want = MIN(len, (unsigned) count - pos);
     double out[want];
 
     double *got = numlist_get(nl, out, pos, want);
