@@ -1,4 +1,5 @@
-/* numlist.c */
+
+#include <stdio.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -41,23 +42,33 @@ size_t numlist_size(const numlist *nl) {
   return nl->used + nl->tail_size;
 }
 
-double *numlist_get(const numlist *nl, double *out) {
-  size_t size = numlist_size(nl);
-  double *op = out + size;
+static unsigned _get(const numlist *nl, double *out, unsigned end, size_t len) {
 
-  while (op != out) {
-    op -= nl->used;
-    memcpy(op, &nl->data, sizeof(double) * nl->used);
-    nl = nl->next;
-  }
+  if (!nl || !len) return 0;
+  if (nl->used <= end) return _get(nl->next, out, end - nl->used, len);
 
+  unsigned avail = MIN(nl->used - end, len);
+
+  memcpy(out + len - avail,
+         nl->data + nl->used - end - avail,
+         sizeof(double) * avail);
+
+  return avail + _get(nl->next, out, 0, len - avail);
+}
+
+double *numlist_get(const numlist *nl, double *out, unsigned start, size_t len) {
+  (void) _get(nl, out, numlist_size(nl) - (start + len), len);
   return out;
+}
+
+double *numlist_get_all(const numlist *nl, double *out) {
+  return numlist_get(nl, out, 0, numlist_size(nl));
 }
 
 double *numlist_fetch(const numlist *nl, size_t *sizep) {
   size_t size = numlist_size(nl);
   double *out = alloc(sizeof(double) * size);
-  numlist_get(nl, out);
+  numlist_get_all(nl, out);
   if (sizep) *sizep = size;
   return out;
 }
