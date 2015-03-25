@@ -1,6 +1,7 @@
 TESTBIN = \
 	average \
 	basic \
+	bytelist \
 	charlist \
 	colour \
 	csv \
