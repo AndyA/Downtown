@@ -15,7 +15,7 @@ static charlist *stuff_list(charlist *cl, size_t len, int base) {
   unsigned char str[len];
   for (unsigned i = 0; i < len; i++)
     str[i] = (unsigned char) base + i;
-  return charlist_put(cl, (const char *) str, len);
+  return charlist_append(cl, (const char *) str, len);
 }
 
 static int check_sequence(const char *str, size_t len, int base) {
@@ -95,7 +95,7 @@ static void test_aligned(void) {
 }
 
 static charlist *put1(charlist *cl, char c) {
-  return charlist_put(cl, &c, 1);
+  return charlist_append(cl, &c, 1);
 }
 
 static void test_get(void) {

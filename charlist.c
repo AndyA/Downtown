@@ -8,7 +8,7 @@
 #include "charlist.h"
 #include "util.h"
 
-charlist *charlist_put(charlist *cl, const char *str, size_t len) {
+charlist *charlist_append(charlist *cl, const char *str, size_t len) {
   while (len) {
     if (!cl || cl->used == charlist_CHUNK) {
       charlist *nnl = alloc(sizeof(charlist));
@@ -40,16 +40,10 @@ size_t charlist_size(const charlist *cl) {
 }
 
 static unsigned _get(const charlist *cl, char *out, unsigned end, size_t len) {
-
   if (!cl || !len) return 0;
   if (cl->used <= end) return _get(cl->next, out, end - cl->used, len);
-
   unsigned avail = MIN(cl->used - end, len);
-
-  memcpy(out + len - avail,
-         cl->data + cl->used - end - avail,
-         avail);
-
+  memcpy(out + len - avail, cl->data + cl->used - end - avail, avail); 
   return avail + _get(cl->next, out, 0, len - avail);
 }
 

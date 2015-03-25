@@ -17,7 +17,7 @@ typedef struct charlist {
   char data[charlist_CHUNK];
 } charlist;
 
-charlist *charlist_put(charlist *cl, const char *str, size_t len);
+charlist *charlist_append(charlist *cl, const char *str, size_t len);
 
 void charlist_free(charlist *cl);
 size_t charlist_size(const charlist *cl);
