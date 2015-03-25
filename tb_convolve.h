@@ -28,7 +28,6 @@ tb_convolve *tb_convolve_set_prescale(tb_convolve *c, double prescale);
 tb_convolve *tb_convolve_set_linear(tb_convolve *c, int linear);
 
 double tb_convolve_calc(const tb_convolve *c, const double *in, unsigned len, unsigned pos);
-void tb_convolve_apply_linear(const tb_convolve *c, double *out, const double *in, unsigned len);
 void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsigned len);
 
 double tb_convolve_elapsed(const double *series, unsigned len);

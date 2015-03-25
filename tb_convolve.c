@@ -72,7 +72,12 @@ double tb_convolve__sample(const double *coef, double pos, double span) {
 }
 
 static double _calc(const tb_convolve *c, double n, double pos, double span, double home) {
-  double *coef_p = n < home ? c->neg_coef : c->pos_coef;
+
+  double *coef_p = (n < home) ? c->neg_coef
+                   : (n > home) ? c->pos_coef
+                   : (rand() & 1) ? c->neg_coef  /* coin flip */
+                   : c->pos_coef;
+
   double sc = tb_convolve__sample(coef_p, pos, span);
   return LOG(n * c->prescale) * sc;
 }
@@ -116,23 +121,29 @@ void tb_convolve_apply(const tb_convolve *c, double *out, const double *in, unsi
 
 double tb_convolve_elapsed(const double *series, unsigned len) {
   double total = 0;
-  for (unsigned i = 0; i < len; i++)
+  for (unsigned i = 0; i < len; i++) {
+    if (fabs(series[i]) < NOWT) {
+      fprintf(stderr, "# len: %u, i: %u, datum: %f\n", len, i, series[i]);
+      break;
+    }
     total += 1 / series[i];
+  }
   return total;
 }
 
 double tb_convolve_translate(const double *in, unsigned ilen, double *out, unsigned olen) {
   memset(out, 0, sizeof(double) * olen);
+  ilen--; // fenceposts
 
   double ipos, opos;
   for (ipos = 0, opos = 0; ipos < (double) ilen && opos < (double) olen;) {
     unsigned ip = (unsigned) ipos;
     unsigned op = (unsigned) opos;
     double rate = in[ip];
-    double igot = ((double) ip + 1 - ipos) / rate;
-    double owant = (double) op + 1 - opos;
+    double igot = MIN(((double) ip + 1 - ipos), (double) ilen - ipos) / rate;
+    double owant = MIN((double) op + 1 - opos, (double) olen - opos);
     double chunk = MIN(igot, owant);
-    out[op] += tb_convolve__sample(in, ipos, chunk);
+    out[op] += chunk / tb_convolve__sample(in, ipos, chunk);
     ipos += chunk * rate;
     opos += chunk;
   }
