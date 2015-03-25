@@ -55,7 +55,7 @@ static void test_numlist(void) {
 
   size_t expect = 0;
 
-  for (int n = 1; n < numlist_CHUNK * 3; n += 313) {
+  for (int n = 1; n < (int) numlist_CHUNK * 3; n += 313) {
     nl = check_nl(nl, expect, n);
     expect += n;
   }

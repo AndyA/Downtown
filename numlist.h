@@ -8,15 +8,12 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include "bytelist.h"
 
-#define numlist_CHUNK  1024
+#define numlist_CHUNK  (sizeof(double) * 1024)
 #define numlist_MAX    (1024*1024)
 
-typedef struct numlist {
-  struct numlist *next;
-  size_t size, used, tail_size;
-  double *data;
-} numlist;
+typedef bytelist numlist;
 
 numlist *numlist_put(numlist *nl, const double *d, size_t len);
 numlist *numlist_putn(numlist *nl, double d);

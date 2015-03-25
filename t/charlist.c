@@ -150,7 +150,7 @@ static void test_long_string(void) {
 
   ok(charlist_size(cl) == len, "charlist_size=%u", (unsigned) len);
 
-  ok(cl->size > charlist_CHUNK, "buffer chunk (%u)", (unsigned) cl->size);
+  /*  ok(cl->size > charlist_CHUNK, "buffer chunk (%u)", (unsigned) cl->size);*/
 
   char *str = charlist_drain(cl);
   ok(strlen(str) == len, "strlen=%u", (unsigned) len);
@@ -182,7 +182,8 @@ static void test_string(void) {
   const char *want = "Hello, World, how are you today? I'm full of string. "
                      "It couldn't happen to a nicer person. Bye!";
 
-  ok(!strcmp(s1, want), "got expected string");
+  if (!ok(!strcmp(s1, want), "got expected string"))
+    diag("wanted \"%s\", got \"%s\"", want, s1);
   ok(!strcmp(s1, s2), "got it again");
   ok(s1 != s2, "and it's different");
 

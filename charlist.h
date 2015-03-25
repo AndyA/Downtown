@@ -8,15 +8,12 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include "bytelist.h"
 
 #define charlist_CHUNK 128
-#define charlist_MAX   (256*1024)
+#define charlist_MAX   (1024*1024)
 
-typedef struct charlist {
-  struct charlist *next;
-  size_t size, used, tail_size;
-  char *data;
-} charlist;
+typedef bytelist charlist;
 
 charlist *charlist_append_bytes(charlist *cl, const char *str, size_t len);
 charlist *charlist_append(charlist *cl, const char *str);

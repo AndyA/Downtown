@@ -7,24 +7,35 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
 #include <stdlib.h>
 
 #define bytelist_CHUNK 128
 #define bytelist_MAX   (256*1024)
 
+#define bytelist_TO_BL(p, type, field) ((bytelist *)((p) ? (((char *)(p)) + offsetof(type, field)) : NULL))
+#define bytelist_BL_TO(p, type, field) ((type *)    ((p) ? (((char *)(p)) - offsetof(type, field)) : NULL))
+
+typedef struct {
+  size_t init_size;
+  size_t max_size;
+  int    terminate;
+} bytelist_class;
+
 typedef struct bytelist {
   struct bytelist *next;
   size_t size, used, tail_size;
   unsigned char *data;
+  const bytelist_class *class;
 } bytelist;
 
-bytelist *bytelist_append_internal(bytelist *cl, const unsigned char *bytes, size_t len, size_t min_chunk);
-bytelist *bytelist_append(bytelist *cl, const unsigned char *bytes, size_t len);
+bytelist *bytelist_append_internal(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *cl);
+bytelist *bytelist_append(bytelist *bl, const unsigned char *bytes, size_t len);
 
-void bytelist_free(bytelist *cl);
-size_t bytelist_size(const bytelist *cl);
-unsigned char *bytelist_get(const bytelist *cl, unsigned char *out, unsigned start, size_t len);
-unsigned char *bytelist_get_all(const bytelist *cl, unsigned char *out);
+void bytelist_free(bytelist *bl);
+size_t bytelist_size(const bytelist *bl);
+unsigned char *bytelist_get(const bytelist *bl, unsigned char *out, unsigned start, size_t len);
+unsigned char *bytelist_get_all(const bytelist *bl, unsigned char *out);
 unsigned char *bytelist_fetch(const bytelist *nl, size_t *sizep);
 unsigned char *bytelist_drain(bytelist *nl, size_t *sizep);
 
