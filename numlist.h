@@ -9,12 +9,13 @@ extern "C" {
 
 #include <stdlib.h>
 
-#define numlist_CHUNK 1024
+#define numlist_CHUNK  1024
+#define numlist_MAX    (1024*1024)
 
 typedef struct numlist {
   struct numlist *next;
-  size_t used, tail_size;
-  double data[numlist_CHUNK];
+  size_t size, used, tail_size;
+  double *data;
 } numlist;
 
 numlist *numlist_put(numlist *nl, const double *d, size_t len);

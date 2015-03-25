@@ -9,13 +9,15 @@
 
 numlist *numlist_put(numlist *nl, const double *d, size_t len) {
   while (len) {
-    if (!nl || nl->used == numlist_CHUNK) {
+    if (!nl || nl->used == nl->size) {
       numlist *nnl = alloc(sizeof(numlist));
+      nnl->size = nl ? MIN(nl->size * 2, numlist_MAX) : numlist_CHUNK;
+      nnl->data = alloc(sizeof(double) * nnl->size);
       nnl->tail_size = numlist_size(nl);
       nnl->next = nl;
       nl = nnl;
     }
-    size_t avail = MIN(len, numlist_CHUNK - nl->used);
+    size_t avail = MIN(len, nl->size - nl->used);
     memcpy(&nl->data[nl->used], d, sizeof(double) * avail);
     nl->used += avail;
     d += avail;
@@ -32,6 +34,7 @@ numlist *numlist_putn(numlist *nl, double d) {
 void numlist_free(numlist *nl) {
   while (nl) {
     numlist *next = nl->next;
+    free(nl->data);
     free(nl);
     nl = next;
   }
