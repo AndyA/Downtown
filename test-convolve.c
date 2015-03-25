@@ -204,11 +204,11 @@ static void convolve(data_series *data, data_series *kernel) {
   if (!kernel->c) {
     log_debug("  Creating tb_convolve for %s", kernel->name);
     kernel->c = tb_convolve_new(kernel->len, kernel->data);
-    tb_convolve_set_prescale(kernel->c, cfg_prescale);
   }
 
   double tmp[data->len];
   log_debug("  Applying %s to %s", kernel->name, data->name);
+  tb_convolve_set_prescale(kernel->c, cfg_prescale);
   tb_convolve_apply(kernel->c, tmp, data->data, data->len);
   for (unsigned i = 0; i < data->len; i++)
     data->data[i] = MIN(MAX(NOWT, tmp[i]), CLIP);
