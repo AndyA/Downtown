@@ -45,7 +45,7 @@ typedef struct bytelist {
 
 
 #define bytelist_DECLARE(listtype, itemtype)                                                           \
-  typedef bytelist listtype;                                                                           \
+  typedef struct listtype listtype;                                                                    \
   bytelist_DECLARE_F(listtype, itemtype)
 
 
@@ -54,7 +54,6 @@ bytelist *bytelist_append_internal(bytelist *bl,
                                    const bytelist_class *cl);
 
 bytelist_DECLARE_F(bytelist, unsigned char)
-
 
 
 #define bytelist_DEFINE(listtype, itemtype, chunk, max, term)                                          \
@@ -67,20 +66,20 @@ bytelist_DECLARE_F(bytelist, unsigned char)
   };                                                                                                   \
                                                                                                        \
   listtype * bytelist__PASTE( listtype, _append )  (listtype *nl, const itemtype *d, size_t len) {     \
-    return bytelist_append_internal(nl, (unsigned char *) d, len, &me);                                \
+    return (listtype *) bytelist_append_internal((bytelist *) nl, (unsigned char *) d, len, &me);      \
   }                                                                                                    \
                                                                                                        \
   void bytelist__PASTE( listtype, _free ) (listtype *nl) {                                             \
-    bytelist_free(nl);                                                                                 \
+    bytelist_free((bytelist *) nl);                                                                    \
   }                                                                                                    \
                                                                                                        \
   size_t  bytelist__PASTE( listtype, _size ) (const listtype *nl) {                                    \
-    return bytelist_size(nl);                                                                          \
+    return bytelist_size((const bytelist *) nl);                                                       \
   }                                                                                                    \
                                                                                                        \
   itemtype * bytelist__PASTE( listtype, _get ) (const listtype *nl, itemtype *out,                     \
                                                 unsigned start, size_t len) {                          \
-    return (itemtype *) bytelist_get(nl, (unsigned char *) out, start, len);                           \
+    return (itemtype *) bytelist_get((const bytelist *) nl, (unsigned char *) out, start, len);        \
   }                                                                                                    \
                                                                                                        \
   itemtype * bytelist__PASTE( listtype, _get_all ) (const listtype *nl, itemtype *out) {               \
@@ -89,11 +88,11 @@ bytelist_DECLARE_F(bytelist, unsigned char)
   }                                                                                                    \
                                                                                                        \
   itemtype * bytelist__PASTE( listtype, _fetch ) (const listtype *nl, size_t *sizep) {                 \
-    return (itemtype *) bytelist_fetch(nl, sizep);                                                     \
+    return (itemtype *) bytelist_fetch((const bytelist *) nl, sizep);                                  \
   }                                                                                                    \
                                                                                                        \
   itemtype * bytelist__PASTE( listtype, _drain ) (listtype *nl, size_t *sizep) {                       \
-    return (itemtype *) bytelist_drain(nl, sizep);                                                     \
+    return (itemtype *) bytelist_drain((bytelist *) nl, sizep);                                        \
   }
 
 #ifdef __cplusplus
