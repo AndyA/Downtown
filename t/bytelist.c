@@ -136,6 +136,16 @@ static void test_get(void) {
 }
 
 void test_main(void) {
+#if defined(TEST_INIT_SIZE) || defined(TEST_RISE_RATE)
+  bytelist_class *me = bytelist__get_class();
+#if defined(TEST_INIT_SIZE)
+  me->init_size = TEST_INIT_SIZE;
+#endif
+#if defined(TEST_RISE_RATE)
+  me->rise_rate = TEST_RISE_RATE;
+#endif
+  diag("init_size=%u, rise_rate=%u", (unsigned) me->init_size, me->rise_rate);
+#endif
   test_aligned();
   test_bytelist();
   test_get();

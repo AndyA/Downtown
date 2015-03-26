@@ -9,8 +9,9 @@
 #include "util.h"
 
 static bytelist_class me = {
-  .init_size = bytelist_CHUNK,
-  .max_size = bytelist_MAX,
+  .init_size   = bytelist_CHUNK,
+  .max_size    = bytelist_MAX,
+  .rise_rate   = 2,
   .member_size = sizeof(unsigned char),
   .options = 0
 };
@@ -20,11 +21,17 @@ size_t _size(const bytelist *bl) {
   return bl->used + bl->tail_size;
 }
 
+// For tests
+
+bytelist_class *bytelist__get_class(void) {
+  return &me;
+}
+
 static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *clazz) {
   while (len) {
     if (!bl || bl->used == bl->size) {
       bytelist *nbl = alloc(sizeof(bytelist));
-      nbl->size = bl ? MIN(bl->size * 2, clazz->max_size)
+      nbl->size = bl ? MIN(bl->size * clazz->rise_rate, clazz->max_size)
                   : clazz->init_size * clazz->member_size;
       nbl->clazz = clazz;
       nbl->data = alloc(nbl->size);

@@ -21,6 +21,7 @@ typedef struct {
   size_t init_size;
   size_t max_size;
   size_t member_size;
+  unsigned rise_rate;
   unsigned options;
 } bytelist_class;
 
@@ -65,6 +66,7 @@ bytelist_DECLARE_F(bytelist, unsigned char)
   static bytelist_class bytelist__PASTE( listtype, _me ) = {                                           \
     .init_size   = chunk,                                                                              \
     .max_size    = max,                                                                                \
+    .rise_rate   = 2,                                                                                  \
     .member_size = sizeof(itemtype),                                                                   \
     .options     = opt                                                                                 \
   };                                                                                                   \
@@ -99,6 +101,10 @@ bytelist_DECLARE_F(bytelist, unsigned char)
   itemtype * bytelist__PASTE( listtype, _drain ) (listtype *nl, size_t *sizep) {                       \
     return (itemtype *) bytelist_drain((bytelist *) nl, sizep);                                        \
   }
+
+// For tests mainly
+
+bytelist_class *bytelist__get_class(void);
 
 #ifdef __cplusplus
 }
