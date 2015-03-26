@@ -10,6 +10,7 @@
 
 #include "log.h"
 #include "numlist.h"
+#include "ptrlist.h"
 #include "tb_convolve.h"
 #include "util.h"
 
@@ -105,20 +106,40 @@ static numlist *read_numlist(FILE *in, int end) {
 
 static tb_convolve *read_convolver(FILE *in) {
   int c = fgetc(in);
-
   while (c != EOF && isspace(c)) c = fgetc(in);
-  if (c == '[') {
-    numlist *pos = read_numlist(in, ']');
-    c = fgetc(in);
-    while (c != EOF && isspace(c)) c = fgetc(in);
-    if (c != '[') die("Missing negative coefs");
-    numlist *neg = read_numlist(in, ']');
-    unsigned psize = (unsigned) numlist_size(pos);
-    unsigned nsize = (unsigned) numlist_size(neg);
-    if (psize != nsize)
-      die("Coeficents aren't the same size: pos=%u, neg=%u", psize, nsize);
 
-    return tb_convolve_new_signed(psize, numlist_drain(pos, NULL), numlist_drain(neg, NULL));
+  if (c == '[') {
+    ptrlist *coef = NULL;
+
+    while (c == '[') {
+      numlist *nl = read_numlist(in, ']');
+      coef = ptrlist_append(coef, (const void **) &nl, 1);
+
+      c = fgetc(in);
+      while (c != EOF && isspace(c)) c = fgetc(in);
+    }
+
+
+    size_t got;
+    numlist **parm = (numlist **) ptrlist_drain(coef, &got);
+    if (got != 3) die("Need 3 sets of coefs, got %u", got);
+
+    double *set[got];
+
+    size_t len = 0;
+    for (unsigned i = 0; i < got; i++) {
+      size_t slen;
+      set[i] = numlist_drain(parm[i], &slen);
+      if (len == 0) len = slen;
+      if (slen != len)
+        die("All coef sets must be the same size. Found %u and %u",
+            (unsigned) len, (unsigned) slen);
+    }
+    free(parm);
+
+    tb_convolve *c = tb_convolve_new_signed(len, set[0], set[1], set[2]);
+    for (unsigned i = 0; i < got; i++) free(set[i]);
+    return c;
   }
 
   ungetc(c, in);

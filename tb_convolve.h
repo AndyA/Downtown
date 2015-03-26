@@ -11,6 +11,7 @@ typedef struct {
   unsigned len;
   unsigned hwm;
   double *pos_coef;
+  double *zero_coef;;
   double *neg_coef;;
   double prescale;
   int linear;
@@ -21,6 +22,7 @@ tb_convolve *tb_convolve_new(unsigned len,
 
 tb_convolve *tb_convolve_new_signed(unsigned len,
                                     const double *pos_coef,
+                                    const double *zero_coef,
                                     const double *neg_coef);
 
 void tb_convolve_free(tb_convolve *c);

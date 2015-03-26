@@ -16,7 +16,7 @@
 
 tb_convolve *tb_convolve_new(unsigned len,
                              const double *coef) {
-  return tb_convolve_new_signed(len, coef, coef);
+  return tb_convolve_new_signed(len, coef, coef, coef);
 }
 
 static double *dup_coef(const double *in, unsigned len) {
@@ -25,22 +25,24 @@ static double *dup_coef(const double *in, unsigned len) {
   return out;
 }
 
-
 tb_convolve *tb_convolve_new_signed(unsigned len,
                                     const double *pos_coef,
+                                    const double *zero_coef,
                                     const double *neg_coef) {
   tb_convolve *c = (tb_convolve *) alloc(sizeof(tb_convolve));
   c->len = len;
   c->hwm = len - 1;
   c->prescale = 1;
-  c->pos_coef = dup_coef(pos_coef, len);
-  c->neg_coef = pos_coef == neg_coef ? c->pos_coef : dup_coef(neg_coef, len);
+  c->pos_coef  = dup_coef(pos_coef, len);
+  c->zero_coef = dup_coef(zero_coef, len);
+  c->neg_coef  = dup_coef(neg_coef, len);
   return c;
 }
 
 void tb_convolve_free(tb_convolve *c) {
   if (c) {
-    if (c->pos_coef != c->neg_coef) free(c->pos_coef);
+    free(c->pos_coef);
+    free(c->zero_coef);
     free(c->neg_coef);
     free(c);
   }
@@ -75,8 +77,7 @@ static double _calc(const tb_convolve *c, double n, double pos, double span, dou
 
   double *coef_p = (n < home) ? c->neg_coef
                    : (n > home) ? c->pos_coef
-                   : (rand() & 1) ? c->neg_coef  /* coin flip */
-                   : c->pos_coef;
+                   : c->zero_coef;
 
   double sc = tb_convolve__sample(coef_p, pos, span);
   return LOG(n * c->prescale) * sc;

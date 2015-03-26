@@ -24,13 +24,14 @@ sub fixup {
   my ( $kernel, $coef ) = @_;
 
   if ( @$coef && ref $coef->[0] ) {
-    die unless @$coef == 2;
-    my ( $pos, $neg ) = @$coef;
-    my $parea = calc_area(@$pos);
-    my $narea = calc_area(@$neg);
-    my $ratio = $parea / $narea;
-    my $adj = sqrt($ratio);
-    return [[set_scale( $adj, @$pos )], [set_scale( 1 / $adj, @$neg )]];
+    return $coef; # pass through
+    #    die unless @$coef == 2;
+    #    my ( $pos, $neg ) = @$coef;
+    #    my $parea = calc_area(@$pos);
+    #    my $narea = calc_area(@$neg);
+    #    my $ratio = $parea / $narea;
+    #    my $adj = sqrt($ratio);
+    #    return [[set_scale( $adj, @$pos )], [set_scale( 1 / $adj, @$neg )]];
   }
 
   my @scoef = set_scale( 1, @$coef );
