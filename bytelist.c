@@ -12,7 +12,7 @@ static bytelist_class me = {
   .init_size = bytelist_CHUNK,
   .max_size = bytelist_MAX,
   .member_size = sizeof(unsigned char),
-  .terminate = 0
+  .options = 0
 };
 
 size_t _size(const bytelist *bl) {
@@ -85,7 +85,7 @@ unsigned char *bytelist_get_all(const bytelist *bl, unsigned char *out) {
 
 unsigned char *bytelist_fetch(const bytelist *bl, size_t *sizep) {
   size_t size = _size(bl);
-  int term = bl->clazz->terminate ? 1 : 0;
+  int term = (bl->clazz->options & bytelist_TERMINATED) ? 1 : 0;
   unsigned char *out = alloc_no_clear(size + term);
   if (term) out[size] = 0;
   bytelist_get_all(bl, out);

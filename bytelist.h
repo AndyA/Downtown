@@ -13,11 +13,15 @@ extern "C" {
 #define bytelist_CHUNK 128
 #define bytelist_MAX   (256*1024)
 
+enum { 
+  bytelist_TERMINATED = 1 << 0 
+};
+
 typedef struct {
   size_t init_size;
   size_t max_size;
   size_t member_size;
-  int    terminate;
+  unsigned options;
 } bytelist_class;
 
 typedef struct bytelist {
@@ -56,17 +60,18 @@ bytelist *bytelist_append_internal(bytelist *bl,
 bytelist_DECLARE_F(bytelist, unsigned char)
 
 
-#define bytelist_DEFINE(listtype, itemtype, chunk, max, term)                                          \
+#define bytelist_DEFINE(listtype, itemtype, chunk, max, opt)                                           \
                                                                                                        \
-  static bytelist_class me = {                                                                         \
+  static bytelist_class bytelist__PASTE( listtype, _me ) = {                                           \
     .init_size   = chunk,                                                                              \
     .max_size    = max,                                                                                \
     .member_size = sizeof(itemtype),                                                                   \
-    .terminate   = term                                                                                \
+    .options     = opt                                                                                 \
   };                                                                                                   \
                                                                                                        \
   listtype * bytelist__PASTE( listtype, _append )  (listtype *nl, const itemtype *d, size_t len) {     \
-    return (listtype *) bytelist_append_internal((bytelist *) nl, (unsigned char *) d, len, &me);      \
+    return (listtype *) bytelist_append_internal((bytelist *) nl, (unsigned char *) d, len,            \
+        &bytelist__PASTE( listtype, _me ));                                                            \
   }                                                                                                    \
                                                                                                        \
   void bytelist__PASTE( listtype, _free ) (listtype *nl) {                                             \
