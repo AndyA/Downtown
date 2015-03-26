@@ -135,36 +135,10 @@ static void test_get(void) {
 
 }
 
-typedef struct {
-  char pad1[313];
-  bytelist bl;
-  char pad2[313];
-} testlist;
-
-#define BL(pcl) bytelist_TO_BL(pcl, testlist, bl)
-#define TL(pbl) bytelist_BL_TO(pbl, testlist, bl)
-
-static void test_misc(void) {
-  testlist tl;
-
-  ok(BL(NULL) == NULL, "BL(NULL) == NULL");
-  ok(TL(NULL) == NULL, "TL(NULL) == NULL");
-
-  const bytelist *bla = &tl.bl;
-  const testlist *tla = &tl;
-
-  const bytelist *blp = BL(&tl);
-  const testlist *tlp = TL(blp);
-
-  if (!ok(blp == bla, "BL(p) matches")) diag("blp=%p, bla=%p", blp, bla);
-  if (!ok(tlp == tla, "TL(p) matches")) diag("blp=%p, tla=%p", tlp, tla);
-}
-
 void test_main(void) {
   test_aligned();
   test_bytelist();
   test_get();
-  test_misc();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

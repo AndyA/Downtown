@@ -12,7 +12,7 @@ static numlist *stuff_list(numlist *nl, size_t len, double base) {
   double d[len];
   for (unsigned i = 0; i < len; i++)
     d[i] = base + (double) i;
-  return numlist_put(nl, d, len);
+  return numlist_append(nl, d, len);
 }
 
 static int check_sequence(const double *d, size_t len, double base) {

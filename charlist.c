@@ -8,43 +8,10 @@
 #include "charlist.h"
 #include "util.h"
 
-static bytelist_class me = {
-  .init_size = charlist_CHUNK,
-  .max_size = charlist_MAX, 
-  .member_size = sizeof(char), 
-  .terminate = 1
-};
+bytelist_DEFINE(charlist, char, charlist_CHUNK, charlist_MAX, 1)
 
-charlist *charlist_append_bytes(charlist *cl, const char *str, size_t len) {
-  return bytelist_append_internal(cl, (unsigned char *) str, len, &me);
-}
-
-charlist *charlist_append(charlist *cl, const char *str) {
-  return charlist_append_bytes(cl, str, strlen(str));
-}
-
-void charlist_free(charlist *cl) {
-  bytelist_free(cl);
-}
-
-size_t charlist_size(const charlist *cl) {
-  return bytelist_size(cl);
-}
-
-char *charlist_get(const charlist *cl, char *out, unsigned start, size_t len) {
-  return (char *) bytelist_get(cl, (unsigned char *) out, start, len);
-}
-
-char *charlist_get_all(const charlist *cl, char *out) {
-  return charlist_get(cl, out, 0, charlist_size(cl));
-}
-
-char *charlist_fetch(const charlist *cl) {
-  return (char *) bytelist_fetch(cl, NULL);
-}
-
-char *charlist_drain(charlist *cl) {
-  return (char *) bytelist_drain(cl, NULL);
+charlist *charlist_puts(charlist *cl, const char *str) {
+  return charlist_append(cl, str, strlen(str));
 }
 
 charlist *charlist_vprintf(charlist *cl, const char *fmt, va_list ap) {
@@ -55,7 +22,7 @@ charlist *charlist_vprintf(charlist *cl, const char *fmt, va_list ap) {
   int len = vsnprintf(tmp, 0, fmt, ap);
   char buf[len + 1];
   vsnprintf(buf, len + 1, fmt, ap2);
-  return charlist_append_bytes(cl, buf, len);
+  return charlist_append(cl, buf, len);
 }
 
 charlist *charlist_printf(charlist *cl, const char *fmt, ...) {

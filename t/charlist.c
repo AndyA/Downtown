@@ -15,7 +15,7 @@ static charlist *stuff_list(charlist *cl, size_t len, int base) {
   unsigned char str[len];
   for (unsigned i = 0; i < len; i++)
     str[i] = (unsigned char) base + i;
-  return charlist_append_bytes(cl, (const char *) str, len);
+  return charlist_append(cl, (const char *) str, len);
 }
 
 static int check_sequence(const char *str, size_t len, int base) {
@@ -32,7 +32,7 @@ static charlist *check_list(charlist *cl, size_t expect, int n) {
   ok(!!cl, "cl != NULL");
   ok(charlist_size(cl) == expect, "size is %llu", (unsigned long long) expect);
 
-  char *d = charlist_fetch(cl);
+  char *d = charlist_fetch(cl, NULL);
   int seq = check_sequence(d, expect, 1);
   if (!ok(seq == -1, "data is correct")) {
     diag("Data starts to differ at offset %d", seq);
@@ -93,7 +93,7 @@ static void test_aligned(void) {
 }
 
 static charlist *put1(charlist *cl, char c) {
-  return charlist_append_bytes(cl, &c, 1);
+  return charlist_append(cl, &c, 1);
 }
 
 static void test_get(void) {
@@ -142,7 +142,7 @@ static void test_long_string(void) {
   size_t len = 0;
   unsigned span = sizeof(buf);
   while (--span) {
-    cl = charlist_append_bytes(cl, buf, span);
+    cl = charlist_append(cl, buf, span);
     len += span;
   }
 
@@ -152,7 +152,7 @@ static void test_long_string(void) {
 
   /*  ok(cl->size > charlist_CHUNK, "buffer chunk (%u)", (unsigned) cl->size);*/
 
-  char *str = charlist_drain(cl);
+  char *str = charlist_drain(cl, NULL);
   ok(strlen(str) == len, "strlen=%u", (unsigned) len);
 
   span = sizeof(buf);
@@ -170,14 +170,14 @@ static void test_long_string(void) {
 
 static void test_string(void) {
   charlist *cl = NULL;
-  cl = charlist_append(cl, "Hello, World");
+  cl = charlist_puts(cl, "Hello, World");
   cl = charlist_printf(cl, ", how are you %s?", "today");
-  cl = charlist_append(cl, " I'm full of string.");
+  cl = charlist_puts(cl, " I'm full of string.");
   cl = charlist_printf(cl, " It couldn't happen to a %s.", "nicer person");
   cl = charlist_printf(cl, " Bye!");
 
-  char *s1 = charlist_fetch(cl);
-  char *s2 = charlist_drain(cl);
+  char *s1 = charlist_fetch(cl, NULL);
+  char *s2 = charlist_drain(cl, NULL);
 
   const char *want = "Hello, World, how are you today? I'm full of string. "
                      "It couldn't happen to a nicer person. Bye!";

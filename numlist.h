@@ -13,17 +13,9 @@ extern "C" {
 #define numlist_CHUNK  (sizeof(double) * 1024)
 #define numlist_MAX    (1024*1024)
 
-typedef bytelist numlist;
+bytelist_DECLARE(numlist, double)
 
-numlist *numlist_put(numlist *nl, const double *d, size_t len);
 numlist *numlist_putn(numlist *nl, double d);
-
-void numlist_free(numlist *nl);
-size_t numlist_size(const numlist *nl);
-double *numlist_get(const numlist *nl, double *out, unsigned start, size_t len);
-double *numlist_get_all(const numlist *nl, double *out);
-double *numlist_fetch(const numlist *nl, size_t *sizep);
-double *numlist_drain(numlist *nl, size_t *sizep);
 
 #ifdef __cplusplus
 }
