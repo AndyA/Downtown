@@ -20,8 +20,8 @@ bin_PROGRAMS = \
 
 libdowntown_la_SOURCES = \
 	average.h average.c \
-	centre.h centre.c \
 	bytelist.h bytelist.c \
+	centre.h centre.c \
 	charlist.h charlist.c \
 	colour.h colour.c \
 	csv.h csv.c \
@@ -36,6 +36,7 @@ libdowntown_la_SOURCES = \
 	numlist.h numlist.c \
 	numpipe.h numpipe.c \
 	progress.h progress.c \
+	ptrlist.h ptrlist.c \
 	quadtree.h quadtree.c \
 	resample.h resample.c \
 	sampler.h sampler.c \
