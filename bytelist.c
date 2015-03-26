@@ -65,6 +65,48 @@ bytelist *bytelist_join(bytelist *bl, bytelist *bl2) {
   return _join(bl2, bl, _size(bl));
 }
 
+static bytelist *_split(bytelist *bl, unsigned pos, size_t shrink, bytelist **blb) {
+  if (!bl) return NULL;
+
+  if (pos >= bl->used) {
+    bl->tail_size -= shrink;
+    bl->next = _split(bl->next, pos - bl->used, shrink, blb);
+    return bl;
+  }
+
+  *blb = _append(bl->next, bl->data, bl->used - pos, bl->clazz);
+  memmove(bl->data, bl->data + bl->used - pos, pos);
+
+  bl->used = pos;
+  bl->tail_size = 0;
+  bl->next = NULL;
+
+  return bl;
+}
+
+
+static void _native_split(bytelist *bl, unsigned pos, size_t shrink, bytelist **bla, bytelist **blb) {
+  if (!bl || pos == 0) {
+    *bla = bl;
+    *blb = NULL;
+    return;
+  }
+
+  size_t size = _size(bl);
+  if (pos >= size) {
+    *bla = NULL;
+    *blb = bl;
+    return;
+  }
+
+  *blb = _split(bl, pos, shrink, bla);
+}
+
+void bytelist_split(bytelist *bl, unsigned pos, bytelist **bla, bytelist **blb) {
+  pos *= bl->clazz->member_size;
+  _native_split(bl, _size(bl) - pos, pos, bla, blb);
+}
+
 bytelist *bytelist_append_internal(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *clazz) {
   return _append(bl, bytes, len * clazz->member_size, clazz);
 }

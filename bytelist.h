@@ -41,6 +41,8 @@ typedef struct bytelist {
                                                                                                            \
   listtype * bytelist__PASTE( listtype, _append      ) (listtype *bl, const itemtype *d, size_t len);      \
   listtype * bytelist__PASTE( listtype, _join        ) (listtype *bl, listtype *nl2);                      \
+  void       bytelist__PASTE( listtype, _split       ) (listtype *bl, unsigned pos,                        \
+                                                        listtype **bla, listtype **blb);                   \
   void       bytelist__PASTE( listtype, _free        ) (listtype *bl);                                     \
   size_t     bytelist__PASTE( listtype, _size        ) (const listtype *bl);                               \
   size_t     bytelist__PASTE( listtype, _member_size ) (const listtype *bl);                               \

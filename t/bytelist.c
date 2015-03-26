@@ -216,6 +216,8 @@ static void test_join(void) {
   bytelist *bl = NULL;
   sane_list(bl, 0, "bl - empty");
 
+  nest_in("join");
+
   for (int i = 0; i < 10; i++) {
     size_t bls = bytelist_size(bl);
     bytelist *bl2 = append_about(NULL, 313, bls);
@@ -223,6 +225,47 @@ static void test_join(void) {
     bl = bytelist_join(bl, bl2);
     sane_list(bl, 0, "bl - joined");
   }
+
+  nest_out();
+  nest_in("split");
+
+  size_t bls = bytelist_size(bl);
+  const unsigned nsplit = 100;
+
+  unsigned split[nsplit];
+  split[0] = (unsigned) bls - 1;
+  split[1] = (unsigned) bls;
+  split[2] = 1;
+  split[3] = 0;
+
+  for (unsigned i = 4; i < nsplit; i++)
+    split[i] = randum((int) bls);
+
+  for (unsigned i = 0; i < nsplit; i++) {
+    bytelist *bla, *blb;
+    unsigned pos = split[i];
+
+    nest_in("at %u", pos);
+
+    bytelist_split(bl, pos, &bla, &blb);
+    size_t blas = bytelist_size(bla);
+    size_t blbs = bytelist_size(blb);
+
+    if (!ok(blas == pos, "bla size == %u", pos))
+      diag("wanted %u, got %u", pos, (unsigned) blas);
+    if (!ok(blbs == bls - pos, "blb size = %u", bls - pos))
+      diag("wanted %u, got %u", bls - pos, (unsigned) blbs);
+
+    sane_list(bla, 0, "bla");
+    sane_list(blb, pos, "blb");
+
+    bl = bytelist_join(bla, blb);
+    sane_list(bl, 0, "rejoined");
+
+    nest_out();
+  }
+
+  nest_out();
 
   bytelist_free(bl);
 }
@@ -238,9 +281,9 @@ void test_main(void) {
 #endif
   diag("init_size=%u, rise_rate=%u", (unsigned) me->init_size, me->rise_rate);
 #endif
-  test_aligned();
-  test_bytelist();
-  test_get();
+  /*  test_aligned();*/
+  /*  test_bytelist();*/
+  /*  test_get();*/
   test_join();
 }
 
