@@ -27,6 +27,11 @@ bytelist_class *bytelist__get_class(void) {
   return &me;
 }
 
+size_t bytelist_member_size(const bytelist *bl) {
+  if (!bl) return 0;
+  return bl->clazz->member_size;
+}
+
 static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *clazz) {
   while (len) {
     if (!bl || bl->used == bl->size) {
