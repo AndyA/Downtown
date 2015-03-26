@@ -8,6 +8,8 @@
 #include "tap.h"
 #include "util.h"
 
+#define CHUNK 1024
+
 static numlist *stuff_list(numlist *nl, size_t len, double base) {
   double d[len];
   for (unsigned i = 0; i < len; i++)
@@ -56,7 +58,7 @@ static void test_numlist(void) {
 
   size_t expect = 0;
 
-  for (int n = 1; n < (int) numlist_CHUNK * 3; n += 313) {
+  for (int n = 1; n < (int) CHUNK * 3; n += 313) {
     nl = check_nl(nl, expect, n);
     expect += n;
   }
@@ -67,10 +69,10 @@ static void test_numlist(void) {
 
 static numlist *check_al(numlist *nl, size_t *expect, int delta, int count) {
   for (int n = 0; n < count; n++) {
-    int past = (int) * expect % numlist_CHUNK;
+    int past = (int) * expect % CHUNK;
     nest_in("%d past boundary", past);
-    nl = check_nl(nl, *expect, numlist_CHUNK + delta);
-    *expect += numlist_CHUNK + delta;
+    nl = check_nl(nl, *expect, CHUNK + delta);
+    *expect += CHUNK + delta;
     nest_out();
   }
   return nl;

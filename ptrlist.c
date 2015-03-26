@@ -1,11 +1,7 @@
-
-#include <stdio.h>
-
-#include <stdlib.h>
-#include <string.h>
-
 #include "ptrlist.h"
-#include "util.h"
+
+#define ptrlist_CHUNK  (sizeof(void *) * 1024)
+#define ptrlist_MAX    (1024*1024)
 
 bytelist_DEFINE(ptrlist, void *, ptrlist_CHUNK, ptrlist_MAX, 0)
 

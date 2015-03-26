@@ -1,11 +1,7 @@
-
-#include <stdio.h>
-
-#include <stdlib.h>
-#include <string.h>
-
 #include "numlist.h"
-#include "util.h"
+
+#define numlist_CHUNK  1024
+#define numlist_MAX    (1024*1024)
 
 bytelist_DEFINE(numlist, double, numlist_CHUNK, numlist_MAX, 0)
 

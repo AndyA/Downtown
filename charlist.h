@@ -7,11 +7,8 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
+#include <stdarg.h>
 #include "bytelist.h"
-
-#define charlist_CHUNK 128
-#define charlist_MAX   (1024*1024)
 
 bytelist_DECLARE(charlist, char)
 

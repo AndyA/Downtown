@@ -7,11 +7,7 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
 #include "bytelist.h"
-
-#define ptrlist_CHUNK  (sizeof(void *) * 1024)
-#define ptrlist_MAX    (1024*1024)
 
 bytelist_DECLARE(ptrlist, void *)
 

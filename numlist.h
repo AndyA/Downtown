@@ -7,11 +7,7 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
 #include "bytelist.h"
-
-#define numlist_CHUNK  (sizeof(double) * 1024)
-#define numlist_MAX    (1024*1024)
 
 bytelist_DECLARE(numlist, double)
 

@@ -8,8 +8,7 @@
 #include "tap.h"
 #include "util.h"
 
-#define CHUNK charlist_CHUNK
-/*#define CHUNK 128*/
+#define CHUNK 128
 
 static charlist *stuff_list(charlist *cl, size_t len, int base) {
   unsigned char str[len];

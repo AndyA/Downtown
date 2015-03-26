@@ -8,6 +8,9 @@
 #include "charlist.h"
 #include "util.h"
 
+#define charlist_CHUNK 128
+#define charlist_MAX   (1024*1024)
+
 bytelist_DEFINE(charlist, char, charlist_CHUNK, charlist_MAX, 1)
 
 charlist *charlist_puts(charlist *cl, const char *str) {

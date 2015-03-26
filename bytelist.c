@@ -24,7 +24,8 @@ static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, c
   while (len) {
     if (!bl || bl->used == bl->size) {
       bytelist *nbl = alloc(sizeof(bytelist));
-      nbl->size = bl ? MIN(bl->size * 2, clazz->max_size) : clazz->init_size;
+      nbl->size = bl ? MIN(bl->size * 2, clazz->max_size)
+                  : clazz->init_size * clazz->member_size;
       nbl->clazz = clazz;
       nbl->data = alloc(nbl->size);
       nbl->tail_size = _size(bl);
