@@ -11,17 +11,23 @@
 static bytelist_class me = {
   .init_size = bytelist_CHUNK,
   .max_size = bytelist_MAX,
+  .member_size = sizeof(unsigned char),
   .terminate = 0
 };
 
-bytelist *bytelist_append_internal(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *class) {
+size_t _size(const bytelist *bl) {
+  if (!bl) return 0;
+  return bl->used + bl->tail_size;
+}
+
+static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *clazz) {
   while (len) {
     if (!bl || bl->used == bl->size) {
       bytelist *nbl = alloc(sizeof(bytelist));
-      nbl->size = bl ? MIN(bl->size * 2, class->max_size) : class->init_size;
+      nbl->size = bl ? MIN(bl->size * 2, clazz->max_size) : clazz->init_size;
+      nbl->clazz = clazz;
       nbl->data = alloc(nbl->size);
-      nbl->tail_size = bytelist_size(bl);
-      nbl->class = class;
+      nbl->tail_size = _size(bl);
       nbl->next = bl;
       bl = nbl;
     }
@@ -33,6 +39,10 @@ bytelist *bytelist_append_internal(bytelist *bl, const unsigned char *bytes, siz
   }
 
   return bl;
+}
+
+bytelist *bytelist_append_internal(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *clazz) {
+  return _append(bl, bytes, len * clazz->member_size, clazz);
 }
 
 bytelist *bytelist_append(bytelist *bl, const unsigned char *bytes, size_t len) {
@@ -50,7 +60,7 @@ void bytelist_free(bytelist *bl) {
 
 size_t bytelist_size(const bytelist *bl) {
   if (!bl) return 0;
-  return bl->used + bl->tail_size;
+  return _size(bl) / bl->clazz->member_size;
 }
 
 static unsigned _get(const bytelist *bl, unsigned char *out, unsigned end, size_t len) {
@@ -62,7 +72,9 @@ static unsigned _get(const bytelist *bl, unsigned char *out, unsigned end, size_
 }
 
 unsigned char *bytelist_get(const bytelist *bl, unsigned char *out, unsigned start, size_t len) {
-  (void) _get(bl, out, bytelist_size(bl) - (start + len), len);
+  start *= bl->clazz->member_size;
+  len   *= bl->clazz->member_size;
+  (void) _get(bl, out, _size(bl) - (start + len), len);
   return out;
 }
 
@@ -71,12 +83,12 @@ unsigned char *bytelist_get_all(const bytelist *bl, unsigned char *out) {
 }
 
 unsigned char *bytelist_fetch(const bytelist *bl, size_t *sizep) {
-  size_t size = bytelist_size(bl);
-  int term = bl->class->terminate ? 1 : 0;
-  unsigned char *out = alloc_no_clear(sizeof(unsigned char) * size + term);
+  size_t size = _size(bl);
+  int term = bl->clazz->terminate ? 1 : 0;
+  unsigned char *out = alloc_no_clear(size + term);
   if (term) out[size] = 0;
   bytelist_get_all(bl, out);
-  if (sizep) *sizep = size;
+  if (sizep) *sizep = size / bl->clazz->member_size;;
   return out;
 }
 

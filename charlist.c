@@ -11,6 +11,7 @@
 static bytelist_class me = {
   .init_size = charlist_CHUNK,
   .max_size = charlist_MAX, 
+  .member_size = sizeof(char), 
   .terminate = 1
 };
 
