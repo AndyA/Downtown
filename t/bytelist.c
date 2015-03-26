@@ -132,7 +132,99 @@ static void test_get(void) {
     pos += len;
     len++;
   }
+}
 
+static unsigned char char_for(unsigned pos) {
+  return (unsigned char)(
+           ((pos >>  0) *  1) ^
+           ((pos >>  7) * 11) ^
+           ((pos >>  9) *  2) ^
+           ((pos >> 11) * 19) ^
+           ((pos >> 15) *  3) ^
+           ((pos >> 19) * 27) ^
+           ((pos >> 25) *  5) ^
+           ((pos >> 30) * 22) ^
+           ((pos >> 31) *  9)
+         );
+}
+
+static bytelist *append_some(bytelist *bl, size_t some, size_t adjust) {
+  unsigned char buf[some];
+  size_t got = adjust + bytelist_size(bl);
+  for (unsigned i = 0; i < some; i++) buf[i] = char_for(got + i);
+  return bytelist_append(bl, buf, some);
+}
+
+static int randum(int limit) {
+  int mask = 1;
+  while (mask < limit) mask <<= 1;
+  for (;;) {
+    int rr = rand() & (mask - 1);
+    if (rr < limit) return rr;
+  }
+}
+
+static bytelist *append_about(bytelist *bl, size_t about, size_t adjust) {
+  while (bytelist_size(bl) < about)
+    bl = append_some(bl, randum(10) * randum(10) + 1, adjust);
+  return bl;
+}
+
+static int check_sanity(const bytelist *bl, size_t adjust, size_t chunk) {
+  unsigned char buf[chunk];
+
+  size_t size = bytelist_size(bl);
+  for (unsigned pos = 0; pos < size; pos += chunk) {
+    size_t avail = MIN(chunk, size - pos);
+    bytelist_get(bl, buf, pos, avail);
+    for (unsigned i = 0; i < avail; i++) {
+      unsigned char want = char_for(adjust + pos + i);
+      if (buf[i] != want) return (int) pos + i;
+    }
+  }
+  return -1;
+}
+
+static int sane_list_c(const bytelist *bl, size_t adjust, size_t chunk) {
+  size_t size = bytelist_size(bl);
+  int bad_pos = check_sanity(bl, adjust, chunk);
+
+  if (ok(bad_pos == -1,
+         "all %u bytes (%u at a time) have the expected value",
+         (unsigned) size, (unsigned) chunk))
+    return 1;
+
+  size_t avail = MIN(10, size - (unsigned) bad_pos);
+  diag("Difference starts at %u:", (unsigned) bad_pos);
+  unsigned char buf[avail];
+  bytelist_get(bl, buf, (unsigned) bad_pos, avail);
+  for (unsigned i = 0; i < avail; i++) {
+    diag("wanted: %02x, got: %02x", char_for(adjust + bad_pos + i), buf[i]);
+  }
+
+  return 0;
+}
+
+static int sane_list(const bytelist *bl, size_t adjust, const char *msg) {
+  nest_in(msg);
+  int t1 = sane_list_c(bl, adjust, 1024);
+  nest_out();
+  return t1;
+}
+
+static void test_join(void) {
+  bytelist *bl = NULL;
+  sane_list(bl, 0, "bl - empty");
+
+  for (int i = 0; i < 10; i++) {
+    size_t bls = bytelist_size(bl);
+    bytelist *bl2 = append_about(NULL, 313, bls);
+    sane_list(bl2, bls, "bl2");
+    bl = bytelist_join(bl, bl2);
+    sane_list(bl, 0, "bl - joined");
+  }
+
+  bytelist_free(bl);
 }
 
 void test_main(void) {
@@ -149,6 +241,7 @@ void test_main(void) {
   test_aligned();
   test_bytelist();
   test_get();
+  test_join();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

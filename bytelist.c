@@ -54,6 +54,17 @@ static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, c
   return bl;
 }
 
+bytelist *_join(bytelist *bl, bytelist *bl2, size_t grow) {
+  if (!bl) return bl2;
+  bl->tail_size += grow;
+  bl->next = _join(bl->next, bl2, grow);
+  return bl;
+}
+
+bytelist *bytelist_join(bytelist *bl, bytelist *bl2) {
+  return _join(bl2, bl, _size(bl));
+}
+
 bytelist *bytelist_append_internal(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *clazz) {
   return _append(bl, bytes, len * clazz->member_size, clazz);
 }
