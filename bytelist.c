@@ -89,6 +89,29 @@ bytelist *bytelist_defrag(bytelist *bl) {
   return nbl;
 }
 
+bytelist *bytelist_buffer(bytelist *bl, unsigned char **bufp, size_t *sizep) {
+  bl = bytelist_defrag(bl);
+  if (bufp)  *bufp  = bl->data;
+  if (sizep) *sizep = bytelist_size(bl);
+  return bl;
+}
+
+bytelist *bytelist_qsort(bytelist *bl, int (*compar)(const void *, const void *)) {
+  unsigned char *buf;
+  size_t size;
+
+  bl = bytelist_buffer(bl, &buf, &size);
+  qsort(buf, size, bl->clazz->member_size, compar);
+
+  return bl;
+}
+
+void *bytelist_bsearch(const bytelist *bl, const unsigned char *key, int (*compar)(const void *, const void *)) {
+  while (bl && (bl->used == 0 || compar(bl->data, key) > 0)) bl = bl->next;
+  if (!bl) return NULL;
+  return bsearch(key, bl->data, bl->used / bl->clazz->member_size, bl->clazz->member_size, compar);
+}
+
 bytelist *_join(bytelist *bl, bytelist *bl2, size_t grow) {
   if (!bl) return bl2;
   bl->tail_size += grow;

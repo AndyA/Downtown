@@ -5,6 +5,7 @@
 
 #include "framework.h"
 #include "bytelist.h"
+#include "numlist.h"
 #include "tap.h"
 #include "util.h"
 
@@ -241,27 +242,31 @@ static void test_join(void) {
   for (unsigned i = 4; i < nsplit; i++)
     split[i] = randum((int) bls);
 
-  for (unsigned i = 0; i < nsplit; i++) {
-    bytelist *bla, *blb;
-    unsigned pos = split[i];
+  for (int pass = 1; pass <= 2; pass++) {
+    nest_in("pass %d", pass);
+    for (unsigned i = 0; i < nsplit; i++) {
+      bytelist *bla, *blb;
+      unsigned pos = split[i];
 
-    nest_in("at %u", pos);
+      nest_in("at %u", pos);
 
-    bytelist_split(bl, pos, &bla, &blb);
-    size_t blas = bytelist_size(bla);
-    size_t blbs = bytelist_size(blb);
+      bytelist_split(bl, pos, &bla, &blb);
+      size_t blas = bytelist_size(bla);
+      size_t blbs = bytelist_size(blb);
 
-    if (!ok(blas == pos, "bla size == %u", pos))
-      diag("wanted %u, got %u", pos, (unsigned) blas);
-    if (!ok(blbs == bls - pos, "blb size = %u", bls - pos))
-      diag("wanted %u, got %u", bls - pos, (unsigned) blbs);
+      if (!ok(blas == pos, "bla size == %u", pos))
+        diag("wanted %u, got %u", pos, (unsigned) blas);
+      if (!ok(blbs == bls - pos, "blb size = %u", bls - pos))
+        diag("wanted %u, got %u", bls - pos, (unsigned) blbs);
 
-    sane_list(bla, 0, "bla");
-    sane_list(blb, pos, "blb");
+      sane_list(bla, 0, "bla");
+      sane_list(blb, pos, "blb");
 
-    bl = bytelist_join(bla, blb);
-    sane_list(bl, 0, "rejoined");
+      bl = bytelist_join(bla, blb);
+      sane_list(bl, 0, "rejoined");
 
+      nest_out();
+    }
     nest_out();
   }
 
@@ -293,6 +298,94 @@ static void test_join(void) {
 
 }
 
+static double randnum(void) {
+  double n = 0;
+  for (int i = 0; i < 4; i++)
+    n = (n + (double) rand()) / RAND_MAX;
+  return n;
+}
+
+static int is_sorted(numlist *nl) {
+  size_t size = numlist_size(nl);
+  double buf[size];
+
+  numlist_get_all(nl, buf);
+
+  for (unsigned i = 1; i < size; i++)
+    if (buf[i - 1] > buf[i]) return 0;
+  return 1;
+}
+
+static int compar_num(const void *a, const void *b) {
+  double na = *(double *)a;
+  double nb = *(double *)b;
+  if (na < nb) return -1;
+  if (na > nb) return 1;
+  return 0;
+}
+
+static void test_qsort(void) {
+  nest_in("qsort");
+
+  numlist *nl = NULL;
+
+  for (int i = 0; i < 1000; i++)
+    nl = numlist_putn(nl, randnum());
+
+  ok(!is_sorted(nl), "unsorted");
+  nl = numlist_qsort(nl, compar_num);
+  ok(is_sorted(nl), "sorted");
+
+  nest_out();
+}
+
+static numlist *fragment(numlist *nl, int n) {
+  size_t size = numlist_size(nl);
+
+  for (int i = 0; i < n; i++) {
+    unsigned pos = (unsigned) randum((int) size);
+    numlist *nla, *nlb;
+    numlist_split(nl, pos, &nla, &nlb);
+    nl = numlist_join(nla, nlb);
+  }
+
+  return nl;
+}
+
+static size_t frags(bytelist *bl) {
+  if (!bl) return 0;
+  return 1 + frags(bl->next);
+}
+
+static void test_bsearch(void) {
+  nest_in("bsearch");
+
+  const int nnum = 10000;
+  double buf[nnum];
+
+  for (int i = 0; i < nnum; i++)
+    buf[i] = randnum();
+  qsort(buf, nnum, sizeof(double), compar_num);
+
+  numlist *nl = numlist_append(NULL, buf, nnum);
+  ok(is_sorted(nl), "sorted");
+  nl = fragment(nl, 100);
+  ok(is_sorted(nl), "still sorted");
+  size_t nfrag = frags((bytelist *) nl);
+  ok(nfrag > 10, "> 10 fragments (%u)", (unsigned) nfrag);
+
+  for (int i = 0; i < nnum / 10; i++) {
+    int slot = randum(nnum);
+    double want = buf[slot];
+    void *got = numlist_bsearch(nl, &want, compar_num);
+    if (!not_null(got, "found something...")) continue;
+    ok(0 == compar_num(&want, got), "found %f", want);
+  }
+
+
+  nest_out();
+}
+
 void test_main(void) {
 #if defined(TEST_INIT_SIZE) || defined(TEST_RISE_RATE)
   bytelist_class *me = bytelist__get_class();
@@ -308,6 +401,8 @@ void test_main(void) {
   test_bytelist();
   test_get();
   test_join();
+  test_qsort();
+  test_bsearch();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
