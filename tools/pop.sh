@@ -58,12 +58,12 @@ for src in "$@"; do
 
                     if [ ! -e "$raw" ]; then
                       dt_f_config="--merge $merge"
-                      ffmpeg -nostdin -i "$src" -t $DURATION -f yuv4mpegpipe - \
+                      ffmpeg -nostdin -i "$src" -t $DURATION -f yuv4mpegpipe -         \
                         | ./downtown_filter $dt_f_config > "$raw" || exit
                     fi
 
                     if [ ! -e "$scaled" ]; then
-                      ffmpeg -nostdin -f yuv4mpegpipe -i "$raw" \
+                      ffmpeg -nostdin -f yuv4mpegpipe -i "$raw"                        \
                         -pix_fmt yuv420p -s ${size}x${size} -f yuv4mpegpipe -y "$scaled" || exit
                     fi
 
@@ -71,19 +71,19 @@ for src in "$@"; do
                     [ "$chans" = 'y' ] && dt_config="$dt_config --mono"
                     [ "$centre" = 'y' ] && dt_config="$dt_config --centre"
                     [ "$delta" = 'y' ] && dt_config="$dt_config --delta"
-                    [ "$graph" = 'y' ] && \
+                    [ "$graph" = 'y' ] &&                                              \
       dt_config="$dt_config --graph rms:#f00 --graph energy:#0f0 --graph min:#00f --graph average:#44f --graph max:#88f"
 
                     echo "$src -> $dst ($dt_config)"
 
                     # Pipe source via downtown_filter into two pipes; one for downtown, one for the overlay
 
-                    ffmpeg \
-                      -nostdin \
-                      -f yuv4mpegpipe \
-                      -i <( cat "$scaled" | ./downtown --output "$dat" $dt_config ) \
-                      -i "$raw" \
-                      -filter_complex '[0:v][1:v]overlay=x=30:y=40[out]' -map '[out]' \
+                    ffmpeg                                                             \
+                      -nostdin                                                         \
+                      -f yuv4mpegpipe                                                  \
+                      -i <( cat "$scaled" | ./downtown --output "$dat" $dt_config )    \
+                      -i "$raw"                                                        \
+                      -filter_complex '[0:v][1:v]overlay=x=30:y=40[out]' -map '[out]'  \
                       -pix_fmt yuv420p -aspect 16:9 -c:v libx264 -b:v 8000k -y "$tmp" && mv "$tmp" "$dst" || exit
 
                   fi
