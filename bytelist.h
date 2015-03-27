@@ -27,7 +27,7 @@ typedef struct {
 
 typedef struct bytelist {
   struct bytelist *next;
-  size_t size, used, tail_size;
+  size_t size, used, tail_size, next_size;
   unsigned char *data;
   const bytelist_class *clazz;
 } bytelist;
@@ -43,6 +43,8 @@ typedef struct bytelist {
   listtype * bytelist__PASTE( listtype, _join        ) (listtype *bl, listtype *nl2);                      \
   void       bytelist__PASTE( listtype, _split       ) (listtype *bl, unsigned pos,                        \
                                                         listtype **bla, listtype **blb);                   \
+  listtype * bytelist__PASTE( listtype, _clone       ) (const listtype *bl);                               \
+  listtype * bytelist__PASTE( listtype, _defrag      ) (listtype *bl);                                     \
   void       bytelist__PASTE( listtype, _free        ) (listtype *bl);                                     \
   size_t     bytelist__PASTE( listtype, _size        ) (const listtype *bl);                               \
   size_t     bytelist__PASTE( listtype, _member_size ) (const listtype *bl);                               \
@@ -82,6 +84,19 @@ bytelist_DECLARE_F(bytelist, unsigned char)
                                                                                                            \
   listtype * bytelist__PASTE( listtype, _join )  (listtype *bl, listtype *bl2) {                           \
     return (listtype *) bytelist_join((bytelist *) bl, (bytelist *) bl2);                                  \
+  }                                                                                                        \
+                                                                                                           \
+  void bytelist__PASTE( listtype, _split )  (listtype *bl, unsigned pos,                                   \
+                                             listtype **bla, listtype **blb) {                             \
+    bytelist_split((bytelist *) bl, pos, (bytelist **) bla, (bytelist **) blb);                            \
+  }                                                                                                        \
+                                                                                                           \
+  listtype * bytelist__PASTE( listtype, _clone ) (const listtype *bl) {                                    \
+    return (listtype *) bytelist_clone((bytelist *) bl);                                                   \
+  }                                                                                                        \
+                                                                                                           \
+  listtype * bytelist__PASTE( listtype, _defrag ) (listtype *bl) {                                         \
+    return (listtype *) bytelist_defrag((bytelist *) bl);                                                  \
   }                                                                                                        \
                                                                                                            \
   void bytelist__PASTE( listtype, _free ) (listtype *bl) {                                                 \

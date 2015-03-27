@@ -266,8 +266,31 @@ static void test_join(void) {
   }
 
   nest_out();
+  nest_in("clone/defrag");
 
-  bytelist_free(bl);
+  not_null(bl->next, "bl is fragmented");
+
+  bytelist *bl2 = bytelist_defrag(bl);
+  sane_list(bl2, 0, "bl2");
+  null(bl2->next, "bl2 is not fragmented");
+  ok(bl != bl2, "bl2 is not bl");
+
+  bytelist *bl3 = bytelist_defrag(bl2);
+  sane_list(bl3, 0, "bl3");
+  null(bl3->next, "bl3 is not fragmented");
+  ok(bl2 == bl3, "bl3 is bl2");
+
+  bytelist *bl4 = bytelist_clone(bl3);
+  sane_list(bl4, 0, "bl4");
+  null(bl4->next, "bl4 is not fragmented");
+  ok(bl3 != bl4, "bl4 is not bl3");
+
+  /* bl, bl2 freed by defrag */
+  bytelist_free(bl3);
+  bytelist_free(bl4);
+
+  nest_out();
+
 }
 
 void test_main(void) {
@@ -281,9 +304,9 @@ void test_main(void) {
 #endif
   diag("init_size=%u, rise_rate=%u", (unsigned) me->init_size, me->rise_rate);
 #endif
-  /*  test_aligned();*/
-  /*  test_bytelist();*/
-  /*  test_get();*/
+  test_aligned();
+  test_bytelist();
+  test_get();
   test_join();
 }
 

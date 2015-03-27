@@ -36,8 +36,19 @@ static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, c
   while (len) {
     if (!bl || bl->used == bl->size) {
       bytelist *nbl = alloc(sizeof(bytelist));
-      nbl->size = bl ? MIN(bl->size * clazz->rise_rate, clazz->max_size)
-                  : clazz->init_size * clazz->member_size;
+
+      size_t init_size = clazz->init_size * clazz->member_size;
+      size_t next_size = (bl ? MIN(bl->next_size, clazz->max_size) : init_size);
+
+      if (len > next_size) {
+        nbl->size = len;
+        nbl->next_size = next_size;
+      }
+      else {
+        nbl->size = next_size;
+        nbl->next_size = nbl->size * clazz->rise_rate;
+      }
+
       nbl->clazz = clazz;
       nbl->data = alloc(nbl->size);
       nbl->tail_size = _size(bl);
@@ -52,6 +63,30 @@ static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, c
   }
 
   return bl;
+}
+
+bytelist *bytelist_clone(const bytelist *bl) {
+  if (!bl) return NULL;
+
+  size_t size;
+  unsigned char *data = bytelist_fetch(bl, &size);
+
+  bytelist *nbl = alloc(sizeof(bytelist));
+
+  nbl->size = size;
+  nbl->used = size;
+  nbl->next_size = bl->clazz->init_size * bl->clazz->member_size;
+  nbl->clazz = bl->clazz;
+  nbl->data = data;
+
+  return nbl;
+}
+
+bytelist *bytelist_defrag(bytelist *bl) {
+  if (!bl || !bl->next) return bl;
+  bytelist *nbl = bytelist_clone(bl);
+  bytelist_free(bl);
+  return nbl;
 }
 
 bytelist *_join(bytelist *bl, bytelist *bl2, size_t grow) {
@@ -83,7 +118,6 @@ static bytelist *_split(bytelist *bl, unsigned pos, size_t shrink, bytelist **bl
 
   return bl;
 }
-
 
 static void _native_split(bytelist *bl, unsigned pos, size_t shrink, bytelist **bla, bytelist **blb) {
   if (!bl || pos == 0) {
