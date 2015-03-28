@@ -153,9 +153,8 @@ int tap2_test(TAP2__ARGS, int flag, const char *msg, va_list ap) {
   if (!flag) {
     tap2_diag("%s, line %d: Assertion %s(%s) failed.",
               file, line, name, cond);
-    for (unsigned i = npfx; i-- > 0;) {
+    for (unsigned i = npfx; i-- > 0;) 
       tap2_diag("  via %s, line %d: %s", pfx[i].file, pfx[i].line, pfx[i].desc);
-    }
   }
   return flag;
 }
