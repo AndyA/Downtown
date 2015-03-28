@@ -10,26 +10,32 @@
 
 typedef struct test_alert {
   struct test_alert *next;
-  int test_no;
-  test_cb cb;
+  int tap_test_no;
+  tap_test_cb cb;
   void *ctx;
 } test_alert;
 
-int test_no = 0;
-double test_nowt = 0.00000000001;
+typedef struct {
+  char *desc;
+  const char *file;
+  int line;
+} prefix;
 
-static char *pfx[MAX_PREFIX];
+int tap_test_no = 0;
+double tap_test_nowt = 0.00000000001;
+
+static prefix pfx[MAX_PREFIX];
 static size_t npfx = 0;
 
 static test_alert *alerts = NULL;
 
 static int (*vfpf)(FILE *f, const char *msg, va_list ap) = vfprintf;
 
-void set_vfpf(int (*nvfpf)(FILE *f, const char *msg, va_list ap)) {
+void tap_set_vfpf(int (*nvfpf)(FILE *f, const char *msg, va_list ap)) {
   vfpf = nvfpf;
 }
 
-static int fpf(FILE *f, const char *msg, ...) {
+static int tap_fpf(FILE *f, const char *msg, ...) {
   va_list ap;
   int rc;
   va_start(ap, msg);
@@ -39,135 +45,152 @@ static int fpf(FILE *f, const char *msg, ...) {
 }
 
 
-void diag(const char *fmt, ...) {
+void tap_diag(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  fpf(stderr, "# ");
+  tap_fpf(stderr, "# ");
   vfpf(stderr, fmt, ap);
-  fpf(stderr, "\n");
+  tap_fpf(stderr, "\n");
   va_end(ap);
 }
 
-static void die(const char *fmt, ...) {
+static void tap_die(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   vfpf(stderr, fmt, ap);
-  fpf(stderr, "\n");
+  tap_fpf(stderr, "\n");
   va_end(ap);
   exit(1);
 }
 
-static void *alloc(size_t size) {
+static void *tap_alloc(size_t size) {
   void *m = malloc(size);
-  if (!m) die("Out of memory for %lu bytes", (unsigned long) size);
+  if (!m) tap_die("Out of memory for %lu bytes", (unsigned long) size);
   memset(m, 0, size);
   return m;
 }
 
-static char *vssprintf(const char *fmt, va_list ap) {
+static char *tap_vssprintf(const char *fmt, va_list ap) {
   char tmp[1];
   char *buf = NULL;
   va_list ap2;
 
   va_copy(ap2, ap);
   int len = vsnprintf(tmp, 0, fmt, ap);
-  buf = alloc(len + 1);
+  buf = tap_alloc(len + 1);
   vsnprintf(buf, len + 1, fmt, ap2);
   return buf;
 }
 
-static test_alert *add_alert(test_alert *list, test_alert *ta) {
+static test_alert *tap_add_alert(test_alert *list, test_alert *ta) {
   if (!list) return ta;
-  if (ta->test_no < list->test_no) {
+  if (ta->tap_test_no < list->tap_test_no) {
     ta->next = list;
     return ta;
   }
-  list->next = add_alert(list->next, ta);
+  list->next = tap_add_alert(list->next, ta);
   return list;
 }
 
-void at_test(int tn, test_cb cb, void *ctx) {
-  test_alert *ta = alloc(sizeof(test_alert));
-  ta->test_no = tn;
+void tap_at_test(int tn, tap_test_cb cb, void *ctx) {
+  test_alert *ta = tap_alloc(sizeof(test_alert));
+  ta->tap_test_no = tn;
   ta->cb = cb;
   ta->ctx = ctx;
-  alerts = add_alert(alerts, ta);
+  alerts = tap_add_alert(alerts, ta);
 }
 
-static void run_alerts(int upto) {
-  while (alerts && alerts->test_no <= upto) {
+static void tap_run_alerts(int upto) {
+  while (alerts && alerts->tap_test_no <= upto) {
     test_alert *ta = alerts;
     alerts = alerts->next;
-    ta->cb(ta->test_no, ta->ctx);
+    ta->cb(ta->tap_test_no, ta->ctx);
     free(ta);
   }
 }
 
-void done_testing(void) {
-  if (0 == test_no) die("No tests run!");
-  fpf(stdout, "1..%d\n", test_no);
+void tap_done_testing(void) {
+  if (0 == tap_test_no) tap_die("No tests run!");
+  tap_fpf(stdout, "1..%d\n", tap_test_no);
 }
 
-int nest_in(const char *p, ...) {
+int tap__nest_in(const char *file, int line, const char *p, ...) {
   va_list ap;
-  if (npfx == MAX_PREFIX) die("Too many prefixes");
+
+  if (npfx == MAX_PREFIX) tap_die("Too many prefixes");
+
   va_start(ap, p);
-  pfx[npfx++] = vssprintf(p, ap);
+
+  pfx[npfx].desc = tap_vssprintf(p, ap);
+  pfx[npfx].file = file;
+  pfx[npfx].line = line;
+
+  npfx++;
+
   return 0;
 }
 
-int nest_out(void) {
-  if (npfx == 0) die("Can't go out a level - we're at the top");
-  free(pfx[--npfx]);
+int tap__nest_out(const char *file, int line) {
+  (void) file;
+  (void) line;
+  if (npfx == 0) tap_die("Can't go out a level - we're at the top");
+  free(pfx[--npfx].desc);
   return 0;
 }
 
-static void prefix(void) {
-  unsigned i;
-  for (i = 0; i < npfx; i++) {
-    fpf(stdout, "%s: ", pfx[i]);
+static void tap_prefix(void) {
+  for (unsigned i = 0; i < npfx; i++) {
+    tap_fpf(stdout, "%s: ", pfx[i].desc);
   }
 }
 
-int test(int flag, const char *msg, va_list ap) {
-  fpf(stdout, "%sok %d - ", flag ? "" : "not ", ++test_no);
-  prefix();
+int tap_test(TAP2__ARGS, int flag, const char *msg, va_list ap) {
+  tap_fpf(stdout, "%sok %d - ", flag ? "" : "not ", ++tap_test_no);
+  tap_prefix();
   vfpf(stdout, msg, ap);
-  fpf(stdout, "\n");
-  run_alerts(test_no);
+  tap_fpf(stdout, "\n");
+  tap_run_alerts(tap_test_no);
+  if (!flag) {
+    tap_diag("%s, line %d: Assertion %s(%s) failed.",
+              file, line, name, cond);
+    for (unsigned i = npfx; i-- > 0;) 
+      tap_diag("  via %s, line %d: %s", pfx[i].file, pfx[i].line, pfx[i].desc);
+  }
   return flag;
 }
 
-int ok(int flag, const char *msg, ...) {
-  TF(flag);
+/* Test assertions */
+
+int tap__ok(TAP2__ARGS, int flag, const char *msg, ...) {
+  tap_TF(flag);
 }
 
-int pass(const char *msg, ...) {
-  TF(1);
+int tap__pass(TAP2__ARGS, const char *msg, ...) {
+  tap_TF(1);
 }
 
-int fail(const char *msg, ...) {
-  TF(0);
+int tap__fail(TAP2__ARGS, const char *msg, ...) {
+  tap_TF(0);
 }
 
-int is(long long got, long long want, const char *msg, ...) {
-  TF(got == want);
+int tap__is(TAP2__ARGS, long long got, long long want, const char *msg, ...) {
+  tap_TF(got == want);
 }
 
-int not_null(const void *p, const char *msg, ...) {
-  TF(!!p);
+int tap__not_null(TAP2__ARGS, const void *p, const char *msg, ...) {
+  tap_TF(!!p);
 }
 
-int null(const void *p, const char *msg, ...) {
-  TF(!p);
+int tap__null(TAP2__ARGS, const void *p, const char *msg, ...) {
+  tap_TF(!p);
 }
 
-int within(double got, double want, double nowt, const char *msg, ...) {
-  TF(fabs(got - want) <= nowt);
+int tap__within(TAP2__ARGS, double got, double want, double nowt, const char *msg, ...) {
+  tap_TF(fabs(got - want) <= nowt);
 }
 
-int close_to(double got, double want, const char *msg, ...) {
-  TF(fabs(got - want) <= test_nowt);
+int tap__close_to(TAP2__ARGS, double got, double want, const char *msg, ...) {
+  tap_TF(fabs(got - want) <= tap_test_nowt);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

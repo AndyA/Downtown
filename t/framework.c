@@ -12,8 +12,7 @@
 
 #include "tap.h"
 
-#define TAP2_NO_ALIAS
-#include "tap2.h"
+#include "tap.h"
 
 void tf_die(const char *msg, ...) {
   va_list ap;
@@ -163,12 +162,7 @@ jd_var *tf_load_resource(jd_var *out, const char *fn) {
 }
 
 static void _done(void) {
-  if (test_no > 0)
-    done_testing();
-  else if (tap2_test_no > 0)
-    tap2_done_testing();
-  else
-    done_testing();
+  done_testing();
 }
 
 int main(int argc, char *argv[]) {

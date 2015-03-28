@@ -11,7 +11,6 @@ TESTBIN =                     \
 	quadtree                     \
 	resample                     \
 	sampler                      \
-	tap2-test                    \
 	tb_convolve                  \
 	util                         \
 	yuv4mpeg2                    \
@@ -24,7 +23,7 @@ noinst_PROGRAMS = wrap $(TESTBIN)
 noinst_LTLIBRARIES = libtest-support.la
 
 libtest_support_la_SOURCES =  \
-	tap.c tap.h tap2.c tap2.h framework.c framework.h
+	tap.c tap.h framework.c framework.h
 
 libtest_support_la_LDFLAGS = -static
 
