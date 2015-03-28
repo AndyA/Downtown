@@ -144,7 +144,7 @@ static void tap_prefix(void) {
   }
 }
 
-int tap_test(TAP2__ARGS, int flag, const char *msg, va_list ap) {
+int tap__test(TAP2__ARGS, int flag, const char *msg, va_list ap) {
   tap_fpf(stdout, "%sok %d - ", flag ? "" : "not ", ++tap_test_no);
   tap_prefix();
   vfpf(stdout, msg, ap);

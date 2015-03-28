@@ -18,7 +18,7 @@ int tap__nest_out(const char *file, int line);
 #define TAP2__ARGS  const char *name, const char *cond, const char *file, int line
 #define TAP2__ARGV  name, cond, file, line
 
-int tap_test(TAP2__ARGS, int flag, const char *msg, va_list ap);
+int tap__test(TAP2__ARGS, int flag, const char *msg, va_list ap);
 
 /* Test assertions */
 
@@ -37,11 +37,11 @@ typedef void (*tap_test_cb)(int tn, void *ctx);
 
 void tap_at_test(int tn, tap_test_cb cb, void *ctx);
 
-#define tap_TF(flag)                    \
+#define tap_TF(flag)                     \
   va_list ap;                            \
   int _c = (flag);                       \
   va_start( ap, msg );                   \
-  tap_test( TAP2__ARGV, _c, msg, ap );  \
+  tap__test( TAP2__ARGV, _c, msg, ap );  \
   va_end( ap );                          \
   return _c;
 
