@@ -58,8 +58,9 @@ void tap_at_test(int tn, tap_test_cb cb, void *ctx);
 #define tap_null(...)       tap__null(     "null",      # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define tap_within(...)     tap__within(   "within",    # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define tap_close_to(...)   tap__close_to( "close_to",  # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
-#define tap_nest_in(...)    tap__nest_in(  __FILE__, __LINE__, __VA_ARGS__ )
-#define tap_nest_out(...)   tap__nest_out( __FILE__, __LINE__ )
+
+#define tap_nest_in(...)    tap__nest_in(                              __FILE__, __LINE__, __VA_ARGS__ )
+#define tap_nest_out(...)   tap__nest_out(                             __FILE__, __LINE__              )
 
 #if !defined(TAP2_NO_ALIAS)
 
@@ -71,8 +72,9 @@ void tap_at_test(int tn, tap_test_cb cb, void *ctx);
 #define null(...)            tap__null(     "null",      # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define within(...)          tap__within(   "within",    # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define close_to(...)        tap__close_to( "close_to",  # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
-#define nest_in(...)         tap__nest_in(  __FILE__, __LINE__, __VA_ARGS__ )
-#define nest_out(...)        tap__nest_out( __FILE__, __LINE__ )
+
+#define nest_in(...)         tap__nest_in(                              __FILE__, __LINE__, __VA_ARGS__ )
+#define nest_out(...)        tap__nest_out(                             __FILE__, __LINE__              )
 
 #define set_vfpf(...)        tap_set_vfpf(     __VA_ARGS__ )
 #define diag(...)            tap_diag(         __VA_ARGS__ )
