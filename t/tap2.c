@@ -15,10 +15,16 @@ typedef struct test_alert {
   void *ctx;
 } test_alert;
 
+typedef struct {
+  char *desc;
+  const char *file;
+  int line;
+} prefix;
+
 int tap2_test_no = 0;
 double tap2_test_nowt = 0.00000000001;
 
-static char *pfx[MAX_PREFIX];
+static prefix pfx[MAX_PREFIX];
 static size_t npfx = 0;
 
 static test_alert *alerts = NULL;
@@ -108,67 +114,83 @@ void tap2_done_testing(void) {
   tap2_fpf(stdout, "1..%d\n", tap2_test_no);
 }
 
-int tap2_nest_in(const char *p, ...) {
+int tap2__nest_in(const char *file, int line, const char *p, ...) {
   va_list ap;
+
   if (npfx == MAX_PREFIX) tap2_die("Too many prefixes");
+
   va_start(ap, p);
-  pfx[npfx++] = tap2_vssprintf(p, ap);
+
+  pfx[npfx].desc = tap2_vssprintf(p, ap);
+  pfx[npfx].file = file;
+  pfx[npfx].line = line;
+
+  npfx++;
+
   return 0;
 }
 
-int tap2_nest_out(void) {
+int tap2__nest_out(const char *file, int line) {
+  (void) file;
+  (void) line;
   if (npfx == 0) tap2_die("Can't go out a level - we're at the top");
-  free(pfx[--npfx]);
+  free(pfx[--npfx].desc);
   return 0;
 }
 
 static void tap2_prefix(void) {
-  unsigned i;
-  for (i = 0; i < npfx; i++) {
-    tap2_fpf(stdout, "%s: ", pfx[i]);
+  for (unsigned i = 0; i < npfx; i++) {
+    tap2_fpf(stdout, "%s: ", pfx[i].desc);
   }
 }
 
-int tap2_test(const char *file, int line, int flag, const char *msg, va_list ap) {
+int tap2_test(TAP2__ARGS, int flag, const char *msg, va_list ap) {
   tap2_fpf(stdout, "%sok %d - ", flag ? "" : "not ", ++tap2_test_no);
   tap2_prefix();
   vfpf(stdout, msg, ap);
-  tap2_fpf(stdout, " (%s, line %d)\n", file, line);
+  tap2_fpf(stdout, "\n");
   tap2_run_alerts(tap2_test_no);
+  if (!flag) {
+    tap2_diag("%s, line %d: Assertion %s(%s) failed.",
+              file, line, name, cond);
+    for (unsigned i = npfx; i-- > 0;) {
+      tap2_diag("  via %s, line %d: %s", pfx[i].file, pfx[i].line, pfx[i].desc);
+    }
+  }
   return flag;
 }
 
 /* Test assertions */
 
-int tap2__ok(const char *file, int line, int flag, const char *msg, ...) {
+int tap2__ok(TAP2__ARGS, int flag, const char *msg, ...) {
   tap2_TF(flag);
 }
 
-int tap2__pass(const char *file, int line, const char *msg, ...) {
+int tap2__pass(TAP2__ARGS, const char *msg, ...) {
   tap2_TF(1);
 }
 
-int tap2__fail(const char *file, int line, const char *msg, ...) {
+int tap2__fail(TAP2__ARGS, const char *msg, ...) {
   tap2_TF(0);
 }
 
-int tap2__is(const char *file, int line, long long got, long long want, const char *msg, ...) {
+int tap2__is(TAP2__ARGS, long long got, long long want, const char *msg, ...) {
   tap2_TF(got == want);
 }
 
-int tap2__not_null(const char *file, int line, const void *p, const char *msg, ...) {
+int tap2__not_null(TAP2__ARGS, const void *p, const char *msg, ...) {
   tap2_TF(!!p);
 }
 
-int tap2__null(const char *file, int line, const void *p, const char *msg, ...) {
+int tap2__null(TAP2__ARGS, const void *p, const char *msg, ...) {
   tap2_TF(!p);
 }
 
-int tap2__within(const char *file, int line, double got, double want, double nowt, const char *msg, ...) {
+int tap2__within(TAP2__ARGS, double got, double want, double nowt, const char *msg, ...) {
   tap2_TF(fabs(got - want) <= nowt);
 }
 
-int tap2__close_to(const char *file, int line, double got, double want, const char *msg, ...) {
+int tap2__close_to(TAP2__ARGS, double got, double want, const char *msg, ...) {
   tap2_TF(fabs(got - want) <= tap2_test_nowt);
 }
 

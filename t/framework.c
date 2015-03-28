@@ -11,6 +11,8 @@
 #include "log.h"
 
 #include "tap.h"
+
+#define TAP2_NO_ALIAS
 #include "tap2.h"
 
 void tf_die(const char *msg, ...) {

@@ -6,7 +6,7 @@
 #include "framework.h"
 #include "bytelist.h"
 #include "numlist.h"
-#include "tap.h"
+#include "tap2.h"
 #include "util.h"
 
 #define CHUNK bytelist_CHUNK
