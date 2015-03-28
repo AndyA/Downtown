@@ -50,10 +50,6 @@ void tap_at_test(int tn, tap_test_cb cb, void *ctx);
 #define tap__SPLICE(a, b)    a ## b
 #define tap__PASTE(a, b)     tap__SPLICE(a, b)
 
-/*#define tap__DEF_ASSERT(*/
-
-#ifdef TAP2_NO_ALIAS
-
 #define tap_ok(...)         tap__ok(       "ok",        # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define tap_pass(...)       tap__pass(     "pass",      # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define tap_fail(...)       tap__fail(     "fail",      # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
@@ -64,9 +60,9 @@ void tap_at_test(int tn, tap_test_cb cb, void *ctx);
 #define tap_close_to(...)   tap__close_to( "close_to",  # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define tap_nest_in(...)    tap__nest_in(  __FILE__, __LINE__, __VA_ARGS__ )
 #define tap_nest_out(...)   tap__nest_out( __FILE__, __LINE__ )
-                             
-#else                        
-                             
+
+#if !defined(TAP2_NO_ALIAS)
+
 #define ok(...)              tap__ok(       "ok",        # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define pass(...)            tap__pass(     "pass",      # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
 #define fail(...)            tap__fail(     "fail",      # __VA_ARGS__, __FILE__, __LINE__, __VA_ARGS__ )
