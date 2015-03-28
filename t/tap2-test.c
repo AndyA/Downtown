@@ -4,12 +4,14 @@
 
 #include "framework.h"
 #include "tap.h"
-#include "tap2.h"
 #include "util.h"
 
+#define TAP2_NO_ALIAS
+
+#include "tap2.h"
 
 void test_main(void) {
-  ok(1, "It's OK!");
+  tap2_ok(1, "It's OK!");
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

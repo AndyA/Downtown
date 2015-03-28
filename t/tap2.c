@@ -16,7 +16,7 @@ typedef struct test_alert {
 } test_alert;
 
 int tap2_test_no = 0;
-double test_nowt = 0.00000000001;
+double tap2_test_nowt = 0.00000000001;
 
 static char *pfx[MAX_PREFIX];
 static size_t npfx = 0;
@@ -129,45 +129,47 @@ static void tap2_prefix(void) {
   }
 }
 
-int tap2_test(int flag, const char *msg, va_list ap) {
+int tap2_test(const char *file, int line, int flag, const char *msg, va_list ap) {
   tap2_fpf(stdout, "%sok %d - ", flag ? "" : "not ", ++tap2_test_no);
   tap2_prefix();
   vfpf(stdout, msg, ap);
-  tap2_fpf(stdout, "\n");
+  tap2_fpf(stdout, " (%s, line %d)\n", file, line);
   tap2_run_alerts(tap2_test_no);
   return flag;
 }
 
-int tap2_ok(int flag, const char *msg, ...) {
+/* Test assertions */
+
+int tap2__ok(const char *file, int line, int flag, const char *msg, ...) {
   tap2_TF(flag);
 }
 
-int tap2_pass(const char *msg, ...) {
+int tap2__pass(const char *file, int line, const char *msg, ...) {
   tap2_TF(1);
 }
 
-int tap2_fail(const char *msg, ...) {
+int tap2__fail(const char *file, int line, const char *msg, ...) {
   tap2_TF(0);
 }
 
-int tap2_is(long long got, long long want, const char *msg, ...) {
+int tap2__is(const char *file, int line, long long got, long long want, const char *msg, ...) {
   tap2_TF(got == want);
 }
 
-int tap2_not_null(const void *p, const char *msg, ...) {
+int tap2__not_null(const char *file, int line, const void *p, const char *msg, ...) {
   tap2_TF(!!p);
 }
 
-int tap2_null(const void *p, const char *msg, ...) {
+int tap2__null(const char *file, int line, const void *p, const char *msg, ...) {
   tap2_TF(!p);
 }
 
-int tap2_within(double got, double want, double nowt, const char *msg, ...) {
+int tap2__within(const char *file, int line, double got, double want, double nowt, const char *msg, ...) {
   tap2_TF(fabs(got - want) <= nowt);
 }
 
-int tap2_close_to(double got, double want, const char *msg, ...) {
-  tap2_TF(fabs(got - want) <= test_nowt);
+int tap2__close_to(const char *file, int line, double got, double want, const char *msg, ...) {
+  tap2_TF(fabs(got - want) <= tap2_test_nowt);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

@@ -9,7 +9,9 @@
 
 #include "framework.h"
 #include "log.h"
+
 #include "tap.h"
+#include "tap2.h"
 
 void tf_die(const char *msg, ...) {
   va_list ap;
@@ -158,6 +160,15 @@ jd_var *tf_load_resource(jd_var *out, const char *fn) {
   return v;
 }
 
+static void _done(void) {
+  if (test_no > 0)
+    done_testing();
+  else if (tap2_test_no > 0)
+    tap2_done_testing();
+  else
+    done_testing();
+}
+
 int main(int argc, char *argv[]) {
   int i, count = 1;
   const char *tc_env = NULL;
@@ -173,7 +184,7 @@ int main(int argc, char *argv[]) {
   for (i = 0; i < count; i++)
     test_main();
 
-  done_testing();
+  _done();
   return 0;
 }
 
