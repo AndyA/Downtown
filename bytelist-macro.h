@@ -16,6 +16,8 @@
   void      bytelist__PASTE( listtype, _split       ) (listtype *bl, unsigned pos,          \
                                                        listtype **bla, listtype **blb);     \
   listtype *bytelist__PASTE( listtype, _clone       ) (const listtype *bl);                 \
+  listtype *bytelist__PASTE( listtype, _extract     ) (const listtype *bl,                  \
+                                                       unsigned pos, size_t len);           \
   listtype *bytelist__PASTE( listtype, _defrag      ) (listtype *bl);                       \
   void      bytelist__PASTE( listtype, _free        ) (listtype *bl);                       \
   size_t    bytelist__PASTE( listtype, _size        ) (const listtype *bl);                 \
@@ -70,6 +72,11 @@
                                                                                             \
   listtype *bytelist__PASTE( listtype, _clone ) (const listtype *bl) {                      \
     return (listtype *) bytelist_clone((bytelist *) bl);                                    \
+  }                                                                                         \
+                                                                                            \
+  listtype *bytelist__PASTE( listtype, _extract ) (const listtype *bl,                      \
+                                                   unsigned pos, size_t len) {              \
+    return (listtype *) bytelist_extract((bytelist *) bl, pos, len);                        \
   }                                                                                         \
                                                                                             \
   listtype *bytelist__PASTE( listtype, _defrag ) (listtype *bl) {                           \

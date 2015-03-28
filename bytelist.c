@@ -72,21 +72,24 @@ static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, c
   return bl;
 }
 
-bytelist *bytelist_clone(const bytelist *bl) {
+bytelist *bytelist_extract(const bytelist *bl, unsigned pos, size_t len) {
   if (!bl) return NULL;
 
-  size_t size;
-  unsigned char *data = bytelist_fetch(bl, &size);
+  size_t size = bytelist_size(bl);
+  if (pos >= size) return NULL;
+  if (pos + len > size) len = size - pos;
 
-  bytelist *nbl = alloc(sizeof(bytelist));
+  bytelist *nbl = _new(bl->clazz);
+  nbl->size = nbl->used = len * bl->clazz->member_size;;
+  nbl->data = alloc_no_clear(nbl->size);
 
-  nbl->size = size;
-  nbl->used = size;
-  nbl->next_size = bl->clazz->init_size * bl->clazz->member_size;
-  nbl->clazz = bl->clazz;
-  nbl->data = data;
+  bytelist_get(bl, nbl->data, pos, len);
 
   return nbl;
+}
+
+bytelist *bytelist_clone(const bytelist *bl) {
+  return bytelist_extract(bl, 0, bytelist_size(bl));
 }
 
 bytelist *bytelist_defrag(bytelist *bl) {
