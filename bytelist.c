@@ -32,10 +32,17 @@ size_t bytelist_member_size(const bytelist *bl) {
   return bl->clazz->member_size;
 }
 
+static bytelist *_new(const bytelist_class *clazz) {
+  bytelist *nbl = alloc(sizeof(bytelist));
+  nbl->clazz = clazz;
+  nbl->next_size = clazz->init_size * clazz->member_size;
+  return nbl;
+}
+
 static bytelist *_append(bytelist *bl, const unsigned char *bytes, size_t len, const bytelist_class *clazz) {
   while (len) {
     if (!bl || bl->used == bl->size) {
-      bytelist *nbl = alloc(sizeof(bytelist));
+      bytelist *nbl = _new(clazz);
 
       size_t init_size = clazz->init_size * clazz->member_size;
       size_t next_size = (bl ? MIN(bl->next_size, clazz->max_size) : init_size);
