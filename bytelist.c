@@ -245,9 +245,9 @@ unsigned char *bytelist_get_all(const bytelist *bl, unsigned char *out) {
 
 unsigned char *bytelist_fetch(const bytelist *bl, size_t *sizep) {
   size_t size = _size(bl);
-  int term = (bl->clazz->options & bytelist_TERMINATED) ? 1 : 0;
+  unsigned term = (bl->clazz->options & bytelist_TERMINATED) ? bl->clazz->member_size : 0;
   unsigned char *out = alloc_no_clear(size + term);
-  if (term) out[size] = 0;
+  memset(out + size, 0, term);
   bytelist_get_all(bl, out);
   if (sizep) *sizep = size / bl->clazz->member_size;;
   return out;
