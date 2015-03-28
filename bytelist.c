@@ -99,6 +99,34 @@ bytelist *bytelist_defrag(bytelist *bl) {
   return nbl;
 }
 
+static void _reverse_buf(bytelist *bl) {
+  if (!bl) return;
+
+  size_t msize = bl->clazz->member_size;
+  unsigned char tmp[bl->used];
+
+  for (unsigned char *pa = bl->data, *pb = bl->data + bl->used;
+       pa < (pb -= msize);
+       pa += msize) {
+    memcpy(tmp, pa, msize);
+    memcpy(pa, pb, msize);
+    memcpy(pb, tmp, msize);
+  }
+}
+
+static bytelist *_reverse(bytelist *bl, bytelist *next) {
+  if (!bl) return NULL;
+  _reverse_buf(bl);
+  bytelist *old_next = bl->next;
+  bl->next = next;
+  if (old_next) return _reverse(old_next, bl);
+  return bl;
+}
+
+bytelist *bytelist_reverse(bytelist *bl) {
+  return _reverse(bl, NULL);
+}
+
 bytelist *bytelist_buffer(bytelist *bl, unsigned char **bufp, size_t *sizep) {
   bl = bytelist_defrag(bl);
   if (bufp)  *bufp  = bl->data;

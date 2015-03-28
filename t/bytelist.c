@@ -305,14 +305,15 @@ static double randnum(void) {
   return n;
 }
 
-static int is_sorted(numlist *nl) {
+static int is_sorted(numlist *nl, int dir) {
   size_t size = numlist_size(nl);
   double buf[size];
 
   numlist_get_all(nl, buf);
 
   for (unsigned i = 1; i < size; i++)
-    if (buf[i - 1] > buf[i]) return 0;
+    if ((dir > 0 && buf[i - 1] > buf[i]) ||
+        (dir < 0 && buf[i - 1] < buf[i])) return 0;
   return 1;
 }
 
@@ -332,9 +333,9 @@ static void test_qsort(void) {
   for (int i = 0; i < 1000; i++)
     nl = numlist_putn(nl, randnum());
 
-  ok(!is_sorted(nl), "unsorted");
+  ok(!is_sorted(nl, 1), "unsorted");
   nl = numlist_qsort(nl, compar_num);
-  ok(is_sorted(nl), "sorted");
+  ok(is_sorted(nl, 1), "sorted");
 
   nest_out();
 }
@@ -357,22 +358,34 @@ static size_t frags(bytelist *bl) {
   return 1 + frags(bl->next);
 }
 
+static numlist *make_numlist(double *buf, size_t nnum) {
+  for (int i = 0; i < (int) nnum; i++)
+    buf[i] = randnum();
+  qsort(buf, nnum, sizeof(double), compar_num);
+
+  numlist *nl = numlist_append(NULL, buf, nnum);
+  ok(is_sorted(nl, 1), "sorted");
+  return nl;
+}
+
+static numlist *make_nl_frag(double *buf, size_t nnum) {
+  numlist *nl = make_numlist(buf, nnum);
+
+  nl = fragment(nl, nnum / 10);
+  ok(is_sorted(nl, 1), "still sorted");
+  size_t nfrag = frags((bytelist *) nl);
+  unsigned want = 10;
+  ok(nfrag > want, "> %u fragments (%u)", want, (unsigned) nfrag);
+  return nl;
+}
+
 static void test_bsearch(void) {
   nest_in("bsearch");
 
   const int nnum = 10000;
   double buf[nnum];
 
-  for (int i = 0; i < nnum; i++)
-    buf[i] = randnum();
-  qsort(buf, nnum, sizeof(double), compar_num);
-
-  numlist *nl = numlist_append(NULL, buf, nnum);
-  ok(is_sorted(nl), "sorted");
-  nl = fragment(nl, 100);
-  ok(is_sorted(nl), "still sorted");
-  size_t nfrag = frags((bytelist *) nl);
-  ok(nfrag > 10, "> 10 fragments (%u)", (unsigned) nfrag);
+  numlist *nl = make_nl_frag(buf, nnum);
 
   for (int i = 0; i < nnum / 10; i++) {
     int slot = randum(nnum);
@@ -382,6 +395,21 @@ static void test_bsearch(void) {
     ok(0 == compar_num(&want, got), "found %f", want);
   }
 
+  numlist_free(nl);
+
+  nest_out();
+}
+
+static void test_reverse(void) {
+  nest_in("reverse");
+
+  const int nnum = 10000;
+  double buf[nnum];
+
+  numlist *nl = make_nl_frag(buf, nnum);
+  nl = numlist_reverse(nl);
+  ok(is_sorted(nl, -1), "reversed");
+  numlist_free(nl);
 
   nest_out();
 }
@@ -403,6 +431,7 @@ void test_main(void) {
   test_join();
   test_qsort();
   test_bsearch();
+  test_reverse();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
