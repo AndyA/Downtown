@@ -234,11 +234,25 @@ size_t bytelist_size(const bytelist *bl) {
 }
 
 static unsigned _get(const bytelist *bl, unsigned char *out, unsigned end, size_t len) {
-  if (!bl || !len) return 0;
-  if (bl->used <= end) return _get(bl->next, out, end - bl->used, len); /* RECURSION */
-  unsigned avail = MIN(bl->used - end, len);
-  memcpy(out + len - avail, bl->data + bl->used - end - avail, avail);
-  return avail + _get(bl->next, out, 0, len - avail); /* RECURSION */
+  if (!len) return 0;
+
+  while (bl && end >= bl->used) {
+    end -= bl->used;
+    bl = bl->next;
+  }
+
+  size_t got = 0;
+
+  while (bl && len > 0) {
+    unsigned avail = MIN(bl->used - end, len);
+    memcpy(out + len - avail, bl->data + bl->used - end - avail, avail);
+    got += avail;
+    end = 0;
+    len -= avail;
+    bl = bl->next;
+  }
+
+  return got;
 }
 
 unsigned char *bytelist_get(const bytelist *bl, unsigned char *out, unsigned start, size_t len) {
