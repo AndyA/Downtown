@@ -376,8 +376,7 @@ static void check_frames(int *allocated) {
 }
 
 int y4m2_parse(FILE *in, y4m2_output *out) {
-  size_t buf_size = 0;
-  char *buf = NULL;
+  char buf[1024];
   y4m2_parameters *global = NULL;
   uint64_t sequence = 0;
   double elapsed = 0;
@@ -388,14 +387,11 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
     int c = getc(in);
     unsigned pos = 0;
     for (;;) {
-      if (pos == buf_size) {
-        buf_size *= 2;
-        if (buf_size < 1024) buf_size = 1024;
-        char *nb = realloc(buf, buf_size);
-        if (NULL == nb) abort();
-        buf = nb;
-      }
+      if (pos == sizeof(buf))
+        die("Header unterminated after %u bytes", sizeof(buf));
+
       if (c == EOF) goto done;
+
       if (c < ' ') {
         buf[pos++] = '\0';
         break;
@@ -433,13 +429,14 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       check_frames(&frames_allocated);
     }
     else {
-      die("Bad stream");
+      die("Bad stream (expected \"%s\" or \"%s\")", tag[Y4M2_START], tag[Y4M2_FRAME]);
     }
   }
 
 done:
 
   y4m2_emit_end(out);
+  free(buf);
   check_frames(&frames_allocated);
 
   return 0;
