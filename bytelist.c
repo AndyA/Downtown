@@ -119,7 +119,7 @@ static bytelist *_reverse(bytelist *bl, bytelist *next) {
   _reverse_buf(bl);
   bytelist *old_next = bl->next;
   bl->next = next;
-  if (old_next) return _reverse(old_next, bl);
+  if (old_next) return _reverse(old_next, bl); /* RECURSION */
   return bl;
 }
 
@@ -153,7 +153,7 @@ void *bytelist_bsearch(const bytelist *bl, const unsigned char *key, int (*compa
 bytelist *_join(bytelist *bl, bytelist *bl2, size_t grow) {
   if (!bl) return bl2;
   bl->tail_size += grow;
-  bl->next = _join(bl->next, bl2, grow);
+  bl->next = _join(bl->next, bl2, grow); /* RECURSION */
   return bl;
 }
 
@@ -166,7 +166,7 @@ static bytelist *_split(bytelist *bl, unsigned pos, size_t shrink, bytelist **bl
 
   if (pos >= bl->used) {
     bl->tail_size -= shrink;
-    bl->next = _split(bl->next, pos - bl->used, shrink, blb);
+    bl->next = _split(bl->next, pos - bl->used, shrink, blb); /* RECURSION */
     return bl;
   }
 
@@ -226,10 +226,10 @@ size_t bytelist_size(const bytelist *bl) {
 
 static unsigned _get(const bytelist *bl, unsigned char *out, unsigned end, size_t len) {
   if (!bl || !len) return 0;
-  if (bl->used <= end) return _get(bl->next, out, end - bl->used, len);
+  if (bl->used <= end) return _get(bl->next, out, end - bl->used, len); /* TAIL RECURSION */
   unsigned avail = MIN(bl->used - end, len);
   memcpy(out + len - avail, bl->data + bl->used - end - avail, avail);
-  return avail + _get(bl->next, out, 0, len - avail);
+  return avail + _get(bl->next, out, 0, len - avail); /* TAIL RECURSION */
 }
 
 unsigned char *bytelist_get(const bytelist *bl, unsigned char *out, unsigned start, size_t len) {
