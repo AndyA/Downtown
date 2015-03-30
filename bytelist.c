@@ -114,17 +114,18 @@ static void _reverse_buf(bytelist *bl) {
   }
 }
 
-static bytelist *_reverse(bytelist *bl, bytelist *next) {
-  if (!bl) return NULL;
-  _reverse_buf(bl);
-  bytelist *old_next = bl->next;
-  bl->next = next;
-  if (old_next) return _reverse(old_next, bl); /* RECURSION */
-  return bl;
-}
-
 bytelist *bytelist_reverse(bytelist *bl) {
-  return _reverse(bl, NULL);
+  bytelist *nbl = NULL;
+
+  while (bl) {
+    _reverse_buf(bl);
+    bytelist *next = bl->next;
+    bl->next = nbl;
+    nbl = bl;
+    bl = next;
+  }
+
+  return nbl;
 }
 
 bytelist *bytelist_buffer(bytelist *bl, unsigned char **bufp, size_t *sizep) {
