@@ -151,15 +151,21 @@ void *bytelist_bsearch(const bytelist *bl, const unsigned char *key, int (*compa
   return bsearch(key, bl->data, bl->used / bl->clazz->member_size, bl->clazz->member_size, compar);
 }
 
-bytelist *_join(bytelist *bl, bytelist *bl2, size_t grow) {
-  if (!bl) return bl2;
-  bl->tail_size += grow;
-  bl->next = _join(bl->next, bl2, grow); /* RECURSION */
-  return bl;
-}
-
 bytelist *bytelist_join(bytelist *bl, bytelist *bl2) {
-  return _join(bl2, bl, _size(bl));
+  if (!bl2) return bl;
+  if (!bl) return bl2;
+
+  /* actually add bl onto bl2 */
+  size_t adjust = _size(bl);
+  bytelist *blp = bl2;
+  for (;;) {
+    blp->tail_size += adjust;
+    if (!blp->next) break;
+    blp = blp->next;
+  }
+
+  blp->next = bl;
+  return bl2;
 }
 
 static bytelist *_split(bytelist *bl, unsigned pos, size_t shrink, bytelist **blb) {
