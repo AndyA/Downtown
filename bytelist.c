@@ -277,8 +277,15 @@ unsigned char *bytelist_fetch(const bytelist *bl, size_t *sizep) {
 }
 
 unsigned char *bytelist_drain(bytelist *bl, size_t *sizep) {
-  bl = bytelist_defrag(bl);
   if (sizep) *sizep = bytelist_size(bl);
+  unsigned term = (bl->clazz->options & bytelist_TERMINATED) ? bl->clazz->member_size : 0;
+  if (term) {
+    /* since we're going to throw it away... */
+    unsigned char zero[term];
+    memset(zero, 0, term);
+    bl = bytelist_append(bl, zero, 1);
+  }
+  bl = bytelist_defrag(bl);
   unsigned char *data = bl->data;
   bl->data = NULL;
   bytelist_free(bl);
