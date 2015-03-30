@@ -254,7 +254,10 @@ unsigned char *bytelist_fetch(const bytelist *bl, size_t *sizep) {
 }
 
 unsigned char *bytelist_drain(bytelist *bl, size_t *sizep) {
-  unsigned char *data = bytelist_fetch(bl, sizep);
+  bl = bytelist_defrag(bl);
+  if (sizep) *sizep = bytelist_size(bl);
+  unsigned char *data = bl->data;
+  bl->data = NULL;
   bytelist_free(bl);
   return data;
 }
