@@ -386,11 +386,15 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
   for (;;) {
     int c = getc(in);
     unsigned pos = 0;
+    if (c == EOF) break;
     for (;;) {
       if (pos == sizeof(buf))
         die("Header unterminated after %u bytes", sizeof(buf));
 
-      if (c == EOF) goto done;
+      if (c == EOF) {
+        log_warning("Garbage found afer last frame");
+        goto done;
+      }
 
       if (c < ' ') {
         buf[pos++] = '\0';
@@ -399,7 +403,6 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       buf[pos++] = c;
       c = getc(in);
     }
-    if (c == EOF) break;
 
     char *tail;
     if (tail = is_word(buf, tag[Y4M2_START]), tail) {
@@ -436,7 +439,6 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
 done:
 
   y4m2_emit_end(out);
-  free(buf);
   check_frames(&frames_allocated);
 
   return 0;
