@@ -71,8 +71,13 @@ for src in "$@"; do
                     [ "$chans" = 'y' ] && dt_config="$dt_config --mono"
                     [ "$centre" = 'y' ] && dt_config="$dt_config --centre"
                     [ "$delta" = 'y' ] && dt_config="$dt_config --delta"
-                    [ "$graph" = 'y' ] &&                                              \
-      dt_config="$dt_config --graph rms:#f00 --graph energy:#0f0 --graph min:#00f --graph average:#44f --graph max:#88f"
+                    if [ "$graph" = 'y' ]; then
+                      dt_config="$dt_config --graph rms:#f00"
+                      dt_config="$dt_config --graph energy:#0f0"
+                      dt_config="$dt_config --graph min:#00f"
+                      dt_config="$dt_config --graph average:#44f"
+                      dt_config="$dt_config --graph max:#88f"
+                    fi
 
                     echo "$src -> $dst ($dt_config)"
 
