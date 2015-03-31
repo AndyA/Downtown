@@ -40,9 +40,9 @@
 /config.status
 /config.sub
 /configure
+/confound
 /core
 /depcomp
-/confound
 /downtown
 /downtown_filter
 /get-stats
@@ -59,6 +59,7 @@
 /test-timebend
 /test.*
 /testcard-yuv
+/tmp/
 /version.h
 /work/
 Makefile
