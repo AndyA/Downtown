@@ -1,6 +1,7 @@
 "use strict";
 
 var MM = require('../lib/MovieMaker.js');
+var DSF = require('../lib/Downtown/StandardFunctions.js');
 
 function loadJSONL(file, done, error) {
   var LineByLineReader = require('line-by-line');
@@ -64,25 +65,39 @@ function historyTrace(ctx, data, row, bbox, parms, depth, factor) {
   var rowData = data[row];
   if (!rowData) return;
 
-  for (var pl = 0; pl < rowData.length; pl++) {
-    var plane = rowData[pl];
-
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = 'rgba(120, 255, 180, ' + opacity + ')';
-
+  function plotLine(series) {
     ctx.beginPath();
 
-    for (var i = 0; i < plane.length; i++) {
-      var datum = plane[i];
-      var px = i * bbox.w / plane.length + bbox.x;
-      var py = bbox.h - datum * parms.scale * factor + bbox.y;
+    for (var i = 0; i < series.length; i++) {
+      var datum = series[i];
+      var norm = parms.func(i);
+      var px = i * bbox.w / series.length + bbox.x;
+      var py = bbox.h - datum / norm * parms.scale * factor + bbox.y;
       if (i == 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     }
 
     ctx.stroke();
+  }
+
+  for (var pl = 0; pl < rowData.length; pl++) {
+    var plane = rowData[pl];
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    var smoothed = DSF.smooth(plane);
+
+    ctx.lineWidth = lineWidth / 2;
+    ctx.strokeStyle = 'rgba(200, 80, 100, ' + opacity + ')';
+
+    plotLine(smoothed);
+
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = 'rgba(120, 255, 180, ' + opacity + ')';
+
+    plotLine(plane);
+
   }
 
 }
@@ -100,12 +115,13 @@ function drawTrace(ctx, data, row) {
 
   var parms = {
     zoom: 0.975,
-    scale: bbox.h / 100,
+    scale: bbox.h / 10,
     opacity: 0.7,
-    lw: 2.5,
+    lw: 4,
     xc: 0.5,
     yc: 0.2,
-    depth: 100
+    depth: 100,
+    func: DSF.normalise
   };
 
   ctx.save();
@@ -129,12 +145,20 @@ function makeSigMovie(dataFile, mjpegFile, opts) {
     console.log("Loaded frame data");
 
     var movie = new MM.SequenceClip();
-    var frames = frameData.length;
-    if (opts.t) {
-      var frameLimit = secondsToFrames(opts.t);
-      if (frameLimit < frames) frames = frameLimit;
-      console.log("Stopping after " + frames + " frames");
+    if (opts.s) {
+      var s = secondsToFrames(opts.s);
+      console.log("Seeking " + s + " frames");
+      frameData = frameData.slice(s);
     }
+
+    if (opts.t) {
+      var t = secondsToFrames(opts.t);
+      console.log("Stopping after " + t + " frames");
+      frameData = frameData.slice(0, t);
+    }
+
+    var frames = frameData.length;
+    console.log(frames + " frames to process");
 
     movie.append(new MM.Clip(function(ctx, framenum) {
       drawTrace(ctx, frameData, framenum);
@@ -146,12 +170,8 @@ function makeSigMovie(dataFile, mjpegFile, opts) {
 }
 
 var argv = require('minimist')(process.argv.slice(2), {
-  string: ['t'],
-  alias: {
-    t: 'time'
-  }
+  string: ['t', 'ss']
 });
-//console.log(argv);
 var args = argv._;
 if (args.length != 2) usage();
 
