@@ -2,6 +2,7 @@
 
 var MM = require('../lib/MovieMaker.js');
 var DSF = require('../lib/Downtown/StandardFunctions.js');
+var BitBox = require('../lib/Downtown/BitBox.js');
 
 function loadJSONL(file, done, error) {
   var LineByLineReader = require('line-by-line');
@@ -53,6 +54,15 @@ function dp(x, n) {
   return Math.floor(x * n) / n;
 }
 
+function splitString(str, chunk) {
+  var out = [];
+  while (str.length) {
+    out.push(str.substr(0, chunk));
+    str = str.substr(chunk);
+  }
+  return out;
+}
+
 function historyTrace(ctx, data, row, bbox, parms, depth, factor) {
   var opacity = parms.opacity * factor;
   var lineWidth = parms.lw * factor;
@@ -68,12 +78,13 @@ function historyTrace(ctx, data, row, bbox, parms, depth, factor) {
   function plotLine(series) {
     ctx.beginPath();
 
-    for (var i = 0; i < series.length; i++) {
+    var started = 0;
+    for (var i = parms.skip; i < series.length; i++) {
       var datum = series[i];
       var norm = parms.func(i);
       var px = i * bbox.w / series.length + bbox.x;
       var py = bbox.h - datum / norm * parms.scale * factor + bbox.y;
-      if (i == 0) ctx.moveTo(px, py);
+      if (!started++) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     }
 
@@ -81,7 +92,7 @@ function historyTrace(ctx, data, row, bbox, parms, depth, factor) {
   }
 
   for (var pl = 0; pl < rowData.length; pl++) {
-    var plane = rowData[pl];
+    var plane = rowData[pl].slice(parms.skip);
 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -102,7 +113,7 @@ function historyTrace(ctx, data, row, bbox, parms, depth, factor) {
 
 }
 
-function drawTrace(ctx, data, row) {
+function drawTrace(ctx, data, row, bitbox) {
   var HMARGIN = 40;
   var VMARGIN = 22;
 
@@ -121,13 +132,26 @@ function drawTrace(ctx, data, row) {
     xc: 0.5,
     yc: 0.2,
     depth: 100,
+    skip: 6,
     func: DSF.normalise
   };
 
   ctx.save();
-
   historyTrace(ctx, data, row, bbox, parms, 0, 1);
+
+  var plane = data[row][0].slice(parms.skip);
+  var sig = DSF.signature(plane);
+  var bs = 256;
+  bitbox.render(ctx, sig, (WIDTH - bs) * 0.5, (HEIGHT - bs) * 0.1, bs, bs);
+
+  if (0) {
+    var hmh = 32;
+    var hmw = hmh * 16;
+    bitbox.renderHeatChip(ctx, (WIDTH - hmw) * 0.5, (HEIGHT - hmh) * 0.5, hmw, hmh);
+  }
+
   ctx.restore();
+
 }
 
 function usage() {
@@ -160,8 +184,10 @@ function makeSigMovie(dataFile, mjpegFile, opts) {
     var frames = frameData.length;
     console.log(frames + " frames to process");
 
+    var bitbox = new BitBox(DSF.signatureBits(), 0.95);
+
     movie.append(new MM.Clip(function(ctx, framenum) {
-      drawTrace(ctx, frameData, framenum);
+      drawTrace(ctx, frameData, framenum, bitbox);
     },
     frames));
 
