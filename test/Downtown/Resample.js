@@ -1,6 +1,8 @@
 "use strict";
 
 var chai = require("chai");
+chai.use(require("chai-deep-closeto"));
+
 var expect = chai.expect;
 
 var RS = require("../../lib/Downtown/Resample.js");
@@ -15,6 +17,12 @@ function mkRamp(len, m, c) {
   return mkArray(len, function(x) {
     return m * x + c;
   });
+}
+
+function hasNaN(ar) {
+  for (var i = 0; i < ar.length; i++)
+  if (isNaN(ar[i])) return true;
+  return false;
 }
 
 describe("Resample", function() {
@@ -52,6 +60,41 @@ describe("Resample", function() {
       }
 
     });
+
+    var cases = [{
+      'src': [1.0, 2.0, 3.0, 4.0, 5.0],
+      'want': [1.0, 2.0, 3.0, 4.0, 5.0]
+    },
+    {
+      'src': [1.0, 2.0],
+      'want': [1.0, 1.5, 2.0]
+    },
+    {
+
+      'src': [1.0, 2.0, 3.0],
+      'want': [1.0, (4.0 / 3.0), 2.0, (8.0 / 3.0), 3.0]
+    },
+    {
+
+      'src': [1.0, 2.0, 3.0, 4.0],
+      'want': [1.5, 3.5]
+    },
+    {
+
+      'src': [0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0],
+      'want': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ]
+    }];
+
+    for (var i = 0; i < cases.length; i++) {
+      (function(tc) {
+        it("should correctly resample " + tc.src.join(', '), function() {
+          var got = RS.resample(tc.src, tc.want.length / tc.src.length);
+          expect(got).to.have.length(tc.want.length);
+          expect(got).to.deep.closeTo(tc.want, 0.001);
+          expect(hasNaN(got)).to.be.false;
+        });
+      })(cases[i]);
+    }
 
   });
 
