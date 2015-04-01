@@ -21,10 +21,10 @@ function drawSpiral(ctx, limit, r, a, r_rate, a_rate) {
   ctx.stroke();
 }
 
-function drawSpirals(canvas, ctx, limit, shift) {
+function drawSpirals(ctx, limit, shift) {
   ctx.save();
   // ctx.scale() seems to cause drawing to stop
-  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
   ctx.lineWidth = 5;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -43,13 +43,13 @@ function drawSpirals(canvas, ctx, limit, shift) {
 
 var spiral_limit = 100;
 
-function spiral(canvas, ctx, framenum) {
-  drawSpirals(canvas, ctx, framenum, 0);
+function spiral(ctx, framenum) {
+  drawSpirals(ctx, framenum, 0);
 }
 
-function spinner(canvas, ctx, framenum) {
+function spinner(ctx, framenum) {
   var angle = (framenum * framenum) / 100;
-  drawSpirals(canvas, ctx, spiral_limit, angle);
+  drawSpirals(ctx, spiral_limit, angle);
 }
 
 function fadeInOut(clip, in_frames, out_frames, in_pad, out_pad) {
