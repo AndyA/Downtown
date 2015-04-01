@@ -178,7 +178,7 @@ function makeSigMovie(dataFile, mjpegFile, opts) {
     var frames = frameData.length;
     console.log(frames + " frames to process");
 
-    var bitbox = new BitBox(DSF.signatureBits(), 0.99);
+    var bitbox = new BitBox(DSF.signatureBits(), 0.999);
 
     movie.append(new MM.Clip(function(ctx, framenum) {
       drawTrace(ctx, frameData, framenum, bitbox);
