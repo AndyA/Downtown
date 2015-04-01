@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 moviemaker='node js/sig.js'
 pip_size='432:324'
 pip_x='0.8'
