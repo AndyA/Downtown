@@ -141,14 +141,8 @@ function drawTrace(ctx, data, row, bitbox) {
 
   var plane = data[row][0].slice(parms.skip);
   var sig = DSF.signature(plane);
-  var bs = 256;
-  bitbox.render(ctx, sig, (WIDTH - bs) * 0.5, (HEIGHT - bs) * 0.1, bs, bs);
-
-  if (0) {
-    var hmh = 32;
-    var hmw = hmh * 16;
-    bitbox.renderHeatChip(ctx, (WIDTH - hmw) * 0.5, (HEIGHT - hmh) * 0.5, hmw, hmh);
-  }
+  var bs = 324;
+  bitbox.render(ctx, sig, (WIDTH - bs) * 0.075, (HEIGHT - bs) * 0.1, bs, bs);
 
   ctx.restore();
 
@@ -184,7 +178,7 @@ function makeSigMovie(dataFile, mjpegFile, opts) {
     var frames = frameData.length;
     console.log(frames + " frames to process");
 
-    var bitbox = new BitBox(DSF.signatureBits(), 0.95);
+    var bitbox = new BitBox(DSF.signatureBits(), 0.99);
 
     movie.append(new MM.Clip(function(ctx, framenum) {
       drawTrace(ctx, frameData, framenum, bitbox);
