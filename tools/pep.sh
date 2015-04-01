@@ -57,11 +57,12 @@ for obj in "$@"; do
         -c:v libx264 -b:v 8000k                                                                                    \
         -y "$m4v_t" && mv "$m4v_t" "$m4v" || exit
 
+      rm -f "$mjpeg_t" "$mjpeg"
+
     fi
 
   done
 done
 
-exit
 # vim:ts=2:sw=2:sts=2:et:ft=sh
 
