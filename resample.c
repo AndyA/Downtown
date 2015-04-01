@@ -54,7 +54,7 @@ double *resample_double(double *out, size_t osize, const double *in, size_t isiz
       sum = in[iis] * (1 - (is - iis));
       iis++;
       while (iis != iie) sum += in[iis++];
-      sum += in[iis] * (ie - iie);
+      if (iis < (int) isize) sum += in[iis] * (ie - iie);
     }
     out[i] = sum / scale;
   }
