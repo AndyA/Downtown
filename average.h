@@ -14,12 +14,17 @@ typedef struct {
   double total;
   double min, max;
   double *data;
+  double (*in_func)(double x);
+  double (*out_func)(double x);
 } average;
 
 average *average_new(unsigned len);
+average *average_logarithmic(average *avg);
+average *average_new_log(unsigned len);
 void average_free(average *avg);
 
 unsigned average_used(const average *avg);
+int average_ready(const average *avg);
 double average_get(const average *avg);
 double average_min(average *avg);
 double average_max(average *avg);

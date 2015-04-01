@@ -7,14 +7,29 @@
 #include "average.h"
 #include "util.h"
 
+static double identity(double x) {
+  return x;
+}
+
 average *average_new(unsigned len) {
   average *avg = alloc(sizeof(average));
   avg->data = alloc(sizeof(double) * len);
   avg->len = len;
   avg->min = avg->max = NAN;
+  avg->in_func = identity;
+  avg->out_func = identity;
   return avg;
 }
 
+average *average_logarithmic(average *avg) {
+  avg->in_func = log;
+  avg->out_func = exp;
+  return avg;
+}
+
+average *average_new_log(unsigned len) {
+  return average_logarithmic(average_new(len));
+}
 
 void average_free(average *avg) {
   if (avg) {
@@ -29,8 +44,12 @@ unsigned average_used(const average *avg) {
   return used < 0 ? used + (int) avg->len : used;
 }
 
+int average_ready(const average *avg) {
+  return average_used(avg) >= avg->len / 2;
+}
+
 double average_get(const average *avg) {
-  return avg->total / (double) average_used(avg);
+  return avg->out_func(avg->total / (double) average_used(avg));
 }
 
 double average_pop(average *avg) {
@@ -45,11 +64,12 @@ double average_pop(average *avg) {
 }
 
 double average_push(average *avg, double datum) {
+  double xdat = avg->in_func(datum);
   if (avg->full)(void) average_pop(avg);
-  avg->data[avg->in++] = datum;
+  avg->data[avg->in++] = xdat;
   if (avg->in == avg->len) avg->in = 0;
   if (avg->in == avg->out) avg->full = 1;
-  avg->total += datum;
+  avg->total += xdat;
   avg->min = NAN;
   avg->max = NAN;
   return average_get(avg);
@@ -69,12 +89,12 @@ static void min_max(average *avg) {
 
 double average_min(average *avg) {
   if (isnan(avg->min) || isnan(avg->max)) min_max(avg);
-  return avg->min;
+  return avg->out_func(avg->min);
 }
 
 double average_max(average *avg) {
   if (isnan(avg->min) || isnan(avg->max)) min_max(avg);
-  return avg->max;
+  return avg->out_func(avg->max);
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
