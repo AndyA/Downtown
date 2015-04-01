@@ -11,6 +11,7 @@ noinst_LTLIBRARIES = libdowntown.la
 bin_PROGRAMS =                \
 	confound                     \
 	downtown                     \
+	downtown-sig                     \
 	downtown_filter              \
 	get-stats                    \
 	test-convolve                \
@@ -61,6 +62,9 @@ downtown_SOURCES = downtown.c
 
 downtown_filter_LDADD = libdowntown.la
 downtown_filter_SOURCES = downtown_filter.c
+
+downtown_sig_LDADD = libdowntown.la
+downtown_sig_SOURCES = downtown-sig.c
 
 get_stats_LDADD = libdowntown.la
 get_stats_SOURCES = get-stats.c
