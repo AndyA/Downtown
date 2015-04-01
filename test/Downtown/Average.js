@@ -3,17 +3,17 @@
 var chai = require("chai");
 var expect = chai.expect;
 
-var A = require("../../lib/Downtown/Average.js");
+var Average = require("../../lib/Downtown/Average.js");
 
 describe("Average", function() {
 
   describe("Basic", function() {
 
-    var a = new A(5);
+    var a = new Average(5);
 
     it("should implement add, length & ready", function() {
-      expect(A).to.respondTo('add');
-      expect(A).to.respondTo('length');
+      expect(Average).to.respondTo('add');
+      expect(Average).to.respondTo('length');
 
       expect(a.length()).to.equal(0);
       expect(a.ready()).to.be.false;
