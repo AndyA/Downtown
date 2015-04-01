@@ -8,45 +8,46 @@ ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libdowntown.la
 
-bin_PROGRAMS = \
-	confound \
-	downtown \
-	downtown_filter \
-	get-stats \
-	test-convolve \
-	test-filters \
-	test-timebend \
+bin_PROGRAMS =                \
+	confound                     \
+	downtown                     \
+	downtown_filter              \
+	get-stats                    \
+	test-convolve                \
+	test-filters                 \
+	test-timebend                \
 	testcard-yuv
 
-libdowntown_la_SOURCES = \
-	average.h average.c \
-	bytelist.h bytelist.c \
-	centre.h centre.c \
-	charlist.h charlist.c \
-	colour.h colour.c \
-	csv.h csv.c \
-	delay.h delay.c \
-	delta.h delta.c \
-	dumpframe.h dumpframe.c \
-	frameinfo.h frameinfo.c \
-	histogram.h histogram.c \
-	injector.h injector.c \
-	log.h log.c \
-	merge.h merge.c \
-	numlist.h numlist.c \
-	numpipe.h numpipe.c \
-	progress.h progress.c \
-	ptrlist.h ptrlist.c \
-	quadtree.h quadtree.c \
-	resample.h resample.c \
-	sampler.h sampler.c \
-	splitter.h splitter.c \
-	tb_convolve.h tb_convolve.c \
-	timebend.h timebend.c \
-	util.h util.c \
-	voronoi.h voronoi.c \
-	y4m2png.h y4m2png.c \
-	yuv4mpeg2.h yuv4mpeg2.c \
+libdowntown_la_SOURCES =      \
+	average.h average.c          \
+	bytelist.h bytelist.c        \
+	centre.h centre.c            \
+	charlist.h charlist.c        \
+	colour.h colour.c            \
+	csv.h csv.c                  \
+	delay.h delay.c              \
+	delta.h delta.c              \
+	dumpframe.h dumpframe.c      \
+	frameinfo.h frameinfo.c      \
+	histogram.h histogram.c      \
+	injector.h injector.c        \
+	log.h log.c                  \
+	merge.h merge.c              \
+	numlist.h numlist.c          \
+	numpipe.h numpipe.c          \
+	progress.h progress.c        \
+	ptrlist.h ptrlist.c          \
+	quadtree.h quadtree.c        \
+	resample.h resample.c        \
+	sampler.h sampler.c          \
+	signature.h signature.c      \
+	splitter.h splitter.c        \
+	tb_convolve.h tb_convolve.c  \
+	timebend.h timebend.c        \
+	util.h util.c                \
+	voronoi.h voronoi.c          \
+	y4m2png.h y4m2png.c          \
+	yuv4mpeg2.h yuv4mpeg2.c      \
 	zigzag.h zigzag.c
 
 libsoundchip_la_CPPFLAGS = $(FFTW_CFLAGS) $(PNG_CFLAGS)

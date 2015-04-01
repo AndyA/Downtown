@@ -1,19 +1,20 @@
-TESTBIN =                     \
-	average                      \
-	basic                        \
-	bytelist                     \
-	bytelist-one                 \
-	charlist                     \
-	colour                       \
-	csv                          \
-	numlist                      \
-	numpipe                      \
-	quadtree                     \
-	resample                     \
-	sampler                      \
-	tb_convolve                  \
-	util                         \
-	yuv4mpeg2                    \
+TESTBIN =      \
+	average       \
+	basic         \
+	bytelist      \
+	bytelist-one  \
+	charlist      \
+	colour        \
+	csv           \
+	numlist       \
+	numpipe       \
+	quadtree      \
+	resample      \
+	sampler       \
+	signature     \
+	tb_convolve   \
+	util          \
+	yuv4mpeg2     \
 	zigzag
 
 TESTPERL =
