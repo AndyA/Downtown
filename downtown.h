@@ -7,18 +7,9 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 #define PROGRESS_RATE 5
 
-typedef void (*permute_func)(const uint8_t *in, uint8_t *out, int w, int h);
-typedef size_t (*permute_size_func)(int w, int h);
-
-typedef struct {
-  const char *name;
-  permute_func f;
-  permute_size_func sf;
-} permute_method;
+void downtown_init(void);
 
 #ifdef __cplusplus
 }

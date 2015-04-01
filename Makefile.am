@@ -37,6 +37,7 @@ libdowntown_la_SOURCES =      \
 	numlist.h numlist.c          \
 	numpipe.h numpipe.c          \
 	progress.h progress.c        \
+	downtown.h downtown-core.c   \
 	ptrlist.h ptrlist.c          \
 	quadtree.h quadtree.c        \
 	resample.h resample.c        \
