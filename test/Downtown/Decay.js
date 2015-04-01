@@ -23,4 +23,9 @@ describe("Decay", function() {
     }
   });
 
+  it("should be able to be set", function() {
+    decay.set(99);
+    expect(decay.get()).to.equal(99);
+  });
+
 });
