@@ -1,4 +1,4 @@
-/* downtown.c */
+/* downtown-filter.c */
 
 #include <getopt.h>
 #include <math.h>
@@ -17,7 +17,7 @@
 #include "util.h"
 #include "yuv4mpeg2.h"
 
-#define PROG      "downtown_filter"
+#define PROG      "downtown-filter"
 
 static int cfg_centre = 0;
 static int cfg_delta = 0;

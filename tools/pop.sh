@@ -59,7 +59,7 @@ for src in "$@"; do
                     if [ ! -e "$raw" ]; then
                       dt_f_config="--merge $merge"
                       ffmpeg -nostdin -i "$src" -t $DURATION -f yuv4mpegpipe -         \
-                        | ./downtown_filter $dt_f_config > "$raw" || exit
+                        | ./downtown-filter $dt_f_config > "$raw" || exit
                     fi
 
                     if [ ! -e "$scaled" ]; then
@@ -81,7 +81,7 @@ for src in "$@"; do
 
                     echo "$src -> $dst ($dt_config)"
 
-                    # Pipe source via downtown_filter into two pipes; one for downtown, one for the overlay
+                    # Pipe source via downtown-filter into two pipes; one for downtown, one for the overlay
 
                     ffmpeg                                                             \
                       -nostdin                                                         \

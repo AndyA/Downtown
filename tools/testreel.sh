@@ -62,8 +62,8 @@ for src in "$@"; do
 
                     if [ ! -e "$raw" ]; then
                       dt_f_config="--merge $merge" 
-                      echo "downtown_filter $dt_f_config"
-                      ./downtown_filter $dt_f_config < "$raw1" > "$raw" || exit
+                      echo "downtown-filter $dt_f_config"
+                      ./downtown-filter $dt_f_config < "$raw1" > "$raw" || exit
                     fi
 
                     if [ ! -e "$scaled" ]; then
@@ -80,7 +80,7 @@ for src in "$@"; do
 
                     echo "$src -> $dst ($dt_config)"
 
-                    # Pipe source via downtown_filter into two pipes; one for downtown, one for the overlay
+                    # Pipe source via downtown-filter into two pipes; one for downtown, one for the overlay
 
                     ffmpeg \
                       -nostdin \
