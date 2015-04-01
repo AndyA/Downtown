@@ -7,6 +7,7 @@
   "contributors": [],
   "dependencies": {
     "canvas": "^1.2.1",
+    "chai-deep-closeto": "^0.1.1",
     "line-by-line": "^0.1.3",
     "minimist": "^1.1.1"
   },
