@@ -28,7 +28,7 @@ jd_var *json_load(jd_var *out, FILE *f) {
 
 jd_var *json_load_file(jd_var *out, const char *fn) {
   FILE *fl = fopen(fn, "r");
-  if (!fl) jd_throw("Can't read %s: %s\n", fn, strerror(errno));
+  if (!fl) die("Can't read %s: %s\n", fn, strerror(errno));
   jd_var *v = json_load(out, fl);
   fclose(fl);
   return v;
