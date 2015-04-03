@@ -1,0 +1,13 @@
+{
+   "baseline" : [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+   ],
+   "sampler" : "spiral:a_rate=5,r_rate=5",
+   "size" : 256
+}
