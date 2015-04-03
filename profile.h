@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #include "jsondata.h"
+#include "sampler.h"
 
 #define profile_SIGNATURE_BITS  256
 
@@ -18,11 +19,15 @@ typedef struct {
   size_t len;
   double *baseline;
 
+  sampler_context *sam;
+  size_t sam_len;
+
 } profile;
 
 profile *profile_load(const char *filename);
 void profile_free(profile *p);
 char *profile_signature(const profile *p, char *sig, const double *data, size_t len);
+sampler_context *profile_sampler(profile *p, size_t *lenp);
 
 #ifdef __cplusplus
 }

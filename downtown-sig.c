@@ -60,6 +60,7 @@ static int cfg_merge = 1;
 static char *cfg_input = "-";
 static char *cfg_output = NULL;
 static char *cfg_raw = NULL;
+static char *cfg_profile = NULL;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -71,6 +72,7 @@ static void usage() {
           "  -i, --input <file.yuv>    Input file (default stdin)\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
           "  -o, --output <file>       signature output file\n"
+          "  -p, --profile <file.json> Use profile\n"
           "  -q, --quiet               No log output\n"
           "  -r, --raw <file>          raw FFT output file\n"
           "  -S, --sampler <algo>      Select sampler algorithm\n"
@@ -172,6 +174,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     int w = frame->i.width / frame->i.plane[pl].xs;
     int h = frame->i.height / frame->i.plane[pl].ys;
 
+    /* TODO - make profile sampler if available */
     if (!fc->sampler) create_sampler(fc, cfg_sampler, plane_name[pl], w, h);
 
     double *sam = sampler_sample(fc->sampler, frame->plane[pl]);
@@ -231,6 +234,7 @@ static void parse_options(int *argc, char ***argv) {
     {"input", required_argument, NULL, 'i'},
     {"histogram", no_argument, NULL, 'H'},
     {"merge", required_argument, NULL, 'M'},
+    {"profile", required_argument, NULL, 'p'},
     {"output", required_argument, NULL, 'o'},
     {"quiet", no_argument, NULL, 'q'},
     {"raw", required_argument, NULL, 'r'},
@@ -263,6 +267,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'o':
       cfg_output = optarg;
+      break;
+
+    case 'p':
+      cfg_profile = optarg;
       break;
 
     case 'q':
