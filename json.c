@@ -19,7 +19,7 @@ static jd_var *load_string(jd_var *out, FILE *f) {
   return out;
 }
 
-jd_var *json_load_json(jd_var *out, FILE *f) {
+jd_var *json_load(jd_var *out, FILE *f) {
   jd_var json = JD_INIT;
   jd_from_json(out, load_string(&json, f));
   jd_release(&json);
@@ -29,7 +29,7 @@ jd_var *json_load_json(jd_var *out, FILE *f) {
 jd_var *json_load_file(jd_var *out, const char *fn) {
   FILE *fl = fopen(fn, "r");
   if (!fl) jd_throw("Can't read %s: %s\n", fn, strerror(errno));
-  jd_var *v = json_load_json(out, fl);
+  jd_var *v = json_load(out, fl);
   fclose(fl);
   return v;
 }
