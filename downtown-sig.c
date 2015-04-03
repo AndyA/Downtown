@@ -46,7 +46,8 @@ typedef struct {
   unsigned long frame_count;
   y4m2_output *next;
   fft_context plane_info[Y4M2_N_PLANE];
-  FILE *fo;
+  FILE *fh_sig;
+  FILE *fh_raw;
 } context;
 
 static const char *plane_name[] = { "Y", "Cb", "Cr" };
@@ -56,7 +57,9 @@ static int cfg_histogram = 0;
 static int cfg_centre = 0;
 static int cfg_delta = 0;
 static int cfg_merge = 1;
+static char *cfg_input = "-";
 static char *cfg_output = NULL;
+static char *cfg_raw = NULL;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -65,9 +68,11 @@ static void usage() {
           "  -c, --centre              Centre frames\n"
           "  -d, --delta               Work on diff between frames\n"
           "  -H, --histogram           Histogram equalisation\n"
+          "  -i, --input <file.yuv>    Input file (default stdin)\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
-          "  -o, --output <file>       FFT output file\n"
+          "  -o, --output <file>       signature output file\n"
           "  -q, --quiet               No log output\n"
+          "  -r, --raw <file>          raw FFT output file\n"
           "  -S, --sampler <algo>      Select sampler algorithm\n"
           "\n"
          );
@@ -86,7 +91,7 @@ static void free_fft_context(fft_context *c) {
 }
 
 static void free_context(context *c) {
-  if (c->fo) fclose(c->fo);
+  /*  if (c->fh_sig) fclose(c->fh_sig);*/
   for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
     free_fft_context(&c->plane_info[pl]);
   }
@@ -131,7 +136,27 @@ oom:
   die("Out of memory");
 }
 
-static void write_log(context *c, FILE *fl, const y4m2_frame *frame) {
+static jd_var *jd_doubles(jd_var *out, const double *in, size_t len) {
+  jd_var *slot = jd_push(jd_set_array(out, len), len);
+  for (unsigned i = 0; i < len; i++)
+    jd_set_real(&slot[i], in[i]);
+  return out;
+}
+
+static void write_raw(context *c, FILE *fl, const y4m2_frame *frame) {
+  scope {
+    fft_context *fc = &c->plane_info[Y4M2_Y_PLANE];
+
+    jd_var *rec = jd_nhv(4);
+    jd_set_int(jd_get_ks(rec, "frame", 1), frame->sequence);
+    jd_var *pln = jd_set_array(jd_get_ks(rec, "planes", 1), 1);
+    jd_doubles(jd_push(pln, 1), fc->raw_sig, fc->rs_size);
+    jd_fprintf(fl, "%J\n", rec);
+  }
+}
+
+
+static void write_sig(context *c, FILE *fl, const y4m2_frame *frame) {
   fft_context *fc = &c->plane_info[Y4M2_Y_PLANE];
   char sig[sig_SIGNATURE_BITS + 1];
   sig_signature(sig, fc->raw_sig, fc->rs_size);
@@ -158,7 +183,8 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     process_fft(fc);
   }
 
-  if (c->fo) write_log(c, c->fo, frame);
+  if (c->fh_sig) write_sig(c, c->fh_sig, frame);
+  if (c->fh_raw) write_raw(c, c->fh_raw, frame);
 
   c->frame_count++;
 }
@@ -202,15 +228,17 @@ static void parse_options(int *argc, char ***argv) {
     {"centre", no_argument, NULL, 'c'},
     {"center", no_argument, NULL, 'c'},
     {"delta", no_argument, NULL, 'd'},
+    {"input", required_argument, NULL, 'i'},
     {"histogram", no_argument, NULL, 'H'},
     {"merge", required_argument, NULL, 'M'},
     {"output", required_argument, NULL, 'o'},
     {"quiet", no_argument, NULL, 'q'},
+    {"raw", required_argument, NULL, 'r'},
     {"sampler", required_argument, NULL, 'S'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "S:M:o:cdhHq", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "S:M:i:o:r:cdhHq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'c':
@@ -225,6 +253,10 @@ static void parse_options(int *argc, char ***argv) {
       cfg_histogram = 1;
       break;
 
+    case 'i':
+      cfg_input = optarg;
+      break;
+
     case 'M':
       cfg_merge = (int) parse_double(optarg);
       break;
@@ -235,6 +267,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'q':
       log_level = ERROR;
+      break;
+
+    case 'r':
+      cfg_raw = optarg;
       break;
 
     case 'S':
@@ -253,6 +289,26 @@ static void parse_options(int *argc, char ***argv) {
   *argv += optind;
 }
 
+static FILE *openout(const char *filename) {
+  if (!filename) return NULL;
+  if (!strcmp(filename, "-")) return stdout;
+  FILE *fl = fopen(filename, "w");
+  if (!fl) die("Can't write %s: %s", filename, strerror(errno));
+  return fl;
+}
+
+static FILE *openin(const char *filename) {
+  if (!filename) return NULL;
+  if (!strcmp(filename, "-")) return stdin;
+  FILE *fl = fopen(filename, "r");
+  if (!fl) die("Can't read %s: %s", filename, strerror(errno));
+  return fl;
+}
+
+static void closeio(FILE *fl) {
+  if (fl && fl != stdin && fl != stdout && fl != stderr) fclose(fl);
+}
+
 int main(int argc, char *argv[]) {
   context ctx;
 
@@ -265,11 +321,9 @@ int main(int argc, char *argv[]) {
 
   memset(&ctx, 0, sizeof(ctx));
 
-  ctx.fo = stdout;
-  if (cfg_output) {
-    ctx.fo = fopen(cfg_output, "w");
-    if (!ctx.fo) die("Can't write %s: %s", cfg_output, strerror(errno));
-  }
+  ctx.fh_sig = openout(cfg_output);
+  ctx.fh_raw = openout(cfg_raw);
+  FILE *inh = openin(cfg_input);
 
   ctx.next = y4m2_output_null();
 
@@ -283,7 +337,11 @@ int main(int argc, char *argv[]) {
   /*  out = frameinfo_filter(out);*/
   out = progress_filter(out, PROGRESS_RATE);
 
-  y4m2_parse(stdin, out);
+  y4m2_parse(inh, out);
+
+  closeio(ctx.fh_sig);
+  closeio(ctx.fh_raw);
+  closeio(inh);
 
   return 0;
 }
