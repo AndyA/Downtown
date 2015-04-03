@@ -8,8 +8,6 @@
 #include "resample.h"
 #include "signature.h"
 
-/*#define DUMP_JSON*/
-
 #define PLP_M           -0.45
 #define PLP_P            1.2
 #define PLP_C            4.15
@@ -46,15 +44,6 @@ double *sig_smooth(double *dst, const double *src, size_t len) {
   return dst;
 }
 
-#ifdef DUMP_JSON
-static jd_var *stuff_nums(jd_var *out, const double *in, size_t len) {
-  jd_var *slot = jd_push(jd_set_array(out, len), len);
-  for (unsigned i = 0; i < len; i++)
-    jd_set_real(slot + i, in[i]);
-  return out;
-}
-#endif
-
 char *sig_signature(char *sig, const double *src, size_t len) {
   double scaled[sig_SIGNATURE_BITS];
   double smoothed[sig_SIGNATURE_BITS];
@@ -65,17 +54,6 @@ char *sig_signature(char *sig, const double *src, size_t len) {
   for (unsigned i = 0; i < sig_SIGNATURE_BITS; i++)
     sig[i] = scaled[i] > smoothed[i] ? '1' : '0';
   sig[sig_SIGNATURE_BITS] = '\0';
-
-#ifdef DUMP_JSON
-  scope {
-    jd_var *hash = jd_nhv(10);
-    stuff_nums(jd_get_ks(hash, "data", 1), src, len);
-    stuff_nums(jd_get_ks(hash, "scaled", 1), scaled, sig_SIGNATURE_BITS);
-    stuff_nums(jd_get_ks(hash, "smoothed", 1), smoothed, sig_SIGNATURE_BITS);
-    jd_set_string(jd_get_ks(hash, "sig", 1), sig);
-    jd_printf("%J", hash);
-  }
-#endif
 
   return sig;
 }
