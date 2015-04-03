@@ -38,6 +38,7 @@ libdowntown_la_SOURCES =      \
 	merge.h merge.c              \
 	numlist.h numlist.c          \
 	numpipe.h numpipe.c          \
+	profile.h profile.c          \
 	progress.h progress.c        \
 	ptrlist.h ptrlist.c          \
 	quadtree.h quadtree.c        \
