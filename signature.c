@@ -1,6 +1,5 @@
 /* signature.c */
 
-#include <jd_pretty.h>
 #include <math.h>
 #include <stdlib.h>
 
