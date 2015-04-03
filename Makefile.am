@@ -28,16 +28,17 @@ libdowntown_la_SOURCES =      \
 	csv.h csv.c                  \
 	delay.h delay.c              \
 	delta.h delta.c              \
+	downtown.h downtown-core.c   \
 	dumpframe.h dumpframe.c      \
 	frameinfo.h frameinfo.c      \
 	histogram.h histogram.c      \
 	injector.h injector.c        \
+	json.h json.c                \
 	log.h log.c                  \
 	merge.h merge.c              \
 	numlist.h numlist.c          \
 	numpipe.h numpipe.c          \
 	progress.h progress.c        \
-	downtown.h downtown-core.c   \
 	ptrlist.h ptrlist.c          \
 	quadtree.h quadtree.c        \
 	resample.h resample.c        \

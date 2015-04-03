@@ -6,6 +6,7 @@ TESTBIN =      \
 	charlist      \
 	colour        \
 	csv           \
+	json          \
 	numlist       \
 	numpipe       \
 	quadtree      \
