@@ -9,6 +9,8 @@ extern "C" {
 
 #include "jsondata.h"
 
+#define profile_SIGNATURE_BITS  256
+
 typedef struct {
   char *filename;
   jd_var config;
@@ -20,6 +22,7 @@ typedef struct {
 
 profile *profile_load(const char *filename);
 void profile_free(profile *p);
+char *profile_signature(const profile *p, char *sig, const double *data, size_t len);
 
 #ifdef __cplusplus
 }
