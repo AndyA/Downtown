@@ -1,7 +1,6 @@
 /* t/tb_convolve.c */
 
 #include <math.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
