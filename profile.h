@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
+
 #include "jsondata.h"
 #include "sampler.h"
 
@@ -28,6 +30,9 @@ profile *profile_load(const char *filename);
 void profile_free(profile *p);
 char *profile_signature(const profile *p, char *sig, const double *data, size_t len);
 sampler_context *profile_sampler(profile *p, size_t *lenp);
+
+double *profile__log2lin(double *out, const double *in, size_t len);
+double *profile__lin2log(double *out, const double *in, size_t len);
 
 #ifdef __cplusplus
 }

@@ -1,10 +1,22 @@
 /* profile.c */
 
+#include <jd_pretty.h>
+#include <math.h>
+#include <stdlib.h>
+
 #include "json.h"
 #include "profile.h"
 #include "resample.h"
 #include "sampler.h"
 #include "util.h"
+
+/*#define RESAMPLE_LOG*/
+
+#ifdef RESAMPLE_LOG
+#define RESAMPLE resample_log
+#else
+#define RESAMPLE resample_double
+#endif
 
 static void unpack(profile *p) {
   p->baseline = json_get_real(jd_get_ks(&p->config, "baseline", 0), &p->len);
@@ -25,6 +37,30 @@ void profile_free(profile *p) {
   free(p->baseline);
 }
 
+double *profile__log2lin(double *out, const double *in, size_t len) {
+  for (unsigned i = 0; i < len; i++)
+    out[i] = exp(in[i]);
+  return out;
+}
+
+double *profile__lin2log(double *out, const double *in, size_t len) {
+  for (unsigned i = 0; i < len; i++)
+    out[i] = log(in[i]);
+  return out;
+}
+
+#ifdef RESAMPLE_LOG
+static double *resample_log(double *out, size_t olen, const double *in, size_t ilen) {
+  double in_log[ilen];
+  double out_log[olen];
+
+  profile__lin2log(in_log, in, ilen);
+  resample_double(out_log, olen, in_log, ilen);
+  profile__log2lin(out, out_log, olen);
+  return out;
+}
+#endif
+
 char *profile_signature(const profile *p, char *sig, const double *data, size_t len) {
   if (len != p->len) die("Data size incorrect: profile length: %u, data length: %u",
                            (unsigned) p->len, (unsigned) len);
@@ -35,10 +71,12 @@ char *profile_signature(const profile *p, char *sig, const double *data, size_t 
 
   double sig_data[profile_SIGNATURE_BITS];
 
-  resample_double(sig_data, profile_SIGNATURE_BITS, delta, p->len); /* log? */
+  RESAMPLE(sig_data, profile_SIGNATURE_BITS, delta, p->len);
 
   for (unsigned i = 0; i < p->len; i++)
     sig[i] = sig_data[i] > 0 ? '1' : '0';
+
+  sig[profile_SIGNATURE_BITS] = '\0';
 
   return sig;
 }
