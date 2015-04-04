@@ -16,6 +16,7 @@
 #include "log.h"
 #include "merge.h"
 #include "progress.h"
+#include "profile.h"
 #include "resample.h"
 #include "sampler.h"
 #include "signature.h"
@@ -25,6 +26,7 @@
 #include "zigzag.h"
 
 #define PROG      "downtown-sig"
+#define SAMPLER   "spiral"
 
 typedef struct {
   fftw_plan plan;
@@ -52,7 +54,7 @@ typedef struct {
 
 static const char *plane_name[] = { "Y", "Cb", "Cr" };
 
-static char *cfg_sampler = "spiral";
+static char *cfg_sampler = NULL;
 static int cfg_histogram = 0;
 static int cfg_centre = 0;
 static int cfg_delta = 0;
@@ -175,7 +177,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     int h = frame->i.height / frame->i.plane[pl].ys;
 
     /* TODO - make profile sampler if available */
-    if (!fc->sampler) create_sampler(fc, cfg_sampler, plane_name[pl], w, h);
+    if (!fc->sampler) create_sampler(fc, cfg_sampler ? cfg_sampler : SAMPLER, plane_name[pl], w, h);
 
     double *sam = sampler_sample(fc->sampler, frame->plane[pl]);
 
