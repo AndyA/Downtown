@@ -9,6 +9,7 @@ TESTBIN =      \
 	json          \
 	numlist       \
 	numpipe       \
+	profile       \
 	quadtree      \
 	resample      \
 	sampler       \
