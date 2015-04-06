@@ -46,22 +46,23 @@ for obj in "$@"; do
       eval $parm;
       echo "src: $src, size: $size, spiral: $spiral"
 
-      y4m2="$src.$size.y4m2"
-      if [ "$src" -nt "$y4m2" ]; then
-        y4m2_t="$y4m2.tmp.y4m2"
-        ffmpeg                  \
-          -nostdin              \
-          -t "$DURATION"        \
-          -i "$src"             \
-          -s "${size}x${size}"  \
-          -pix_fmt yuv420p      \
-          -f yuv4mpegpipe       \
-          -y "$y4m2_t"          \
-            && mv "$y4m2_t" "$y4m2" || exit
-      fi
-
       dat="$src.$size.$spiral.dat"
       if [ "$src" -nt "$dat" ]; then
+
+        y4m2="$src.$size.y4m2"
+        if [ "$src" -nt "$y4m2" ]; then
+          y4m2_t="$y4m2.tmp.y4m2"
+          ffmpeg                  \
+            -nostdin              \
+            -t "$DURATION"        \
+            -i "$src"             \
+            -s "${size}x${size}"  \
+            -pix_fmt yuv420p      \
+            -f yuv4mpegpipe       \
+            -y "$y4m2_t"          \
+              && mv "$y4m2_t" "$y4m2" || exit
+        fi
+
         dat_t="$dat.tmp.dat"
         ./downtown-sig --input "$y4m2" --raw "$dat_t" --sampler "spiral:$spiral" \
           && mv "$dat_t" "$dat" || exit
