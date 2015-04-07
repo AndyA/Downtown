@@ -8,6 +8,7 @@
       10,
       10
    ],
+   "height" : 256,
    "sampler" : "spiral:a_rate=5,r_rate=5",
-   "size" : 256
+   "width" : 256
 }
