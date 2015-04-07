@@ -147,6 +147,21 @@ static jd_var *jd_doubles(jd_var *out, const double *in, size_t len) {
   return out;
 }
 
+static void write_raw_header(context *c, FILE *fl) {
+  scope {
+    fft_context *fc = &c->plane_info[Y4M2_Y_PLANE];
+    sampler_context *sam = fc->sampler;
+
+    jd_var *rec = jd_nhv(4);
+    jd_set_string(jd_get_ks(rec, "sampler", 1), sampler_spec(sam));
+    jd_set_int(jd_get_ks(rec, "width", 1), sam->width);
+    jd_set_int(jd_get_ks(rec, "height", 1), sam->height);
+
+    jd_fprintf(fl, "%J\n", rec);
+  }
+
+}
+
 static void write_raw(context *c, FILE *fl, const y4m2_frame *frame) {
   scope {
     fft_context *fc = &c->plane_info[Y4M2_Y_PLANE];
@@ -177,7 +192,11 @@ static void process_frame(context *c, const y4m2_frame *frame) {
     int h = frame->i.height / frame->i.plane[pl].ys;
 
     /* TODO - make profile sampler if available */
-    if (!fc->sampler) create_sampler(fc, cfg_sampler ? cfg_sampler : SAMPLER, plane_name[pl], w, h);
+    if (!fc->sampler) {
+      create_sampler(fc, cfg_sampler ? cfg_sampler : SAMPLER, plane_name[pl], w, h);
+      if (pl == Y4M2_Y_PLANE && c->fh_raw)
+        write_raw_header(c, c->fh_raw);
+    }
 
     double *sam = sampler_sample(fc->sampler, frame->plane[pl]);
 
