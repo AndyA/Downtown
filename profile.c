@@ -67,22 +67,23 @@ char *profile_signature(const profile *p, char *sig, const double *data, size_t 
   double delta[p->len];
 
   for (unsigned i = 0; i < len; i++)
-    delta[i] = data[i] - p->baseline[i];
+    delta[i] = data[i] / p->baseline[i];
 
   double sig_data[profile_SIGNATURE_BITS];
 
   RESAMPLE(sig_data, profile_SIGNATURE_BITS, delta, p->len);
 
   for (unsigned i = 0; i < p->len; i++)
-    sig[i] = sig_data[i] > 0 ? '1' : '0';
+    sig[i] = sig_data[i] > 1 ? '1' : '0';
 
   sig[profile_SIGNATURE_BITS] = '\0';
 
   return sig;
 }
 
-unsigned profile_frame_size(profile *p) {
-  return jd_get_int(jd_get_ks(&p->config, "size", 0));
+void profile_frame_size(profile *p, unsigned *wp, unsigned *hp) {
+  if (wp) *wp = (unsigned) jd_get_int(jd_get_ks(&p->config, "width", 0));
+  if (hp) *hp = (unsigned) jd_get_int(jd_get_ks(&p->config, "height", 0));
 }
 
 sampler_context *profile_sampler(profile *p, size_t *lenp) {
@@ -90,8 +91,9 @@ sampler_context *profile_sampler(profile *p, size_t *lenp) {
     const char *spec = jd_bytes(jd_get_ks(&p->config, "sampler", 0), NULL);
     if (!spec) die("'sampler' missing in %s", p->filename);
     p->sam = sampler_new(spec, p->filename);
-    unsigned fsz = profile_frame_size(p);
-    p->sam_len = sampler_init(p->sam, fsz, fsz);
+    unsigned w, h;
+    profile_frame_size(p, &w, &h);
+    p->sam_len = sampler_init(p->sam, w, h);
   }
   if (lenp) *lenp = p->sam_len;
   return p->sam;
