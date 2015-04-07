@@ -206,6 +206,7 @@ void sampler_free(sampler_context *ctx) {
     sampler_free_params(ctx->params);
     free(ctx->name);
     free(ctx->buf);
+    free(ctx->spec);
     free(ctx);
   }
 }
@@ -219,6 +220,22 @@ size_t sampler_init(sampler_context *ctx, unsigned w, unsigned h) {
 
 double *sampler_sample(sampler_context *ctx, const uint8_t *in) {
   return ctx->class->sample(ctx, in);
+}
+
+char *sampler_spec(sampler_context *ctx) {
+  if (!ctx->spec) {
+    ctx->spec = sstrdup(ctx->class->name);
+    char joiner = ':';
+    for (sampler_params *p = ctx->params; p; p = p->next) {
+      char *nspec = isnan(p->value)
+                    ?  ssprintf("%s%c%s='%s'", ctx->spec, joiner, p->name, p->text)
+                    :  ssprintf("%s%c%s=%.17g", ctx->spec, joiner, p->name, p->value) ;
+      joiner = ',';
+      free(ctx->spec);
+      ctx->spec = nspec;
+    }
+  }
+  return ctx->spec;
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c

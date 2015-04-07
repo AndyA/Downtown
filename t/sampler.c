@@ -103,12 +103,16 @@ static void test_register(void) {
 
   sampler_register(&info);
 
-  sampler_context *ctx = sampler_new("test_sampler:x=99", "test");
+  sampler_context *ctx = sampler_new("test_sampler:x=99,q='y'", "test");
 
   ok(ctx != NULL, "new");
   ok(0 == strcmp(ctx->class->name, "test_sampler"), "name matchs");
   ok(0 == strcmp(ctx->params->name, "x"), "param name matches");
   ok(ctx->params->value = 99, "param value matches");
+
+  char *spec = sampler_spec(ctx);
+  if (!  ok(0 == strcmp(spec, "test_sampler:x=99,q='y'"), "spec matches"))
+    diag("Got %s", spec);
 
   size_t size = sampler_init(ctx, 1000, 800);
   ok(1 == done_init, "init called");
