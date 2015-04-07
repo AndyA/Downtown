@@ -18,6 +18,28 @@ function zipop(a, b, op) {
   return out;
 }
 
+function deepMap(x, f) {
+  if (x instanceof Array) {
+    var out = [];
+    for (var i = 0; i < x.length; i++) out.push(deepMap(x[i], f));
+    return out;
+  }
+  return f(x);
+}
+
+function autoMap(f) {
+  return function(x) {
+    return deepMap(x, f);
+  }
+}
+
+var xlog = autoMap(
+function(x) {
+  if (x <= 0) return -100;
+  return Math.log(x);
+});
+var xexp = autoMap(Math.exp);
+
 function readList(list, done) {
   var total = null;
   var frames = 0;
@@ -32,7 +54,7 @@ function readList(list, done) {
 
     lr.on('line', function(line) {
       var data = JSON.parse(line);
-      var planes = data.planes;
+      var planes = xlog(data.planes);
       if (total === null) {
         total = planes;
       } else {
@@ -49,17 +71,22 @@ function readList(list, done) {
   }
 
   function next() {
-    if (list.length) readFile(list.shift(), next)
-    else done(total, frames);
+    if (list.length) {
+      readFile(list.shift(), next)
+      return;
+    }
+
+    var average = zipop(total, frames, function(a, b) {
+      return a / b
+    });
+
+    done(xexp(average));
   }
 
   next();
 }
 
 var argv = process.argv.slice(2);
-readList(argv, function(total, frames) {
-  var average = zipop(total, frames, function(a, b) {
-    return a / b
-  });
+readList(argv, function(average) {
   console.log(JSON.stringify(average));
 });
