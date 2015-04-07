@@ -23,7 +23,7 @@ function readList(list, done) {
   var frames = 0;
 
   function readFile(file, done) {
-    console.log('>>> ' + file);
+    console.log('# ' + file);
     var lr = new LineByLineReader(file);
     lr.on('error', function(err) {
       console.log(err);
