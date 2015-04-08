@@ -20,6 +20,13 @@ Options:
 
 EOT
 
+my %SAMPLER = (
+  spiral => 'r_rate=5,a_rate=5,area_limit=1.2,edge_trim=1',
+  zigzag => '',
+  weave  => '',
+  raster => '',
+);
+
 my %O = ( params => undef, );
 my $json = JSON->new->pretty->canonical;
 
@@ -28,8 +35,12 @@ GetOptions( 'p|params:s' => \$O{params} ) or die usage;
 for my $avg (@ARGV) {
 
   my $avg = shift @ARGV;
-  my %p   = ();
-  my %s   = ( name => 'spiral' );
+  ( my $prof = $avg ) =~ s/\.json$/.profile/;
+
+  say "$avg -> $prof";
+
+  my %p = ();
+  my %s = ( name => 'spiral', parse_parms( $SAMPLER{spiral} ) );
 
   $p{width} = $p{height} = 0 + $1 if $avg =~ /\bs(\d+)\./;
   $s{a_rate} = 0 + $1 if $avg =~ /\ba_rate=(\d+(?:\.\d+))/;
@@ -40,8 +51,12 @@ for my $avg (@ARGV) {
   my $baseline = $json->decode( scalar file($avg)->slurp );
   my %prof = ( %p, sampler => mk_sampler( \%s ), baseline => $baseline );
 
-  say $json->encode( \%prof );
+  my $fh = file($prof)->openw;
+  say $fh $json->encode( \%prof );
 }
+
+# Q&D
+sub parse_parms { split /[=,]/, $_[0] }
 
 sub mk_sampler {
   my $spec = shift;
