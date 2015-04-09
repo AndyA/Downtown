@@ -21,6 +21,8 @@ typedef struct {
   size_t len;
   double *baseline;
 
+  unsigned smooth_span;
+
   sampler_context *sam;
   size_t sam_len;
 
@@ -28,6 +30,7 @@ typedef struct {
 
 profile *profile_load(const char *filename);
 void profile_free(profile *p);
+double *profile_smooth(const profile *p, double *dst, const double *src, size_t len);
 char *profile_signature(const profile *p, char *sig, const double *data, size_t len);
 void profile_frame_size(profile *p, unsigned *wp, unsigned *hp);
 sampler_context *profile_sampler(profile *p, size_t *lenp);

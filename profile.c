@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "average.h"
 #include "json.h"
 #include "profile.h"
 #include "resample.h"
@@ -19,7 +20,9 @@
 #endif
 
 static void unpack(profile *p) {
-  p->baseline = json_get_real(jd_get_ks(&p->config, "baseline", 0), &p->len);
+  p->baseline = json_get_real(jd_get_idx(jd_get_ks(&p->config, "baseline", 0), 0), &p->len);
+  jd_var *smooth = jd_get_ks(&p->config, "smooth", 0);
+  p->smooth_span = smooth ? (unsigned) jd_get_int(smooth) : 1;
 }
 
 profile *profile_load(const char *filename) {
@@ -61,17 +64,48 @@ static double *resample_log(double *out, size_t olen, const double *in, size_t i
 }
 #endif
 
+static double *smooth(double *dst, const double *src, size_t len, unsigned span) {
+  average *avg = average_new_log(span);
+
+  unsigned dpos = 0;
+  for (unsigned i = 0; i < len; i++) {
+    if (average_ready(avg)) dst[dpos++] = average_get(avg);
+    average_push(avg, src[i]);
+  }
+
+  while (dpos != len) {
+    dst[dpos++] = average_get(avg);
+    average_pop(avg);
+  }
+
+  average_free(avg);
+
+  return dst;
+}
+
+double *profile_smooth(const profile *p, double *dst, const double *src, size_t len) {
+  if (p->smooth_span <= 1) return NULL;
+  return smooth(dst, src, len, p->smooth_span);
+}
+
 char *profile_signature(const profile *p, char *sig, const double *data, size_t len) {
   if (len != p->len) die("Data size incorrect: profile length: %u, data length: %u",
                            (unsigned) p->len, (unsigned) len);
-  double delta[p->len];
+  double norm[p->len];
+  double smoothed[p->len];
+  double sig_raw[p->len];
 
   for (unsigned i = 0; i < len; i++)
-    delta[i] = data[i] / p->baseline[i];
+    norm[i] = data[i] / p->baseline[i];
+
+  double *smoop = profile_smooth(p, smoothed, norm, len);
+
+  for (unsigned i = 0; i < len; i++)
+    sig_raw[i] = norm[i] - (smoop ? smoop[i] : 1);
 
   double sig_data[profile_SIGNATURE_BITS];
 
-  RESAMPLE(sig_data, profile_SIGNATURE_BITS, delta, p->len);
+  RESAMPLE(sig_data, profile_SIGNATURE_BITS, sig_raw, p->len);
 
   for (unsigned i = 0; i < p->len; i++)
     sig[i] = sig_data[i] > 1 ? '1' : '0';
@@ -98,7 +132,6 @@ sampler_context *profile_sampler(profile *p, size_t *lenp) {
   if (lenp) *lenp = p->sam_len;
   return p->sam;
 }
-
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
  */
