@@ -2,8 +2,9 @@
 
 #include <stdlib.h>
 
-#include "profile.h"
 #include "framework.h"
+#include "json.h"
+#include "profile.h"
 #include "tap.h"
 #include "util.h"
 
@@ -56,9 +57,43 @@ static void test_profile(void) {
   nest_out();
 }
 
+static void test_sig(void) {
+  nest_in("sig");
+
+  jd_var sig = JD_INIT;
+
+
+  char *prof = tf_resource("data/default.profile");
+  profile *p = profile_load(prof);
+  free(prof);
+
+  char *ref = tf_resource("data/sig.json");
+  json_load_file(&sig, ref);
+  free(ref);
+
+  size_t frames = jd_count(&sig);
+  for (unsigned f = 0; f < frames; f++) {
+    char osig[profile_SIGNATURE_BITS + 1];
+    size_t dlen;
+    double *data = json_get_real(jd_get_idx(jd_get_ks(jd_get_idx(&sig, f), "planes", 0), 0), &dlen);
+
+    profile_signature(p, osig, data, dlen);
+    diag("%s", osig);
+
+    free(data);
+  }
+
+  profile_free(p);
+
+  jd_release(&sig);
+
+  nest_out();
+}
+
 void test_main(void) {
   test_lin_log();
   test_profile();
+  test_sig();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
