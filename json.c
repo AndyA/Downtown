@@ -34,6 +34,24 @@ jd_var *json_load_file(jd_var *out, const char *fn) {
   return v;
 }
 
+jd_var *json_save(jd_var *obj, FILE *f) {
+  jd_var json = JD_INIT;
+  jd_to_json(&json, obj);
+  size_t len;
+  const char *js = jd_bytes(&json, &len);
+  fwrite(js, 1, len, f);
+  jd_release(&json);
+  return obj;
+}
+
+jd_var *json_save_file(jd_var *out, const char *fn) {
+  FILE *fl = fopen(fn, "w");
+  if (!fl) die("Can't write %s: %s\n", fn, strerror(errno));
+  json_save(out, fl);
+  fclose(fl);
+  return out;
+}
+
 double *json_get_real(jd_var *ar, size_t *sizep) {
   size_t size = jd_count(ar);
   double *data = alloc_no_clear(sizeof(double) * size);

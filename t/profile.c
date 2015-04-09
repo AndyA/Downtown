@@ -62,29 +62,37 @@ static void test_sig(void) {
 
   jd_var sig = JD_INIT;
 
-
   char *prof = tf_resource("data/default.profile");
   profile *p = profile_load(prof);
-  free(prof);
 
   char *ref = tf_resource("data/sig.json");
   json_load_file(&sig, ref);
-  free(ref);
 
   size_t frames = jd_count(&sig);
   for (unsigned f = 0; f < frames; f++) {
     char osig[profile_SIGNATURE_BITS + 1];
     size_t dlen;
-    double *data = json_get_real(jd_get_idx(jd_get_ks(jd_get_idx(&sig, f), "planes", 0), 0), &dlen);
+    jd_var *slot = jd_get_idx(&sig, f);
+    double *data = json_get_real(jd_get_idx(jd_get_ks(slot, "planes", 0), 0), &dlen);
 
     profile_signature(p, osig, data, dlen);
     diag("%s", osig);
 
+    jd_set_string(jd_get_ks(slot, "signature", 1), osig);
+
     free(data);
+  }
+
+  const char *save_as = getenv("PROFILE_SAVE");
+  if (save_as) {
+    json_save_file(&sig, save_as);
+    diag("Updated test data saved as %s", save_as);
   }
 
   profile_free(p);
 
+  free(prof);
+  free(ref);
   jd_release(&sig);
 
   nest_out();

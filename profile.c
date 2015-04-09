@@ -107,7 +107,7 @@ char *profile_signature(const profile *p, char *sig, const double *data, size_t 
 
   RESAMPLE(sig_data, profile_SIGNATURE_BITS, sig_raw, p->len);
 
-  for (unsigned i = 0; i < p->len; i++)
+  for (unsigned i = 0; i < profile_SIGNATURE_BITS; i++)
     sig[i] = sig_data[i] > 1 ? '1' : '0';
 
   sig[profile_SIGNATURE_BITS] = '\0';
