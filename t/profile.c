@@ -1,6 +1,7 @@
 /* t/profile.c */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "framework.h"
 #include "json.h"
@@ -60,6 +61,8 @@ static void test_profile(void) {
 static void test_sig(void) {
   nest_in("sig");
 
+  const char *save_as = getenv("PROFILE_SAVE");
+
   jd_var sig = JD_INIT;
 
   char *prof = tf_resource("data/default.profile");
@@ -76,14 +79,16 @@ static void test_sig(void) {
     double *data = json_get_real(jd_get_idx(jd_get_ks(slot, "planes", 0), 0), &dlen);
 
     profile_signature(p, osig, data, dlen);
-    diag("%s", osig);
 
-    jd_set_string(jd_get_ks(slot, "signature", 1), osig);
+    if (save_as)
+      jd_set_string(jd_get_ks(slot, "signature", 1), osig);
+
+    const char *want = jd_bytes(jd_get_ks(slot, "signature", 0), NULL);
+    ok(!strcmp(want, osig), "signature: %s", want);
 
     free(data);
   }
 
-  const char *save_as = getenv("PROFILE_SAVE");
   if (save_as) {
     json_save_file(&sig, save_as);
     diag("Updated test data saved as %s", save_as);
