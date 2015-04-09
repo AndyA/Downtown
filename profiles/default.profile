@@ -1754,6 +1754,6 @@
    ],
    "height" : 256,
    "sampler" : "spiral:a_rate=3.375,area_limit=1.2,edge_trim=1,r_rate=2.25",
-   "smooth" : 50,
+   "smooth" : 1000, 
    "width" : 256
 }
