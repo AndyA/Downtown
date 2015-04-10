@@ -95,6 +95,10 @@ static void scale(context *c, const y4m2_parameters *parms, y4m2_frame *frame) {
   frame_setup(dst, dst_stride, c->out);
 
   sws_scale(c->swc, (const uint8_t *const *) src, src_stride, 0, frame->i.height, dst, dst_stride);
+
+  c->out->sequence = frame->sequence;
+  c->out->elapsed = frame->elapsed;
+
   y4m2_emit_frame(c->next, c->oparms, y4m2_retain_frame(c->out));
   y4m2_release_frame(frame);
 }
