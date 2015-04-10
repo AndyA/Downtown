@@ -129,11 +129,15 @@ static void set_planes(y4m2_frame_info *info,
     info->size += info->plane[pl].size;
 }
 
+void y4m2_get_parm_size(const y4m2_parameters *parms, unsigned *wp, unsigned *hp) {
+  if (wp) *wp = parse_num(y4m2_get_parm(parms, "W"));
+  if (hp) *hp = parse_num(y4m2_get_parm(parms, "H"));
+}
+
 void y4m2_parse_frame_info(y4m2_frame_info *info, const y4m2_parameters *parms) {
   static uint8_t pl_fill[Y4M2_N_PLANE] = { 16, 128, 128 };
 
-  info->width = parse_num(y4m2_get_parm(parms, "W"));
-  info->height = parse_num(y4m2_get_parm(parms, "H"));
+  y4m2_get_parm_size(parms, &info->width, &info->height);
 
   const char *cs = y4m2_get_parm(parms, "C");
   if (!cs) cs = "420";

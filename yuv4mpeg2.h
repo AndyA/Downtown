@@ -88,6 +88,7 @@ y4m2_parameters *y4m2_merge_parms(y4m2_parameters *parms, const y4m2_parameters 
 y4m2_parameters *y4m2_clone_parms(const y4m2_parameters *orig);
 const char *y4m2_get_parm(const y4m2_parameters *parms, const char *name);
 void y4m2_set_parm(y4m2_parameters *parm, const char *name, const char *value);
+void y4m2_get_parm_size(const y4m2_parameters *parms, unsigned *wp, unsigned *hp);
 y4m2_parameters *y4m2_adjust_parms(const y4m2_parameters *parms, const char *fmt, ...);
 
 /* Frame lifecycle */
