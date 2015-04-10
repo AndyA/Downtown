@@ -426,7 +426,7 @@ int y4m2_parse(FILE *in, y4m2_output *out) {
       elapsed += _frame_duration(merged);
       size_t got = fread(frame->buf, 1, frame->i.size, in);
       if (got != frame->i.size) die("Short read");
-      y4m2_emit_frame(out, parms, frame);
+      y4m2_emit_frame(out, merged, frame);
       y4m2_free_parms(parms);
       y4m2_free_parms(merged);
       check_frames(&frames_allocated);
