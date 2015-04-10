@@ -9,74 +9,65 @@
 #include "tap.h"
 #include "util.h"
 
-#define NOWT 0.0001
-#define NREP 10
-#define MAX_DIFFS 8
+static void test_count(void) {
+  nest_in("signature__count_bits");
 
-static char *diff_str(char *out, const char *a, const char *b) {
-  size_t alen = strlen(a);
-  size_t blen = strlen(b);
-  char *op = out;
-  unsigned i;
+  ok(0 == signature__count_bits(0), "0 has 0 set bits");
+  ok(signature_WBITS == signature__count_bits(UINT_MAX), "%u has %u set bits",
+     UINT_MAX, signature_WBITS);
 
-  for (i = 0; i < alen && i < blen; i++)
-    *op++ = a[i] == b[i] ? ' ' : '^';
+  for (unsigned b = 0; b < signature_WBITS; b++)
+    ok(1 == signature__count_bits(1u << b), "%u has 1 set bit", 1u << b);
 
-  for (; i < alen || i < blen; i++)
-    *op++ = '^';
-
-  *op++ = '\0';
-
-  return out;
+  nest_out();
 }
 
-static int ndiff(const char *a, const char *b) {
-  int diffs = 0;
-  while (*a && *b) if (*a++ != *b++) diffs++;
-  while (*a++) diffs++;
-  while (*b++) diffs++;
-  return diffs;
+static unsigned randbit(void) {
+  return rand() & (profile_SIGNATURE_BITS - 1);
 }
 
-static void test_signature(void) {
+static unsigned count_ones(const char *buf) {
+  unsigned count = 0;
+  for (unsigned i = 0; buf[i]; i++)
+    if (buf[i] == '1') count++;
+  return count;
+}
 
-  nest_in("signature");
+static void test_format(void) {
+  nest_in("formatting");
 
-  double data[700];
-  char sig[sig_SIGNATURE_BITS + 1];
+  char bin_buf[signature_LEN_BIN + 1];
+  char bin_got[signature_LEN_BIN + 1];
+  char hex_buf[signature_LEN_HEX + 1];
 
-  const char *want = "01111110000000111111100000001111"
-                     "11100110001100110001100111111100"
-                     "00000111111100000001111111000000"
-                     "01111111000000011111110010001110"
-                     "11100010001110111000100111111100"
-                     "00000111111110000001111111100000"
-                     "01111111000100011101110001000111"
-                     "01110011001111111000000011111110";
+  signature sig, sig2;
 
+  for (unsigned i = 1; i < profile_SIGNATURE_BITS; i++) {
+    memset(bin_buf, '0', signature_LEN_BIN);
+    bin_buf[signature_LEN_BIN] = '\0';
+    for (unsigned b = 0; b < i; b++) bin_buf[randbit()] = '1';
+    unsigned want = count_ones(bin_buf);
 
-  for (unsigned i = 0; i < sizeof(data) / sizeof(data[0]); i++)
-    data[i] = 15
-              + sin((double) i / 2) * 3
-              + sin((double) i / 6) * 3.2
-              + sin((double) i / 7.1) * 1.9;
+    signature_parse(&sig, bin_buf);
+    unsigned got = signature_count(&sig);
+    ok(got == want, "%u bits in %s", want, bin_buf);
 
-  char *got = sig_signature(sig, data, sizeof(data) / sizeof(data[0]));
-  ok(got == sig, "returned pointer to buf");
-  int diffs = ndiff(want, got);
-  if (!ok(diffs < MAX_DIFFS, "signature matches with %d bits", MAX_DIFFS)) {
-    char diff[sig_SIGNATURE_BITS + 1];
+    signature_format_hex(&sig, hex_buf, sizeof(hex_buf));
+    signature_parse(&sig2, hex_buf);
 
-    diag("wanted: %s", want);
-    diag("got:    %s", got);
-    diag("        %s", diff_str(diff, want, got));
+    got = signature_count(&sig2);
+    ok(got == want, "%u bits in %s", want, hex_buf);
+
+    signature_format_bin(&sig2, bin_got, sizeof(bin_got));
+    ok(!strcmp(bin_buf, bin_got), "%s -> %s", hex_buf, bin_buf);
   }
 
   nest_out();
 }
 
 void test_main(void) {
-  test_signature();
+  test_count();
+  test_format();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
