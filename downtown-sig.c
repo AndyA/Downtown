@@ -92,7 +92,7 @@ static void free_fft_context(fft_context *c) {
     fftw_free(c->obuf);
     fftw_free(c->raw_sig);
     fftw_free(c->display_sig);
-    sampler_free(c->sampler);
+    /*    sampler_free(c->sampler);*/
   }
 }
 
