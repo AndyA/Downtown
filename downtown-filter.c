@@ -14,6 +14,7 @@
 #include "log.h"
 #include "merge.h"
 #include "progress.h"
+#include "scale.h"
 #include "util.h"
 #include "yuv4mpeg2.h"
 
@@ -23,6 +24,7 @@ static int cfg_centre = 0;
 static int cfg_delta = 0;
 static int cfg_histogram = 0;
 static int cfg_merge = 1;
+static char *cfg_size = NULL;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -33,9 +35,31 @@ static void usage() {
           "  -H, --histogram           Histogram equalisation\n"
           "  -M, --merge <n>           Merge every <n> input frames\n"
           "  -q, --quiet               No log output\n"
+          "  -s, --size <w>x<h>        Scale frames\n"
           "\n"
          );
   exit(1);
+}
+
+static void parse_size(const char *size, unsigned *wp, unsigned *hp) {
+  const char *sp;
+  char *ep;
+
+  unsigned w = strtoul(size, &ep, 10);
+  if (ep == size || (*ep != ':' && *ep != 'x')) goto bad;
+
+  sp = ep + 1;
+
+  unsigned h = strtoul(sp, &ep, 10);
+  if (ep == sp || *ep) goto bad;
+
+  *wp = w;
+  *hp = h;
+
+  return;
+
+bad:
+  die("Bad size: %s", size);
 }
 
 static double parse_double(const char *num) {
@@ -56,10 +80,11 @@ static void parse_options(int *argc, char ***argv) {
     {"histogram", no_argument, NULL, 'H'},
     {"merge", required_argument, NULL, 'M'},
     {"quiet", no_argument, NULL, 'q'},
+    {"size", required_argument, NULL, 's'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "M:hHcdq", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "M:s:hHcdq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'c':
@@ -80,6 +105,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'q':
       log_level = ERROR;
+      break;
+
+    case 's':
+      cfg_size = optarg;
       break;
 
     case 'h':
@@ -106,6 +135,11 @@ int main(int argc, char *argv[]) {
   if (cfg_delta) out = delta_filter(out);
   if (cfg_histogram) out = histogram_filter(out);
   if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
+  if (cfg_size) {
+    unsigned w, h;
+    parse_size(cfg_size, &w, &h);
+    out = scale_filter(out, w, h);
+  }
 
   out = frameinfo_filter(out);
   out = progress_filter(out, PROGRESS_RATE);
