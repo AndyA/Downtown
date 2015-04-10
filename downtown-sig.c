@@ -15,10 +15,11 @@
 #include "histogram.h"
 #include "log.h"
 #include "merge.h"
-#include "progress.h"
 #include "profile.h"
+#include "progress.h"
 #include "resample.h"
 #include "sampler.h"
+#include "scale.h"
 #include "util.h"
 #include "voronoi.h"
 #include "yuv4mpeg2.h"
@@ -62,6 +63,7 @@ static char *cfg_input = "-";
 static char *cfg_output = NULL;
 static char *cfg_raw = NULL;
 static char *cfg_profile = NULL;
+static char *cfg_size = NULL;
 
 static void usage() {
   fprintf(stderr, "Usage: " PROG " [options] < <in.y4m2> > <out.y4m2>\n\n"
@@ -76,6 +78,7 @@ static void usage() {
           "  -p, --profile <file.json> Use profile\n"
           "  -q, --quiet               No log output\n"
           "  -r, --raw <file>          raw FFT output file\n"
+          "  -s, --size <w>x<h>        Scale frames\n"
           "  -S, --sampler <algo>      Select sampler algorithm\n"
           "\n"
          );
@@ -176,18 +179,15 @@ static void write_sig(context *c, FILE *fl, const y4m2_frame *frame) {
 }
 
 static void create_sampler(context *c, fft_context *fc, int w, int h) {
-  if (cfg_profile) {
-    if (cfg_sampler) die("Can't use --sampler with --profile");
-    log_info("Loading profile %s", cfg_profile);
-    c->prof = profile_load(cfg_profile);
+  if (c->prof) {
     fc->sampler = profile_sampler(c->prof, &fc->len);
+    return;
   }
-  else {
-    const char *spec = cfg_sampler ? cfg_sampler : SAMPLER;
-    log_info("Creating sampler %s", spec);
-    fc->sampler = sampler_new(spec, "sampler");
-    fc->len = sampler_init(fc->sampler, w, h);
-  }
+
+  const char *spec = cfg_sampler ? cfg_sampler : SAMPLER;
+  log_info("Creating sampler %s", spec);
+  fc->sampler = sampler_new(spec, "sampler");
+  fc->len = sampler_init(fc->sampler, w, h);
 }
 
 static void process_frame(context *c, const y4m2_frame *frame) {
@@ -245,6 +245,27 @@ static void callback(y4m2_reason reason,
   }
 }
 
+static void parse_size(const char *size, unsigned *wp, unsigned *hp) {
+  const char *sp;
+  char *ep;
+
+  unsigned w = strtoul(size, &ep, 10);
+  if (ep == size || (*ep != ':' && *ep != 'x')) goto bad;
+
+  sp = ep + 1;
+
+  unsigned h = strtoul(sp, &ep, 10);
+  if (ep == sp || *ep) goto bad;
+
+  *wp = w;
+  *hp = h;
+
+  return;
+
+bad:
+  die("Bad size: %s", size);
+}
+
 static double parse_double(const char *num) {
   char *ep;
   double v = strtod(num, &ep);
@@ -268,10 +289,11 @@ static void parse_options(int *argc, char ***argv) {
     {"quiet", no_argument, NULL, 'q'},
     {"raw", required_argument, NULL, 'r'},
     {"sampler", required_argument, NULL, 'S'},
+    {"size", required_argument, NULL, 's'},
     {NULL, 0, NULL, 0}
   };
 
-  while (ch = getopt_long(*argc, *argv, "S:M:i:o:r:cdhHq", opts, &oidx), ch != -1) {
+  while (ch = getopt_long(*argc, *argv, "S:s:M:i:o:r:cdhHq", opts, &oidx), ch != -1) {
     switch (ch) {
 
     case 'c':
@@ -312,6 +334,10 @@ static void parse_options(int *argc, char ***argv) {
 
     case 'S':
       cfg_sampler = optarg;
+      break;
+
+    case 's':
+      cfg_size = optarg;
       break;
 
     case 'h':
@@ -362,6 +388,12 @@ int main(int argc, char *argv[]) {
   ctx.fh_raw = openout(cfg_raw);
   FILE *inh = openin(cfg_input);
 
+  if (cfg_profile) {
+    if (cfg_sampler) die("Can't use --sampler with --profile");
+    log_info("Loading profile %s", cfg_profile);
+    ctx.prof = profile_load(cfg_profile);
+  }
+
   ctx.next = y4m2_output_null();
 
   y4m2_output *out = y4m2_output_next(callback, &ctx);
@@ -370,6 +402,17 @@ int main(int argc, char *argv[]) {
   if (cfg_delta) out = delta_filter(out);
   if (cfg_histogram) out = histogram_filter(out);
   if (cfg_merge > 1) out = merge_filter(out, cfg_merge);
+
+  if (ctx.prof) {
+    unsigned w, h;
+    profile_frame_size(ctx.prof, &w, &h);
+    out = scale_filter(out, w, h);
+  }
+  else if (cfg_size) {
+    unsigned w, h;
+    parse_size(cfg_size, &w, &h);
+    out = scale_filter(out, w, h);
+  }
 
   /*  out = frameinfo_filter(out);*/
   out = progress_filter(out, PROGRESS_RATE);
