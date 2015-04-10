@@ -19,7 +19,6 @@
 #include "profile.h"
 #include "resample.h"
 #include "sampler.h"
-#include "signature.h"
 #include "util.h"
 #include "voronoi.h"
 #include "yuv4mpeg2.h"
@@ -50,9 +49,9 @@ typedef struct {
   fft_context plane_info[Y4M2_N_PLANE];
   FILE *fh_sig;
   FILE *fh_raw;
-} context;
 
-static const char *plane_name[] = { "Y", "Cb", "Cr" };
+  profile *prof;
+} context;
 
 static char *cfg_sampler = NULL;
 static int cfg_histogram = 0;
@@ -95,7 +94,7 @@ static void free_fft_context(fft_context *c) {
 }
 
 static void free_context(context *c) {
-  /*  if (c->fh_sig) fclose(c->fh_sig);*/
+  profile_free(c->prof);
   for (int pl = 0; pl < Y4M2_N_PLANE; pl++) {
     free_fft_context(&c->plane_info[pl]);
   }
@@ -115,12 +114,6 @@ static void process_fft(fft_context *c) {
     double si = c->obuf[c->len - i];
     *out++ = sqrt(sr * sr + si * si);
   }
-}
-
-static void create_sampler(fft_context *fc, const char *spec, const char *name, int w, int h) {
-  fc->sampler = sampler_new(spec, name);
-  fc->len = sampler_init(fc->sampler, w, h);
-  log_debug("Sampler for %s will return %u samples", name, fc->len);
 }
 
 static void init_fft_context(fft_context *c) {
@@ -174,12 +167,27 @@ static void write_raw(context *c, FILE *fl, const y4m2_frame *frame) {
   }
 }
 
-
 static void write_sig(context *c, FILE *fl, const y4m2_frame *frame) {
+  if (!c->prof) die("Can't write a signature without a profile");
   fft_context *fc = &c->plane_info[Y4M2_Y_PLANE];
-  char sig[sig_SIGNATURE_BITS + 1];
-  sig_signature(sig, fc->raw_sig, fc->rs_size);
+  char sig[profile_SIGNATURE_BITS + 1];
+  profile_signature(c->prof, sig, fc->raw_sig, fc->rs_size);
   fprintf(fl, "%14llu %s\n", (unsigned long long) frame->sequence, sig);
+}
+
+static void create_sampler(context *c, fft_context *fc, int w, int h) {
+  if (cfg_profile) {
+    if (cfg_sampler) die("Can't use --sampler with --profile");
+    log_info("Loading profile %s", cfg_profile);
+    c->prof = profile_load(cfg_profile);
+    fc->sampler = profile_sampler(c->prof, &fc->len);
+  }
+  else {
+    const char *spec = cfg_sampler ? cfg_sampler : SAMPLER;
+    log_info("Creating sampler %s", spec);
+    fc->sampler = sampler_new(spec, "sampler");
+    fc->len = sampler_init(fc->sampler, w, h);
+  }
 }
 
 static void process_frame(context *c, const y4m2_frame *frame) {
@@ -193,7 +201,7 @@ static void process_frame(context *c, const y4m2_frame *frame) {
 
     /* TODO - make profile sampler if available */
     if (!fc->sampler) {
-      create_sampler(fc, cfg_sampler ? cfg_sampler : SAMPLER, plane_name[pl], w, h);
+      create_sampler(c, fc, w, h);
       if (pl == Y4M2_Y_PLANE && c->fh_raw)
         write_raw_header(c, c->fh_raw);
     }
