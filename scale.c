@@ -58,7 +58,7 @@ static void setup(context *c, const y4m2_parameters *parms) {
   y4m2_get_parm_size(parms, &sw, &sh);
 
   if (sw == c->width && sh == c->height) {
-    log_info("No scaling needed");
+    log_info("No scaling needed (%ux%u)", sw, sh);
     return;
   }
 
@@ -70,6 +70,8 @@ static void setup(context *c, const y4m2_parameters *parms) {
   c->swc = sws_getContext(sw, sh, pix_fmt,
                           c->width, c->height, pix_fmt,
                           SWS_BICUBIC, NULL, NULL, NULL);
+
+  log_info("Scaling %ux%u to %ux%u", sw, sh, c->width, c->height);
 
   if (!c->swc) die("Failed to create scaling context");
 
