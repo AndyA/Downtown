@@ -44,6 +44,7 @@ libdowntown_la_SOURCES =      \
 	quadtree.h quadtree.c        \
 	resample.h resample.c        \
 	sampler.h sampler.c          \
+	scale.h scale.c              \
 	signature.h signature.c      \
 	splitter.h splitter.c        \
 	tb_convolve.h tb_convolve.c  \
