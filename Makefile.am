@@ -54,8 +54,8 @@ libdowntown_la_SOURCES =      \
 	yuv4mpeg2.h yuv4mpeg2.c      \
 	zigzag.h zigzag.c
 
-libdowntown_la_CPPFLAGS = $(FFTW_CFLAGS) $(PNG_CFLAGS)
-libdowntown_la_LDFLAGS = -avoid-version -static $(FFTW_LIBS) $(PNG_LIBS)
+libdowntown_la_CPPFLAGS = $(FFTW_CFLAGS) $(PNG_CFLAGS) $(SWSCALE_CFLAGS)
+libdowntown_la_LDFLAGS = -avoid-version -static $(FFTW_LIBS) $(PNG_LIBS) $(SWSCALE_LIBS)
 
 confound_LDADD = libdowntown.la
 confound_SOURCES = confound.c
