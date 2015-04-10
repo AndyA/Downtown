@@ -9,6 +9,33 @@
 #include "tap.h"
 #include "util.h"
 
+static unsigned randbit(void) {
+  return rand() & (profile_SIGNATURE_BITS - 1);
+}
+
+static unsigned count_ones(const char *buf) {
+  unsigned count = 0;
+  for (unsigned i = 0; buf[i]; i++)
+    if (buf[i] == '1') count++;
+  return count;
+}
+
+static void random_sig(char *bin_buf) {
+  memset(bin_buf, '0', signature_LEN_BIN);
+  bin_buf[signature_LEN_BIN] = '\0';
+  unsigned nset = randbit();
+  for (unsigned i = 0; i < nset; i++)
+    bin_buf[randbit()] = '1';
+}
+
+static unsigned count_diff(const char *a, const char *b) {
+  unsigned count = 0;
+  while (*a && *b)
+    if (*a++ != *b++) count++;
+  if (*a || *b) die("sig strings have different lengths");
+  return count;
+}
+
 static void test_count(void) {
   nest_in("signature__count_bits");
 
@@ -20,17 +47,6 @@ static void test_count(void) {
     ok(1 == signature__count_bits(1u << b), "%u has 1 set bit", 1u << b);
 
   nest_out();
-}
-
-static unsigned randbit(void) {
-  return rand() & (profile_SIGNATURE_BITS - 1);
-}
-
-static unsigned count_ones(const char *buf) {
-  unsigned count = 0;
-  for (unsigned i = 0; buf[i]; i++)
-    if (buf[i] == '1') count++;
-  return count;
 }
 
 static void test_format(void) {
@@ -65,9 +81,31 @@ static void test_format(void) {
   nest_out();
 }
 
+static void test_distance(void) {
+  nest_in("distance");
+
+  char sig_buf_a[signature_LEN_BIN + 1];
+  char sig_buf_b[signature_LEN_BIN + 1];
+  signature sig_a, sig_b;
+
+  for (unsigned i = 0; i < profile_SIGNATURE_BITS; i++) {
+    random_sig(sig_buf_a);
+    random_sig(sig_buf_b);
+    unsigned want = count_diff(sig_buf_a, sig_buf_b);
+
+    signature_parse(&sig_a, sig_buf_a);
+    signature_parse(&sig_b, sig_buf_b);
+
+    ok(want == signature_distance(&sig_a, &sig_b), "distance: %u", want);
+  }
+
+  nest_out();
+}
+
 void test_main(void) {
   test_count();
   test_format();
+  test_distance();
 }
 
 /* vim:ts=2:sw=2:sts=2:et:ft=c
