@@ -9,6 +9,8 @@
 #include "tap.h"
 #include "util.h"
 
+#define MAX_DIFFS 8
+
 #define countof(x) (sizeof(x)/sizeof((x)[0]))
 
 static double _random(void) {
@@ -58,6 +60,31 @@ static void test_profile(void) {
   nest_out();
 }
 
+static char *diff_str(char *out, const char *a, const char *b) {
+  size_t alen = strlen(a);
+  size_t blen = strlen(b);
+  char *op = out;
+  unsigned i;
+
+  for (i = 0; i < alen && i < blen; i++)
+    *op++ = a[i] == b[i] ? ' ' : '^';
+
+  for (; i < alen || i < blen; i++)
+    *op++ = '^';
+
+  *op++ = '\0';
+
+  return out;
+}
+
+static int ndiff(const char *a, const char *b) {
+  int diffs = 0;
+  while (*a && *b) if (*a++ != *b++) diffs++;
+  while (*a++) diffs++;
+  while (*b++) diffs++;
+  return diffs;
+}
+
 static void test_sig(void) {
   nest_in("sig");
 
@@ -73,18 +100,26 @@ static void test_sig(void) {
 
   size_t frames = jd_count(&sig);
   for (unsigned f = 0; f < frames; f++) {
-    char osig[profile_SIGNATURE_BITS + 1];
+    char got[profile_SIGNATURE_BITS + 1];
     size_t dlen;
     jd_var *slot = jd_get_idx(&sig, f);
     double *data = json_get_real(jd_get_idx(jd_get_ks(slot, "planes", 0), 0), &dlen);
 
-    profile_signature(p, osig, data, dlen);
+    profile_signature(p, got, data, dlen);
 
     if (save_as)
-      jd_set_string(jd_get_ks(slot, "signature", 1), osig);
+      jd_set_string(jd_get_ks(slot, "signature", 1), got);
 
     const char *want = jd_bytes(jd_get_ks(slot, "signature", 0), NULL);
-    ok(!strcmp(want, osig), "signature: %s", want);
+    int diffs = ndiff(want, got);
+    if (!ok(diffs < MAX_DIFFS, "signature matches with %d bits", MAX_DIFFS)) {
+      char diff[profile_SIGNATURE_BITS + 1];
+
+      diag("wanted: %s", want);
+      diag("got:    %s", got);
+      diag("        %s", diff_str(diff, want, got));
+    }
+    ok(!strcmp(want, got), "signature: %s", want);
 
     free(data);
   }
