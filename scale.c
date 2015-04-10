@@ -55,8 +55,14 @@ static enum AVPixelFormat get_pix_fmt(const y4m2_parameters *parms) {
 
 static void setup(context *c, const y4m2_parameters *parms) {
   unsigned sw, sh;
-  enum AVPixelFormat pix_fmt = get_pix_fmt(parms);
   y4m2_get_parm_size(parms, &sw, &sh);
+
+  if (sw == c->width && sh == c->height) {
+    log_info("No scaling needed");
+    return;
+  }
+
+  enum AVPixelFormat pix_fmt = get_pix_fmt(parms);
 
   c->oparms = y4m2_adjust_parms(parms, "W%u H%u", c->width, c->height);
 
@@ -101,11 +107,14 @@ static void callback(y4m2_reason reason,
 
   case Y4M2_START:
     setup(c, parms);
-    y4m2_emit_start(c->next, c->oparms);
+    y4m2_emit_start(c->next, c->oparms ? c->oparms : parms);
     break;
 
   case Y4M2_FRAME:
-    scale(c, parms, frame);
+    if (c->oparms)
+      scale(c, parms, frame);
+    else
+      y4m2_emit_frame(c->next, parms, frame);
     break;
 
   case Y4M2_END:
